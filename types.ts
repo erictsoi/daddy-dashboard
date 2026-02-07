@@ -63,3 +63,24 @@ export interface ScheduleBlock {
     lessonId: string;
   } | null;
 }
+
+export interface ExpandedLesson {
+  title: string;
+  videoUrl: string;
+  videoId: string;
+  position: number;
+}
+
+export interface ParsedRow {
+  childName: string;
+  yearGroup: string;
+  subjectCategory: string;
+  subjectName: string;
+  lessonTitle: string;
+  notes: string;
+  videoUrl: string;
+  isValid: boolean;
+  isYouTubeUrl: boolean;
+  youTubeType?: 'video' | 'playlist';
+  expandedLessons?: ExpandedLesson[];
+}

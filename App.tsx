@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ViewState, ChildProfile, YearGroup, Subject, Lesson, ScheduleBlock, ViewOrigin } from './types';
+import { ViewState, ChildProfile, YearGroup, Subject, Lesson, ScheduleBlock, ViewOrigin, ParsedRow } from './types';
 import { INITIAL_DATA, SUGGESTED_TOPICS, CREATIVE_PROMPTS } from './constants';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
@@ -277,17 +277,17 @@ const App: React.FC = () => {
       }));
   };
 
-  const handleBulkImport = (rows: any[]) => {
+  const handleBulkImport = (rows: ParsedRow[]) => {
     setData(prevData => {
       const newData = [...prevData];
       const touchedSubjectIds = new Set<string>();
 
       rows.forEach(row => {
-        // 1. Find or create child
-        let child = newData.find(c => c.name.toLowerCase() === row.childName.toLowerCase());
-        if (!child) return; 
+        if (!row.isValid) return;
 
-        // 2. Find or create Year Group
+        let child = newData.find(c => c.name.toLowerCase() === row.childName.toLowerCase());
+        if (!child) return;
+
         let yearGroup = child.yearGroups.find(yg => yg.name.toLowerCase() === row.yearGroup.toLowerCase());
         if (!yearGroup) {
           yearGroup = {
@@ -298,40 +298,37 @@ const App: React.FC = () => {
           child.yearGroups.push(yearGroup);
         }
 
-        // 3. Find or create Subject
         const fullSubjectName = `${row.subjectCategory}: ${row.subjectName}`;
-        let subject = yearGroup.subjects.find(s => s.name === fullSubjectName || s.name === row.subjectName);
+        let subject = yearGroup.subjects.find(s => s.name === fullSubjectName);
         if (!subject) {
-          // Determine color based on category
           let color = 'bg-gray-100 text-gray-800';
-          if (row.subjectCategory.toLowerCase().includes('math')) color = 'bg-blue-100 text-blue-800';
-          else if (row.subjectCategory.toLowerCase().includes('english')) color = 'bg-amber-100 text-amber-800';
-          else if (row.subjectCategory.toLowerCase().includes('science')) color = 'bg-green-100 text-green-800';
-          else if (row.subjectCategory.toLowerCase().includes('humanities')) color = 'bg-orange-100 text-orange-800';
-          else if (row.subjectCategory.toLowerCase().includes('creative')) color = 'bg-purple-100 text-purple-800';
+          const cat = row.subjectCategory.toLowerCase();
+          if (cat.includes('math')) color = 'bg-blue-100 text-blue-800';
+          else if (cat.includes('english')) color = 'bg-amber-100 text-amber-800';
+          else if (cat.includes('science')) color = 'bg-green-100 text-green-800';
+          else if (cat.includes('humanities')) color = 'bg-orange-100 text-orange-800';
+          else if (cat.includes('creative')) color = 'bg-purple-100 text-purple-800';
 
           subject = {
             id: Math.random().toString(36).substr(2, 9),
             name: fullSubjectName,
-            category: row.subjectCategory,
+            category: row.subjectCategory as any,
             color,
             lessons: []
           };
           yearGroup.subjects.push(subject);
-          touchedSubjectIds.add(subject.id); // Mark as new, no need to clear (it's empty)
+          touchedSubjectIds.add(subject.id);
         } else {
-            // Existing subject. Check if we've cleared it in this batch yet.
-            if (!touchedSubjectIds.has(subject.id)) {
-                subject.lessons = []; // Clear existing lessons on first touch
-                touchedSubjectIds.add(subject.id);
-            }
+          if (!touchedSubjectIds.has(subject.id)) {
+            subject.lessons = [];
+            touchedSubjectIds.add(subject.id);
+          }
         }
 
-        // 4. Add Lesson
         const newLesson: Lesson = {
           id: Math.random().toString(36).substr(2, 9),
           title: row.lessonTitle,
-          durationMinutes: 45, // Default
+          durationMinutes: 45,
           completed: false,
           deleted: false,
           videoUrl: row.videoUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
