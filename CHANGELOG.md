@@ -7,6 +7,33 @@
      4. Bump version in package.json
 -->
 
+## 2026-02-09
+
+### Added
+- Supabase authentication integration
+- Google OAuth sign-in on Landing page
+- AuthContext with useAuth() hook for managing user sessions
+- Sign-out functionality
+
+### Changed
+- App.tsx wrapped with AuthProvider
+- LandingView now shows user profile and sign-in/sign-out buttons
+
+### Added
+- Created src/lib/supabase.ts - Supabase browser client
+- Created src/lib/AuthContext.tsx - Authentication context provider
+- Created .env.example - Environment variables template
+
+### Changed
+- Data persistence now syncs with Supabase when authenticated
+- Guest mode uses localStorage for data persistence
+- All curriculum mutations save to localStorage (guest) or Supabase (auth)
+
+### Added
+- Created src/lib/dataService.ts - Data layer with dual persistence
+- Created supabase_schema.sql - Database schema with RLS policies
+- Types updated with DbChild, DbYearGroup, DbSubject, DbLesson interfaces
+
 ## 2026-02-08
 
 ### Added

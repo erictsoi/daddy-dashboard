@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ViewState, ChildProfile, YearGroup, Subject, Lesson, ScheduleBlock, ViewOrigin, ParsedRow } from './types';
 import { INITIAL_DATA, SUGGESTED_TOPICS, CREATIVE_PROMPTS } from './constants';
+import { AuthProvider, useAuth } from './lib/AuthContext';
+import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, updateChildGoogleEmail } from './lib/dataService';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
 import { Timeline } from './components/Timeline';
 import { CurriculumBuilder } from './components/CurriculumBuilder';
+import { ChildManagement } from './components/ChildManagement';
 import { 
   Users, 
   Book, 
@@ -28,12 +31,17 @@ import {
   Archive,
   Lock,
   LogOut,
-  UserCircle
+  UserCircle,
+  UserPlus
 } from 'lucide-react';
 
 const App: React.FC = () => {
+  const { user } = useAuth() || {};
   const [view, setView] = useState<ViewState>({ type: 'LANDING' });
-  const [data, setData] = useState<ChildProfile[]>(INITIAL_DATA);
+  const [data, setData] = useState<ChildProfile[]>([]);
+  const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showChildManagement, setShowChildManagement] = useState(false);
   
   // Scroll Restoration
   const scrollYRef = useRef(0);
@@ -41,6 +49,83 @@ const App: React.FC = () => {
   // Schedule State
   const [schedule, setSchedule] = useState<ScheduleBlock[]>([]);
   const [isDayActive, setIsDayActive] = useState(false);
+
+  // Load data on mount and when user changes
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        if (user) {
+          // Check if user is a child by matching email
+          const childData = await fetchChildByEmail(user.email || '');
+          if (childData) {
+            setChildProfile(childData);
+            setData([]);
+          } else {
+            setChildProfile(null);
+            const childrenData = await fetchChildren(user.id);
+            if (childrenData.length > 0) {
+              setData(childrenData);
+            } else {
+              const localData = getLocalData();
+              setData(localData);
+            }
+          }
+        } else {
+          setChildProfile(null);
+          setData(getLocalData());
+        }
+      } catch (err) {
+        console.error('Error loading data:', err);
+        setData(getLocalData());
+      }
+      setLoading(false);
+    };
+    loadData();
+  }, [user]);
+
+  // --- Child Management Functions ---
+
+  const handleAddChild = (childData: Omit<ChildProfile, 'id' | 'yearGroups'>) => {
+    const newChild: ChildProfile = {
+      ...childData,
+      id: Math.random().toString(36).substr(2, 9),
+      yearGroups: [],
+    };
+    setData(prev => {
+      const newData = [...prev, newChild];
+      if (!user) {
+        saveLocalData(newData);
+      }
+      return newData;
+    });
+  };
+
+  const handleUpdateChild = (id: string, childData: Omit<ChildProfile, 'id' | 'yearGroups'>) => {
+    setData(prev => {
+      const newData = prev.map(child => {
+        if (child.id !== id) return child;
+        return {
+          ...child,
+          ...childData,
+        };
+      });
+      if (!user) {
+        saveLocalData(newData);
+      }
+      return newData;
+    });
+  };
+
+  const handleDeleteChild = (id: string) => {
+    setData(prev => {
+      const newData = prev.filter(child => child.id !== id);
+      if (!user) {
+        saveLocalData(newData);
+      }
+      return newData;
+    });
+  };
 
   // --- Schedule Generator Logic ---
   
@@ -148,26 +233,30 @@ const App: React.FC = () => {
   // --- Curriculum Actions ---
 
   const handleCompleteLesson = (childId: string, subjectId: string, lessonId: string, timeSpentSeconds: number) => {
-    // 1. Update Data
-    setData(prev => prev.map(child => {
-      if (child.id !== childId) return child;
-      return {
-        ...child,
-        yearGroups: child.yearGroups.map(yg => ({
-          ...yg,
-          subjects: yg.subjects.map(sub => {
-            if (sub.id !== subjectId) return sub;
-            return {
-              ...sub,
-              lessons: sub.lessons.map(l => l.id === lessonId ? { ...l, completed: true, timeSpentSeconds } : l)
-            };
-          })
-        }))
-      };
-    }));
+    setData(prev => {
+      const newData = prev.map(child => {
+        if (child.id !== childId) return child;
+        return {
+          ...child,
+          yearGroups: child.yearGroups.map(yg => ({
+            ...yg,
+            subjects: yg.subjects.map(sub => {
+              if (sub.id !== subjectId) return sub;
+              return {
+                ...sub,
+                lessons: sub.lessons.map(l => l.id === lessonId ? { ...l, completed: true, timeSpentSeconds } : l)
+              };
+            })
+          }))
+        };
+      });
+      // Persist to localStorage for guest mode
+      if (!user) {
+        saveLocalData(newData);
+      }
+      return newData;
+    });
 
-    // 2. Navigation Logic
-    // Close out lesson and return to Subject Detail (list) to allow selecting next video
     if (view.type === 'LESSON_PLAYER') {
         setView({ 
             type: 'SUBJECT_DETAIL', 
@@ -179,102 +268,28 @@ const App: React.FC = () => {
   };
 
   const handleSoftDeleteLesson = (childId: string, subjectId: string, lessonId: string) => {
-      setData(prev => prev.map(child => {
-          if (child.id !== childId) return child;
-          return {
-              ...child,
-              yearGroups: child.yearGroups.map(yg => ({
-                  ...yg,
-                  subjects: yg.subjects.map(sub => {
-                      if (sub.id !== subjectId) return sub;
-                      return {
-                          ...sub,
-                          lessons: sub.lessons.map(l => l.id === lessonId ? { ...l, deleted: true } : l)
-                      };
-                  })
-              }))
-          };
-      }));
-  };
-
-  const handleRestoreLesson = (childId: string, subjectId: string, lessonId: string) => {
-      setData(prev => prev.map(child => {
-          if (child.id !== childId) return child;
-          return {
-              ...child,
-              yearGroups: child.yearGroups.map(yg => ({
-                  ...yg,
-                  subjects: yg.subjects.map(sub => {
-                      if (sub.id !== subjectId) return sub;
-                      return {
-                          ...sub,
-                          lessons: sub.lessons.map(l => l.id === lessonId ? { ...l, deleted: false } : l)
-                      };
-                  })
-              }))
-          };
-      }));
-  };
-
-  const handleHardDeleteLesson = (childId: string, subjectId: string, lessonId: string) => {
-      setData(prev => prev.map(child => {
-          if (child.id !== childId) return child;
-          return {
-              ...child,
-              yearGroups: child.yearGroups.map(yg => ({
-                  ...yg,
-                  subjects: yg.subjects.map(sub => {
-                      if (sub.id !== subjectId) return sub;
-                      return {
-                          ...sub,
-                          lessons: sub.lessons.filter(l => l.id !== lessonId)
-                      };
-                  })
-              }))
-          };
-      }));
-  };
-
-  const handleAddLesson = (childId: string, subjectId: string, title: string) => {
-      if (!title.trim()) return;
-      setData(prev => prev.map(child => {
-          if (child.id !== childId) return child;
-          return {
-              ...child,
-              yearGroups: child.yearGroups.map(yg => ({
-                  ...yg,
-                  subjects: yg.subjects.map(sub => {
-                      if (sub.id !== subjectId) return sub;
-                      const newLesson: Lesson = {
-                          id: Math.random().toString(36).substr(2, 9),
-                          title,
-                          durationMinutes: 45,
-                          completed: false,
-                          deleted: false,
-                          outcomes: [],
-                          videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-                      };
-                      return {
-                          ...sub,
-                          lessons: [...sub.lessons, newLesson]
-                      };
-                  })
-              }))
-          };
-      }));
-  };
-
-  const handleDeleteSubject = (childId: string, subjectId: string) => {
-      setData(prev => prev.map(child => {
-          if (child.id !== childId) return child;
-          return {
-              ...child,
-              yearGroups: child.yearGroups.map(yg => ({
-                  ...yg,
-                  subjects: yg.subjects.filter(s => s.id !== subjectId)
-              }))
-          };
-      }));
+      setData(prev => {
+        const newData = prev.map(child => {
+            if (child.id !== childId) return child;
+            return {
+                ...child,
+                yearGroups: child.yearGroups.map(yg => ({
+                    ...yg,
+                    subjects: yg.subjects.map(sub => {
+                        if (sub.id !== subjectId) return sub;
+                        return {
+                            ...sub,
+                            lessons: sub.lessons.map(l => l.id === lessonId ? { ...l, deleted: true } : l)
+                        };
+                    })
+                }))
+            };
+        });
+        if (!user) {
+          saveLocalData(newData);
+        }
+        return newData;
+      });
   };
 
   const handleBulkImport = (rows: ParsedRow[]) => {
@@ -337,54 +352,227 @@ const App: React.FC = () => {
         subject.lessons.push(newLesson);
       });
 
+      if (!user) {
+        saveLocalData(newData);
+      }
       return newData;
     });
     setView({ type: 'HOME' });
   };
 
+  const handleDeleteSubject = (childId: string, subjectId: string) => {
+      setData(prev => {
+        const newData = prev.map(child => {
+            if (child.id !== childId) return child;
+            return {
+                ...child,
+                yearGroups: child.yearGroups.map(yg => ({
+                    ...yg,
+                    subjects: yg.subjects.filter(s => s.id !== subjectId)
+                }))
+            };
+        });
+        if (!user) {
+          saveLocalData(newData);
+        }
+        return newData;
+      });
+  };
+
+  const handleAddLesson = (childId: string, subjectId: string, title: string) => {
+      if (!title.trim()) return;
+      setData(prev => {
+        const newData = prev.map(child => {
+            if (child.id !== childId) return child;
+            return {
+                ...child,
+                yearGroups: child.yearGroups.map(yg => ({
+                    ...yg,
+                    subjects: yg.subjects.map(sub => {
+                        if (sub.id !== subjectId) return sub;
+                        const newLesson: Lesson = {
+                            id: Math.random().toString(36).substr(2, 9),
+                            title,
+                            durationMinutes: 45,
+                            completed: false,
+                            deleted: false,
+                            outcomes: [],
+                            videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+                        };
+                        return {
+                            ...sub,
+                            lessons: [...sub.lessons, newLesson]
+                        };
+                    })
+                }))
+            };
+        });
+        if (!user) {
+          saveLocalData(newData);
+        }
+        return newData;
+      });
+  };
+
+  const handleRestoreLesson = (childId: string, subjectId: string, lessonId: string) => {
+      setData(prev => {
+        const newData = prev.map(child => {
+            if (child.id !== childId) return child;
+            return {
+                ...child,
+                yearGroups: child.yearGroups.map(yg => ({
+                    ...yg,
+                    subjects: yg.subjects.map(sub => {
+                        if (sub.id !== subjectId) return sub;
+                        return {
+                            ...sub,
+                            lessons: sub.lessons.map(l => l.id === lessonId ? { ...l, deleted: false } : l)
+                        };
+                    })
+                }))
+            };
+        });
+        if (!user) {
+          saveLocalData(newData);
+        }
+        return newData;
+      });
+  };
+
+  const handleHardDeleteLesson = (childId: string, subjectId: string, lessonId: string) => {
+      setData(prev => {
+        const newData = prev.map(child => {
+            if (child.id !== childId) return child;
+            return {
+                ...child,
+                yearGroups: child.yearGroups.map(yg => ({
+                    ...yg,
+                    subjects: yg.subjects.map(sub => {
+                        if (sub.id !== subjectId) return sub;
+                        return {
+                            ...sub,
+                            lessons: sub.lessons.filter(l => l.id !== lessonId)
+                        };
+                    })
+                }))
+            };
+        });
+        if (!user) {
+          saveLocalData(newData);
+        }
+        return newData;
+      });
+  };
+
   // --- Components for Views ---
 
-  const LandingView = () => (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
-        <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">HK Homeschool Hub</h1>
-            <p className="text-xl text-gray-500">Who is learning today?</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl">
-            {/* Daddy Card */}
-            <button 
-                onClick={() => setView({ type: 'HOME' })}
-                className="bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 flex flex-col items-center gap-6 border border-gray-100 group"
-            >
-                <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center text-6xl group-hover:bg-gray-200 transition">
-                    👨‍🏫
-                </div>
-                <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-800">Daddy</h2>
-                    <p className="text-gray-500 mt-2">Dashboard & Admin</p>
-                </div>
-            </button>
+  const LandingView = () => {
+    const { user, signInWithGoogle, signOut, loading } = useAuth() || {};
 
-            {/* Kids Cards */}
-            {data.map(child => (
-                <button 
-                    key={child.id}
-                    onClick={() => setView({ type: 'CHILD_DASHBOARD', childId: child.id })}
-                    className={`bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 flex flex-col items-center gap-6 border-b-[8px] border-${child.themeColor}-500 group`}
-                >
-                    <div className={`w-32 h-32 rounded-full bg-${child.themeColor}-50 flex items-center justify-center text-6xl group-hover:bg-${child.themeColor}-100 transition`}>
-                        {child.avatar}
-                    </div>
-                    <div className="text-center">
-                        <h2 className="text-2xl font-bold text-gray-800">{child.name}</h2>
-                        <p className={`text-${child.themeColor}-600 font-medium mt-2`}>Student Access</p>
-                    </div>
-                </button>
-            ))}
+    if (childProfile) {
+      return (
+        <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
+          <div className="text-center mb-8">
+            <div className={`w-32 h-32 rounded-full bg-${childProfile.themeColor}-50 flex items-center justify-center text-6xl mx-auto mb-4`}>
+              {childProfile.avatar}
+            </div>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">{childProfile.name}'s Space</h1>
+            <p className="text-gray-500">Ready to learn today?</p>
+          </div>
+          
+          <button
+            onClick={() => setView({ type: 'CHILD_DASHBOARD', childId: childProfile.id })}
+            className={`bg-${childProfile.themeColor}-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-${childProfile.themeColor}-700 hover:scale-105 transition-all flex items-center gap-3 mb-8`}
+          >
+            <Play size={24} fill="currentColor"/> Let's Learn!
+          </button>
+
+          <button
+            onClick={() => signOut?.()}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            Sign out
+          </button>
         </div>
-    </div>
-  );
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
+          <div className="text-center mb-12">
+              <h1 className="text-4xl font-bold text-gray-800 mb-4">HK Homeschool Hub</h1>
+              <p className="text-xl text-gray-500">Who is learning today?</p>
+          </div>
+          
+          {user ? (
+            <div className="bg-white p-6 rounded-2xl shadow-lg mb-8 text-center">
+              <div className="flex items-center gap-4 mb-4">
+                {user.user_metadata.avatar_url && (
+                  <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-12 h-12 rounded-full" />
+                )}
+                <div className="text-left">
+                  <p className="font-bold text-gray-800">{user.user_metadata.full_name || user.email}</p>
+                  <p className="text-sm text-gray-500">Signed in</p>
+                </div>
+              </div>
+              <button
+                onClick={() => signOut?.()}
+                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => signInWithGoogle?.()}
+              disabled={loading}
+              className="bg-white border border-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-50 transition flex items-center gap-2 mb-8 shadow-sm"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              {loading ? 'Loading...' : 'Sign in with Google'}
+            </button>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl">
+              {/* Daddy Card */}
+              <button 
+                  onClick={() => setView({ type: 'HOME' })}
+                  className="bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 flex flex-col items-center gap-6 border border-gray-100 group"
+              >
+                  <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center text-6xl group-hover:bg-gray-200 transition">
+                      👨‍🏫
+                  </div>
+                  <div className="text-center">
+                      <h2 className="text-2xl font-bold text-gray-800">Daddy</h2>
+                      <p className="text-gray-500 mt-2">Dashboard & Admin</p>
+                  </div>
+              </button>
+
+              {/* Kids Cards */}
+              {data.map(child => (
+                  <button 
+                      key={child.id}
+                      onClick={() => setView({ type: 'CHILD_DASHBOARD', childId: child.id })}
+                      className={`bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 flex flex-col items-center gap-6 border-b-[8px] border-${child.themeColor}-500 group`}
+                  >
+                      <div className={`w-32 h-32 rounded-full bg-${child.themeColor}-50 flex items-center justify-center text-6xl group-hover:bg-${child.themeColor}-100 transition`}>
+                          {child.avatar}
+                      </div>
+                      <div className="text-center">
+                          <h2 className="text-2xl font-bold text-gray-800">{child.name}</h2>
+                          <p className={`text-${child.themeColor}-600 font-medium mt-2`}>Student Access</p>
+                      </div>
+                  </button>
+              ))}
+          </div>
+      </div>
+    );
+  };
 
   const SubjectDetail = ({ childId, subjectId, origin }: { childId: string, subjectId: string, origin: ViewOrigin }) => {
     const child = data.find(c => c.id === childId);
@@ -613,6 +801,12 @@ const App: React.FC = () => {
               <p className="text-gray-500 text-sm mt-1">HK Homeschool Relocation Plan</p>
             </div>
             <div className="flex gap-3">
+                <button 
+                    onClick={() => setShowChildManagement(true)}
+                    className="text-gray-500 hover:text-gray-800 px-3 py-2 rounded-lg flex items-center gap-2 transition"
+                >
+                    <UserPlus size={16} /> Manage Children
+                </button>
                 <button 
                     onClick={() => setView({ type: 'LANDING' })}
                     className="text-gray-500 hover:text-gray-800 px-3 py-2 rounded-lg flex items-center gap-2 transition"
@@ -870,8 +1064,10 @@ const App: React.FC = () => {
   };
 
   const ChildDashboard = ({ childId }: { childId: string }) => {
-    const child = data.find(c => c.id === childId);
+    const child = data.find(c => c.id === childId) || childProfile;
     if (!child) return null;
+
+    const { signOut } = useAuth() || {};
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -885,6 +1081,14 @@ const App: React.FC = () => {
                  <button onClick={() => setView({ type: 'LANDING' })} className="flex items-center gap-2 text-white/80 hover:text-white transition">
                    <ArrowLeftIcon /> Switch User
                  </button>
+                 {childProfile && (
+                   <button 
+                     onClick={() => signOut?.()} 
+                     className="text-white/80 hover:text-white text-sm"
+                   >
+                     Sign Out
+                   </button>
+                 )}
              </div>
              <div className="flex items-center gap-4">
                 <span className="text-6xl">{child.avatar}</span>
@@ -992,42 +1196,42 @@ const App: React.FC = () => {
 
   // --- Main Render Switch ---
 
-  if (view.type === 'LANDING') {
-      return <LandingView />;
-  }
-
-  if (view.type === 'CURRICULUM_BUILDER') {
-    return <CurriculumBuilder onBack={() => setView({ type: 'HOME' })} onImport={handleBulkImport} />;
-  }
-
-  if (view.type === 'SUBJECT_DETAIL') {
-      return <SubjectDetail childId={view.childId} subjectId={view.subjectId} origin={view.origin} />;
-  }
-
-  if (view.type === 'LESSON_PLAYER') {
-    const child = data.find(c => c.id === view.childId);
-    const yearGroup = child?.yearGroups.find(yg => yg.subjects.some(s => s.id === view.subjectId));
-    const subject = yearGroup?.subjects.find(s => s.id === view.subjectId);
-    const lesson = subject?.lessons.find(l => l.id === view.lessonId);
-
-    if (child && subject && lesson) {
-      return (
-        <LessonPlayer 
-          child={child} 
-          subject={subject} 
-          lesson={lesson} 
-          onBack={() => setView({ type: 'SUBJECT_DETAIL', childId: view.childId, subjectId: view.subjectId, origin: view.origin })}
-          onComplete={(id, time) => handleCompleteLesson(child.id, subject.id, id, time)}
-        />
-      );
-    }
-    return <div>Error loading lesson</div>;
-  }
-
   return (
     <>
+      {view.type === 'LANDING' && <LandingView />}
+      {view.type === 'CURRICULUM_BUILDER' && <CurriculumBuilder onBack={() => setView({ type: 'HOME' })} onImport={handleBulkImport} />}
+      {view.type === 'SUBJECT_DETAIL' && <SubjectDetail childId={view.childId} subjectId={view.subjectId} origin={view.origin} />}
+      {view.type === 'LESSON_PLAYER' && (() => {
+        const child = data.find(c => c.id === view.childId);
+        const yearGroup = child?.yearGroups.find(yg => yg.subjects.some(s => s.id === view.subjectId));
+        const subject = yearGroup?.subjects.find(s => s.id === view.subjectId);
+        const lesson = subject?.lessons.find(l => l.id === view.lessonId);
+
+        if (child && subject && lesson) {
+          return (
+            <LessonPlayer 
+              child={child} 
+              subject={subject} 
+              lesson={lesson} 
+              onBack={() => setView({ type: 'SUBJECT_DETAIL', childId: view.childId, subjectId: view.subjectId, origin: view.origin })}
+              onComplete={(id, time) => handleCompleteLesson(child.id, subject.id, id, time)}
+            />
+          );
+        }
+        return <div>Error loading lesson</div>;
+      })()}
       {view.type === 'HOME' && <DaddyDashboardView />}
       {view.type === 'CHILD_DASHBOARD' && <ChildDashboard childId={view.childId} />}
+      
+      {showChildManagement && (
+        <ChildManagement
+          children={data}
+          onAddChild={handleAddChild}
+          onUpdateChild={handleUpdateChild}
+          onDeleteChild={handleDeleteChild}
+          onClose={() => setShowChildManagement(false)}
+        />
+      )}
     </>
   );
 };

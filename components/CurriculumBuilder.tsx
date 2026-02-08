@@ -3,14 +3,6 @@ import { ArrowLeft, Save, AlertCircle, FileText, CheckCircle, Link, Copy, Youtub
 import { fetchPlaylistVideos, processYouTubeUrl } from '../utils/youtube';
 import { ParsedRow } from '../types';
 
-declare global {
-  interface ImportMeta {
-    env: {
-      VITE_YOUTUBE_API_KEY?: string;
-    };
-  }
-}
-
 interface Props {
   onBack: () => void;
   onImport: (rows: ParsedRow[]) => void;
