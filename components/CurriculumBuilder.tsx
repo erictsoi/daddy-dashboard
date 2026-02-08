@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Save, AlertCircle, FileText, CheckCircle, Link, Copy, Youtube, Loader2 } from 'lucide-react';
-import { fetchPlaylistVideos, processYouTubeUrl, parseYouTubeUrl, ProcessedYouTubeResult, YouTubeVideo } from '../utils/youtube';
+import { ArrowLeft, Save, AlertCircle, FileText, CheckCircle, Link, Copy, Youtube, Loader2, ChevronRight } from 'lucide-react';
+import { fetchPlaylistVideos, processYouTubeUrl } from '../utils/youtube';
 import { ParsedRow } from '../types';
 
 declare global {
-  interface Window {
-    YOUTUBE_API_KEY?: string;
-  }
   interface ImportMeta {
     env: {
       VITE_YOUTUBE_API_KEY?: string;
@@ -24,7 +21,6 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [inputMode, setInputMode] = useState<'paste' | 'playlist'>('paste');
   const [playlistUrl, setPlaylistUrl] = useState('');
-  const [playlistVideos, setPlaylistVideos] = useState<YouTubeVideo[]>([]);
   const [isLoadingPlaylist, setIsLoadingPlaylist] = useState(false);
   const [playlistError, setPlaylistError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -38,7 +34,6 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
   useEffect(() => {
     if (import.meta.env.VITE_YOUTUBE_API_KEY) {
       window.YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
-      console.log('YouTube API key loaded:', import.meta.env.VITE_YOUTUBE_API_KEY.substring(0, 10) + '...');
     }
   }, []);
 
@@ -49,9 +44,8 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
     setPlaylistError('');
 
     try {
-      const apiKey = process.env.YOUTUBE_API_KEY;
+      const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
       const videos = await fetchPlaylistVideos(playlistUrl, apiKey);
-      console.log('Loaded', videos.length, 'videos', 'with API key:', apiKey ? 'yes' : 'no');
 
       const cleanUrl = cleanPlaylistUrl(playlistUrl);
       const newRow: ParsedRow = {
@@ -73,33 +67,12 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
         })),
       };
       setParsedRows([newRow]);
-      setPlaylistVideos([]);
-    } catch (err) {
+    } catch {
       setPlaylistError('Failed to load playlist. Check the URL.');
-      setPlaylistVideos([]);
     } finally {
       setIsLoadingPlaylist(false);
     }
   };
-
-  useEffect(() => {
-    if (playlistVideos.length > 0) {
-      const rows: ParsedRow[] = playlistVideos.map((video, idx) => ({
-        childName: defaultChild,
-        yearGroup: defaultYear,
-        subjectCategory: defaultSubject,
-        subjectName: defaultSubcategory,
-        lessonTitle: video.title,
-        notes: `Video ${idx + 1} from playlist`,
-        videoUrl: video.url,
-        isValid: true,
-        isYouTubeUrl: true,
-        youTubeType: 'video',
-      }));
-      setParsedRows(rows);
-      setExpandedCount(rows.length);
-    }
-  }, [playlistVideos, defaultChild, defaultYear, defaultSubject, defaultSubcategory]);
 
   const parseInput = (text: string): ParsedRow[] => {
     return text.split(/\r?\n/).filter(line => line.trim() !== '').map(line => {
@@ -112,11 +85,8 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
       const notes = cols[5]?.trim() || '';
       const videoUrl = cols[6]?.trim() || '';
 
-      const youtubeRegex = /(?:youtube\.com|youtu\.be)/i;
-      const isYouTubeUrl = youtubeRegex.test(videoUrl);
-
+      const isYouTubeUrl = /(?:youtube\.com|youtu\.be)/i.test(videoUrl);
       const lessonTitle = ytPlaylistFocus || (isYouTubeUrl ? 'YouTube Playlist' : 'Lesson');
-
       const isValid = !!(childName && yearGroup && subjectCategory && subjectName && videoUrl);
 
       return {
@@ -139,15 +109,12 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
       setParsedRows([]);
       return;
     }
-
-    const rows = parseInput(inputText);
-    setParsedRows(rows);
+    setParsedRows(parseInput(inputText));
   }, [inputText]);
 
   const cleanPlaylistUrl = (url: string): string => {
     const playlistIdMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
-    if (!playlistIdMatch) return url;
-    return `https://www.youtube.com/playlist?list=${playlistIdMatch[1]}`;
+    return playlistIdMatch ? `https://www.youtube.com/playlist?list=${playlistIdMatch[1]}` : url;
   };
 
   const processYouTube = async () => {
@@ -156,20 +123,15 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
 
     setIsProcessing(true);
     const updated = [...parsedRows];
-    const apiKey = process.env.YOUTUBE_API_KEY;
+    const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
 
     for (let i = 0; i < updated.length; i++) {
       const row = updated[i];
       if (!row.isYouTubeUrl || row.expandedLessons) continue;
 
       setProcessingProgress(`Processing ${i + 1} of ${updated.length}...`);
-      console.log('Processing URL:', row.videoUrl, 'API key:', apiKey ? 'yes' : 'no');
 
-      const cleanUrl = cleanPlaylistUrl(row.videoUrl);
-      console.log('Clean URL:', cleanUrl);
-
-      const result = await processYouTubeUrl(cleanUrl, row.lessonTitle || undefined, apiKey);
-      console.log('Result:', result?.title, 'videos:', result?.videos?.length || 0);
+      const result = await processYouTubeUrl(cleanPlaylistUrl(row.videoUrl), row.lessonTitle || undefined, apiKey);
 
       if (result) {
         updated[i] = {
@@ -180,14 +142,12 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
         };
 
         if (result.isPlaylist && result.videos && result.videos.length > 0) {
-          const expandedLessons: ParsedRow['expandedLessons'] = result.videos.map((v, idx) => ({
+          updated[i].expandedLessons = result.videos.map((v, idx) => ({
             title: v.title,
             videoUrl: `https://www.youtube.com/embed/${v.id}`,
             videoId: v.id,
             position: idx,
           }));
-          updated[i].expandedLessons = expandedLessons;
-          console.log('Expanded to', expandedLessons.length, 'lessons');
         }
       }
     }
@@ -198,12 +158,10 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
   };
 
   const expandPlaylists = () => {
-    console.log('Expanding playlists, parsedRows:', parsedRows.length);
     const expanded: ParsedRow[] = [];
     let playlistCount = 0;
 
     for (const row of parsedRows) {
-      console.log('Row:', row.lessonTitle, 'expandedLessons:', row.expandedLessons?.length);
       if (row.youTubeType === 'playlist' && row.expandedLessons && row.expandedLessons.length > 0) {
         playlistCount++;
         for (const lesson of row.expandedLessons) {
@@ -221,7 +179,6 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
       }
     }
 
-    console.log('Final expanded count:', expanded.length);
     setParsedRows(expanded);
     setExpandedCount(expanded.length - parsedRows.length + playlistCount);
   };
@@ -331,10 +288,10 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
             {inputMode === 'paste' ? (
               <>
                 <h2 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <FileText size={18} className="text-blue-500"/> Paste Data Here
+                  <FileText size={18} className="text-blue-500" /> Paste Data Here
                 </h2>
                 <p className="text-xs text-gray-500 mb-3">
-                  Copy columns from Excel/Sheets: <br/>
+                  Copy columns from Excel/Sheets: <br />
                   <span className="font-mono bg-gray-100 px-1">Who | Year | Subject | Subcategory | Lesson Title | Notes | Link</span>
                 </p>
                 <textarea
@@ -347,19 +304,17 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
             ) : (
               <>
                 <h2 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <Link size={18} className="text-red-500"/> YouTube Playlist
+                  <Link size={18} className="text-red-500" /> YouTube Playlist
                 </h2>
-                <p className="text-xs text-gray-500 mb-3">
-                  Paste a YouTube playlist URL to import all videos as lessons.
-                </p>
-            <input
-              type="url"
-              className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              placeholder="https://www.youtube.com/playlist?list=..."
-              value={playlistUrl}
-              onChange={(e) => setPlaylistUrl(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && loadPlaylist()}
-            />
+                <p className="text-xs text-gray-500 mb-3">Paste a YouTube playlist URL to import all videos as lessons.</p>
+                <input
+                  type="url"
+                  className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  placeholder="https://www.youtube.com/playlist?list=..."
+                  value={playlistUrl}
+                  onChange={(e) => setPlaylistUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && loadPlaylist()}
+                />
                 <button
                   onClick={loadPlaylist}
                   disabled={isLoadingPlaylist || !playlistUrl.trim()}
@@ -369,17 +324,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
                 >
                   {isLoadingPlaylist ? <Loader2 size={16} className="animate-spin" /> : 'Load Playlist'}
                 </button>
-                {playlistError && (
-                  <p className="mt-2 text-xs text-red-500">{playlistError}</p>
-                )}
-
-                {playlistVideos.length > 0 && (
-                  <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-                    <p className="text-sm text-green-700 font-medium flex items-center gap-2">
-                      <CheckCircle size={16} /> {playlistVideos.length} videos loaded
-                    </p>
-                  </div>
-                )}
+                {playlistError && <p className="mt-2 text-xs text-red-500">{playlistError}</p>}
 
                 <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
                   <p className="text-xs font-medium text-gray-600">Default Values</p>
@@ -434,76 +379,97 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
           <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center flex-wrap gap-4">
             <h2 className="font-semibold text-gray-800">Preview Data</h2>
             <div className="flex gap-4 text-xs font-medium flex-wrap">
-              <span className="flex items-center gap-1 text-gray-600">
-                {parsedRows.length} rows
-              </span>
+              <span className="flex items-center gap-1 text-gray-600">{parsedRows.length} rows</span>
               <span className="flex items-center gap-1 text-green-600">
-                <CheckCircle size={14}/> {validRows.length} valid
+                <CheckCircle size={14} /> {validRows.length} valid
               </span>
               <span className="flex items-center gap-1 text-red-500">
-                <AlertCircle size={14}/> {parsedRows.length - validRows.length} invalid
+                <AlertCircle size={14} /> {parsedRows.length - validRows.length} invalid
               </span>
               {expandedCount > 0 && (
                 <span className="flex items-center gap-1 text-purple-600">
-                  <Link size={14}/> +{expandedCount} expanded
+                  <Link size={14} /> +{expandedCount} expanded
                 </span>
               )}
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-gray-100 text-gray-600 font-medium border-b border-gray-200 sticky top-0">
-                <tr>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Who</th>
-                  <th className="p-3">Year</th>
-                  <th className="p-3">Category</th>
-                  <th className="p-3">Subject</th>
-                  <th className="p-3">Lesson</th>
-                  <th className="p-3">Source</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {parsedRows.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="p-12 text-center text-gray-400 italic">
-                      Paste data to see preview...
-                    </td>
-                  </tr>
-                )}
-                {parsedRows.map((row, idx) => (
-                  <tr key={idx} className={row.isValid ? 'hover:bg-gray-50' : 'bg-red-50'}>
-                    <td className="p-3">
-                      {row.isValid ? (
-                        <CheckCircle size={16} className="text-green-500" />
-                      ) : (
-                        <AlertCircle size={16} className="text-red-500" />
-                      )}
-                    </td>
-                    <td className="p-3 font-medium text-gray-800">{row.childName}</td>
-                    <td className="p-3 text-gray-600">{row.yearGroup}</td>
-                    <td className="p-3 text-gray-600">{row.subjectCategory}</td>
-                    <td className="p-3 text-gray-600">{row.subjectName}</td>
-                    <td className="p-3 text-gray-800">{row.lessonTitle}</td>
-                    <td className="p-3">
-                      {row.isYouTubeUrl ? (
-                        <span className="inline-flex items-center gap-1 text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
-                          <Youtube size={12} />
-                          {row.youTubeType === 'playlist' ? 'Playlist' : 'Video'}
-                          {row.expandedLessons && ` (${row.expandedLessons.length})`}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 text-xs">-</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <PreviewTable rows={parsedRows} />
         </div>
       </div>
     </div>
   );
 };
+
+interface PreviewTableProps {
+  rows: ParsedRow[];
+}
+
+function PreviewTable({ rows }: PreviewTableProps) {
+  if (rows.length === 0) {
+    return (
+      <div className="flex-1 overflow-auto max-h-[600px]">
+        <div className="p-12 text-center text-gray-400 italic">Paste data to see preview...</div>
+      </div>
+    );
+  }
+
+  const groups = rows.reduce<Record<string, ParsedRow[]>>((acc, row) => {
+    const key = `${row.subjectCategory}|${row.subjectName}`;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(row);
+    return acc;
+  }, {});
+
+  return (
+    <div className="flex-1 overflow-auto max-h-[600px]">
+      <div className="divide-y divide-gray-200">
+        {Object.entries(groups).map(([key, groupRows]) => {
+          const [category, subject] = key.split('|');
+          const allVideos = groupRows.flatMap((row) =>
+            row.expandedLessons?.map((l) => ({ title: l.title, position: l.position, videoUrl: l.videoUrl })) ||
+            (row.lessonTitle ? [{ title: row.lessonTitle, position: 0, videoUrl: row.videoUrl }] : [])
+          );
+
+          return (
+            <div key={key}>
+              <PreviewGroupRow category={category} subject={subject} videos={allVideos} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+interface PreviewGroupRowProps {
+  category: string;
+  subject: string;
+  videos: { title: string; position: number; videoUrl: string }[];
+}
+
+function PreviewGroupRow({ category, subject, videos }: PreviewGroupRowProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  return (
+    <div>
+      <button onClick={() => setIsExpanded(!isExpanded)} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 text-left bg-gray-50">
+        <ChevronRight size={18} className={`text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+        <span className="font-medium text-gray-800">{category}</span>
+        <ChevronRight size={14} className="text-gray-400" />
+        <span className="font-medium text-gray-800">{subject}</span>
+        <span className="ml-auto text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">{videos.length} videos</span>
+      </button>
+      {isExpanded && (
+        <div className="divide-y divide-gray-100 bg-white">
+          {videos.map((video, idx) => (
+            <div key={idx} className="px-4 pl-12 py-2 flex items-center gap-3 hover:bg-gray-50">
+              <Youtube size={14} className="text-red-500 flex-shrink-0" />
+              <span className="text-sm text-gray-700 truncate flex-1">{video.title}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
