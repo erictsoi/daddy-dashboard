@@ -3,6 +3,7 @@ import { ViewState, ChildProfile, YearGroup, Subject, Lesson, ScheduleBlock, Vie
 import { INITIAL_DATA, SUGGESTED_TOPICS, CREATIVE_PROMPTS } from './constants';
 import { AuthProvider, useAuth } from './lib/AuthContext';
 import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, updateChildGoogleEmail } from './lib/dataService';
+import { usePersistentTimer, formatTime, formatTimeReadable } from './src/lib/useTimer';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
 import { Timeline } from './components/Timeline';
@@ -32,7 +33,8 @@ import {
   Lock,
   LogOut,
   UserCircle,
-  UserPlus
+  UserPlus,
+  Timer
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -585,12 +587,27 @@ const App: React.FC = () => {
     // Admin Mode Check
     const isReadOnly = origin === 'CHILD_DASHBOARD';
 
-    // Scroll to top when mounting detail view, but we are managing restoration in HomeView
+    // Persistent timer for subject
+    const { isRunning, elapsed, start, stop } = usePersistentTimer({
+      subjectId,
+      onTick: () => {},
+      onSave: () => {},
+      autoSaveInterval: 30,
+    });
+
+    // Start timer when viewing subject
+    useEffect(() => {
+      start();
+      return () => stop();
+    }, [subjectId]);
+
+    // Scroll to top when mounting detail view
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
 
     const handleBack = () => {
+        stop();
         if (origin === 'HOME') {
             setView({ type: 'HOME' });
         } else {
@@ -615,7 +632,14 @@ const App: React.FC = () => {
                              <h1 className="text-3xl font-bold">{subject.name}</h1>
                              <p className="opacity-90">{child.name} • {yg?.name}</p>
                         </div>
-                        <div className="text-4xl opacity-50">{child.avatar}</div>
+                        <div className="text-right">
+                            <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-lg">
+                                <Timer size={18} />
+                                <span className="font-mono font-bold">{formatTime(elapsed)}</span>
+                                {isRunning && <span className="text-green-300">●</span>}
+                            </div>
+                        </div>
+                        <div className="text-4xl opacity-50 ml-4">{child.avatar}</div>
                     </div>
                 </div>
             </header>
@@ -631,6 +655,12 @@ const App: React.FC = () => {
                          <div className="text-sm text-gray-500">Completed</div>
                          <div className={`text-2xl font-bold text-${child.themeColor}-600`}>
                              {activeLessons.filter(l => l.completed).length}
+                         </div>
+                     </div>
+                     <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex-1">
+                         <div className="text-sm text-gray-500">Time Spent</div>
+                         <div className={`text-2xl font-bold text-${child.themeColor}-600`}>
+                             {formatTimeReadable(elapsed)}
                          </div>
                      </div>
                  </div>
@@ -664,26 +694,26 @@ const App: React.FC = () => {
                                  
                                  <div className="flex items-center gap-2">
                                      <button 
-                                        onClick={() => setView({ type: 'LESSON_PLAYER', childId, subjectId, lessonId: lesson.id, origin })}
-                                        className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition ${
-                                            lesson.completed 
-                                            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
-                                            : `bg-${child.themeColor}-50 text-${child.themeColor}-700 hover:bg-${child.themeColor}-100`
-                                        }`}
+                                         onClick={() => setView({ type: 'LESSON_PLAYER', childId, subjectId, lessonId: lesson.id, origin })}
+                                         className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition ${
+                                             lesson.completed 
+                                             ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+                                             : `bg-${child.themeColor}-50 text-${child.themeColor}-700 hover:bg-${child.themeColor}-100`
+                                         }`}
                                      >
                                          {lesson.completed ? 'Review' : 'Start'} <Play size={14}/>
                                      </button>
                                      {!isReadOnly && (
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleSoftDeleteLesson(childId, subjectId, lesson.id);
-                                            }}
-                                            title="Move to Trash"
-                                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
-                                        >
-                                            <Trash2 size={16}/>
-                                        </button>
+                                         <button 
+                                             onClick={(e) => {
+                                                 e.stopPropagation();
+                                                 handleSoftDeleteLesson(childId, subjectId, lesson.id);
+                                             }}
+                                             title="Move to Trash"
+                                             className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                                         >
+                                             <Trash2 size={16}/>
+                                         </button>
                                      )}
                                  </div>
                              </div>
@@ -693,39 +723,39 @@ const App: React.FC = () => {
 
                  {/* Add Lesson - Only for Admin */}
                  {!isReadOnly && (
-                    <div className="pt-4 border-t border-gray-200">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Add New Lesson</h3>
-                        <div className="flex gap-3">
-                            <input 
-                                type="text" 
-                                value={newLessonTitle}
-                                onChange={(e) => setNewLessonTitle(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddLesson(childId, subjectId, newLessonTitle)}
-                                placeholder="e.g. Introduction to Algebra..."
-                                className="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                            />
-                            <button 
-                                onClick={() => {
-                                    handleAddLesson(childId, subjectId, newLessonTitle);
-                                    setNewLessonTitle("");
-                                }}
-                                disabled={!newLessonTitle.trim()}
-                                className="bg-gray-900 text-white px-6 rounded-xl font-bold hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Add
-                            </button>
-                        </div>
-                    </div>
+                     <div className="pt-4 border-t border-gray-200">
+                         <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Add New Lesson</h3>
+                         <div className="flex gap-3">
+                             <input 
+                                 type="text" 
+                                 value={newLessonTitle}
+                                 onChange={(e) => setNewLessonTitle(e.target.value)}
+                                 onKeyDown={(e) => e.key === 'Enter' && handleAddLesson(childId, subjectId, newLessonTitle)}
+                                 placeholder="e.g. Introduction to Algebra..."
+                                 className="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                             />
+                             <button 
+                                 onClick={() => {
+                                     handleAddLesson(childId, subjectId, newLessonTitle);
+                                     setNewLessonTitle("");
+                                 }}
+                                 disabled={!newLessonTitle.trim()}
+                                 className="bg-gray-900 text-white px-6 rounded-xl font-bold hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                             >
+                                 Add
+                             </button>
+                         </div>
+                     </div>
                  )}
 
                  {/* Trash / Archive Section - Only for Admin */}
                  {!isReadOnly && deletedLessons.length > 0 && (
                      <div className="pt-8 border-t border-gray-200">
                          <button 
-                            onClick={() => setShowTrash(!showTrash)}
-                            className="flex items-center gap-2 text-gray-500 hover:text-gray-800 font-medium text-sm mb-4"
+                             onClick={() => setShowTrash(!showTrash)}
+                             className="flex items-center gap-2 text-gray-500 hover:text-gray-800 font-medium text-sm mb-4"
                          >
-                            <Archive size={16}/> {showTrash ? 'Hide Trash' : `Show Trash (${deletedLessons.length})`}
+                             <Archive size={16}/> {showTrash ? 'Hide Trash' : `Show Trash (${deletedLessons.length})`}
                          </button>
 
                          {showTrash && (
@@ -735,22 +765,22 @@ const App: React.FC = () => {
                                          <span className="text-gray-500 line-through text-sm font-medium">{lesson.title}</span>
                                          <div className="flex gap-2">
                                              <button 
-                                                onClick={() => handleRestoreLesson(childId, subjectId, lesson.id)}
-                                                className="p-1.5 text-blue-500 hover:bg-blue-50 rounded"
-                                                title="Restore Lesson"
+                                                 onClick={() => handleRestoreLesson(childId, subjectId, lesson.id)}
+                                                 className="p-1.5 text-blue-500 hover:bg-blue-50 rounded"
+                                                 title="Restore Lesson"
                                              >
-                                                <RotateCcw size={16}/>
+                                                 <RotateCcw size={16}/>
                                              </button>
                                              <button 
-                                                onClick={() => {
-                                                    if(confirm('Permanently delete this lesson?')) {
-                                                        handleHardDeleteLesson(childId, subjectId, lesson.id);
-                                                    }
-                                                }}
-                                                className="p-1.5 text-red-500 hover:bg-red-50 rounded"
-                                                title="Permanently Delete"
+                                                 onClick={() => {
+                                                     if(confirm('Permanently delete this lesson?')) {
+                                                         handleHardDeleteLesson(childId, subjectId, lesson.id);
+                                                     }
+                                                 }}
+                                                 className="p-1.5 text-red-500 hover:bg-red-50 rounded"
+                                                 title="Permanently Delete"
                                              >
-                                                <XCircle size={16}/>
+                                                 <XCircle size={16}/>
                                              </button>
                                          </div>
                                      </div>
@@ -759,21 +789,21 @@ const App: React.FC = () => {
                          )}
                      </div>
                  )}
-                 
+                  
                  {!isReadOnly && (
-                    <div className="flex justify-end pt-8">
-                        <button 
-                            onClick={() => {
-                                if(confirm('Are you sure you want to delete this entire subject and all lessons?')) {
-                                    handleDeleteSubject(childId, subjectId);
-                                    setView({ type: 'HOME' });
-                                }
-                            }}
-                            className="text-red-500 text-sm hover:underline flex items-center gap-2"
-                        >
-                            <Trash2 size={14}/> Delete Entire Subject
-                        </button>
-                    </div>
+                     <div className="flex justify-end pt-8">
+                         <button 
+                             onClick={() => {
+                                 if(confirm('Are you sure you want to delete this entire subject and all lessons?')) {
+                                     handleDeleteSubject(childId, subjectId);
+                                     setView({ type: 'HOME' });
+                                 }
+                             }}
+                             className="text-red-500 text-sm hover:underline flex items-center gap-2"
+                         >
+                             <Trash2 size={14}/> Delete Entire Subject
+                         </button>
+                     </div>
                  )}
             </div>
         </div>

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Lesson, ChildProfile, Subject } from '../types';
-import { ArrowLeft, Clock, CheckCircle, Play, Pause, BookOpen, AlertCircle, Award } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle, Play, Pause, BookOpen, AlertCircle, Award, Timer } from 'lucide-react';
+import { usePersistentTimer, formatTime, formatTimeReadable } from '../src/lib/useTimer';
 
 interface Props {
   child: ChildProfile;
@@ -21,43 +22,23 @@ const tc = (color: string, suffix: string = '') => `bg-${color}${suffix ? '-' + 
 const tcText = (color: string, suffix: string = '') => `text-${color}${suffix ? '-' + suffix : ''}`;
 
 export const LessonPlayer: React.FC<Props> = ({ child, subject, lesson, onBack, onComplete }) => {
-  const [timeLeft, setTimeLeft] = useState(lesson.durationMinutes * 60);
-  const [isActive, setIsActive] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [key, setKey] = useState(0);
-
-  const timeSpent = (lesson.durationMinutes * 60) - timeLeft;
   const videoId = getYouTubeID(lesson.videoUrl);
+  
+  const { isRunning, elapsed, start, stop, reset } = usePersistentTimer({
+    subjectId: subject.id,
+    onTick: () => {},
+    onSave: () => {},
+    autoSaveInterval: 30,
+  });
 
+  // Start timer when entering lesson
   useEffect(() => {
-    setIsActive(false);
-    setTimeLeft(lesson.durationMinutes * 60);
+    start();
     setKey(k => k + 1);
-  }, [lesson.id, lesson.durationMinutes]);
-
-  useEffect(() => {
-    let interval: any = null;
-    if (isActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft(seconds => Math.max(0, seconds - 1));
-      }, 1000);
-    } else if (timeLeft === 0) {
-      setIsActive(false);
-    }
-    return () => clearInterval(interval);
-  }, [isActive, timeLeft]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return mins + ':' + (secs < 10 ? '0' : '') + secs;
-  };
-
-  const progress = ((lesson.durationMinutes * 60 - timeLeft) / (lesson.durationMinutes * 60)) * 100;
-
-  const handleFinish = () => {
-    onComplete(lesson.id, timeSpent);
-  };
+    return () => stop();
+  }, [subject.id]);
 
   const themeBg = tc(child.themeColor);
   const themeBg600 = tc(child.themeColor, '600');
@@ -65,8 +46,16 @@ export const LessonPlayer: React.FC<Props> = ({ child, subject, lesson, onBack, 
   const themeBg500 = tc(child.themeColor, '500');
   const themeBg100 = tc(child.themeColor, '100');
   const themeText600 = tcText(child.themeColor, '600');
-  const themeText700 = tcText(child.themeColor, '700');
-  const themeText400 = tcText(child.themeColor, '400');
+
+  const handleFinish = () => {
+    stop();
+    onComplete(lesson.id, elapsed);
+  };
+
+  const handleExit = () => {
+    stop();
+    onBack();
+  };
 
   return (
     <div className="flex flex-col h-screen bg-white relative">
@@ -78,14 +67,14 @@ export const LessonPlayer: React.FC<Props> = ({ child, subject, lesson, onBack, 
                 </div>
                 <h2 className="text-3xl font-bold text-gray-800 mb-2">Great Job, {child.name}!</h2>
                 <p className="text-gray-500 mb-8">
-                    You have spent <span className="font-bold text-gray-800">{Math.floor(timeSpent / 60)} minutes</span> on this lesson.
+                    You have spent <span className="font-bold text-gray-800">{formatTimeReadable(elapsed)}</span> on this subject.
                 </p>
                 <div className="space-y-3">
                     <button onClick={handleFinish} className={'w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition ' + themeBg600 + ' text-white hover:' + themeBg700}>
-                        <CheckCircle size={24} /> Finish Lesson
+                        <CheckCircle size={24} /> Finish & Save
                     </button>
                     <button onClick={() => setShowCompleteModal(false)} className="w-full py-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition">
-                        Wait, I am not done yet
+                        I'm still learning
                     </button>
                 </div>
             </div>
@@ -93,7 +82,7 @@ export const LessonPlayer: React.FC<Props> = ({ child, subject, lesson, onBack, 
       )}
 
       <div className={themeBg600 + ' text-white p-4 shadow-md flex items-center justify-between'}>
-        <button onClick={onBack} className="flex items-center space-x-2 hover:bg-white/20 p-2 rounded-lg transition">
+        <button onClick={handleExit} className="flex items-center space-x-2 hover:bg-white/20 p-2 rounded-lg transition">
           <ArrowLeft size={20} />
           <span>Exit Lesson</span>
         </button>
@@ -124,7 +113,7 @@ export const LessonPlayer: React.FC<Props> = ({ child, subject, lesson, onBack, 
               )}
            </div>
            <div className="mt-6 text-white/50 text-sm flex items-center gap-2">
-               <AlertCircle size={16} /> Timer starts automatically when video plays
+               <Timer size={16} /> Time is being tracked for this subject
            </div>
         </div>
 
@@ -132,17 +121,22 @@ export const LessonPlayer: React.FC<Props> = ({ child, subject, lesson, onBack, 
            <div className="p-6 bg-white border-b border-gray-200">
              <div className="flex items-center justify-between mb-2">
                <span className="text-gray-500 font-medium flex items-center gap-2">
-                 <Clock size={16} /> Session Timer
+                 <Timer size={16} /> Time on Subject
                </span>
-               <span className={'font-mono text-2xl font-bold ' + (timeLeft < 60 ? 'text-red-500' : 'text-gray-800')}>
-                 {formatTime(timeLeft)}
+               <span className={'font-mono text-2xl font-bold ' + (isRunning ? 'text-green-600' : 'text-gray-800')}>
+                 {formatTime(elapsed)} {isRunning && '⚡'}
                </span>
              </div>
-             <div className="h-2 w-full bg-gray-100 rounded-full mb-6 overflow-hidden">
-                <div className={'h-full transition-all duration-1000 ' + themeBg500} style={{ width: progress + '%' }}></div>
+             <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+               <Clock size={14} />
+               <span>This session: {formatTime(elapsed)}</span>
              </div>
-             <button onClick={() => setIsActive(!isActive)} className={'w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ' + (isActive ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : themeBg600 + ' text-white hover:' + themeBg700 + ' shadow-lg')}>
-               {isActive ? <><Pause size={20} /> Pause Video</> : <><Play size={20} /> Start Video</>}
+             <button 
+               onClick={isRunning ? stop : start}
+               className={'w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ' + 
+                 (isRunning ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : themeBg600 + ' text-white hover:' + themeBg700 + ' shadow-lg')}
+             >
+               {isRunning ? <><Pause size={20} /> Pause</> : <><Play size={20} /> Resume</>}
              </button>
            </div>
 
@@ -154,7 +148,7 @@ export const LessonPlayer: React.FC<Props> = ({ child, subject, lesson, onBack, 
              <ul className="space-y-3">
                {lesson.outcomes.map((outcome, idx) => (
                  <li key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 shadow-sm">
-                   <div className={'mt-1 min-w-[6px] h-[6px] rounded-full ' + themeText400} />
+                   <div className={'mt-1 min-w-[6px] h-[6px] rounded-full ' + themeText600.replace('text-', 'bg-')} />
                    <span className="text-gray-600 text-sm leading-relaxed">{outcome}</span>
                  </li>
                ))}

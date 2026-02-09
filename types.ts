@@ -15,6 +15,7 @@ export interface Subject {
   category: 'Maths' | 'English' | 'Science' | 'Humanities' | 'Languages' | 'Creative' | 'Other';
   lessons: Lesson[];
   color: string;
+  timeSpentSeconds?: number; // Persistent timer tracking total time spent on subject
 }
 
 export interface YearGroup {
