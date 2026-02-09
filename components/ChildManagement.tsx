@@ -1,32 +1,16 @@
 import React, { useState } from 'react';
-import { ChildProfile, YearGroup, Subject, Lesson } from '../types';
-import { Plus, X, Edit2, Save, Trash2, GripVertical } from 'lucide-react';
-
-const AVATARS = ['👶', '🧒', '👦', '👧', '🧑‍🦰', '👱', '🧒', '👦', '👧', '🧒', '👦', '👧', '🧑', '👨‍🦱', '👩‍🦱', '🧑‍🦳', '👨‍🦳', '👩‍🦳', '🧑‍🦲', '👨‍🦲', '👩‍🦲', '🧔', '👨', '👩', '🧑‍🚀', '👩‍🚀', '🧑‍🔬', '👩‍🔬', '🧑‍🎨', '👩‍🎨', '🧑‍🏫', '👩‍🏫', '🧑‍⚕️', '👩‍⚕️', '🧑‍🌾', '👩‍🌾', '🧑‍🍳', '👩‍🍳', '🧑‍🎤', '👩‍🎤', '🧑‍🎭', '👩‍🎭', '🧑‍🚒', '👩‍🚒', '🧑‍✈️', '👩‍✈️', '🧑‍🚀', '👩‍🚀', '🦸', '🦸‍♀️', '🦹', '🦹‍♀️', '🧙', '🧙‍♀️', '🧚', '🧚‍♀️', '🧛', '🧛‍♀️', '🧜', '🧜‍♀️', '🧝', '🧝‍♀️', '🧞', '🧞‍♀️', '🧟', '🧟‍♀️', '👼', '🎅', '🤶', '🦸‍♂️', '🦹‍♂️', '🧙‍♂️', '🧚‍♂️', '🧛‍♂️', '🧜‍♂️', '🧝‍♂️', '🧞‍♂️', '🧟‍♂️'];
-
-const THEME_COLORS = [
-  { name: 'Blue', class: 'blue', bg: 'bg-blue-500', light: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-500' },
-  { name: 'Indigo', class: 'indigo', bg: 'bg-indigo-500', light: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-500' },
-  { name: 'Purple', class: 'purple', bg: 'bg-purple-500', light: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-500' },
-  { name: 'Pink', class: 'pink', bg: 'bg-pink-500', light: 'bg-pink-50', text: 'text-pink-600', border: 'border-pink-500' },
-  { name: 'Rose', class: 'rose', bg: 'bg-rose-500', light: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-500' },
-  { name: 'Red', class: 'red', bg: 'bg-red-500', light: 'bg-red-50', text: 'text-red-600', border: 'border-red-500' },
-  { name: 'Orange', class: 'orange', bg: 'bg-orange-500', light: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-500' },
-  { name: 'Amber', class: 'amber', bg: 'bg-amber-500', light: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-500' },
-  { name: 'Yellow', class: 'yellow', bg: 'bg-yellow-500', light: 'bg-yellow-50', text: 'text-yellow-600', border: 'border-yellow-500' },
-  { name: 'Green', class: 'green', bg: 'bg-green-500', light: 'bg-green-50', text: 'text-green-600', border: 'border-green-500' },
-  { name: 'Emerald', class: 'emerald', bg: 'bg-emerald-500', light: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-500' },
-  { name: 'Teal', class: 'teal', bg: 'bg-teal-500', light: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-500' },
-  { name: 'Cyan', class: 'cyan', bg: 'bg-cyan-500', light: 'bg-cyan-50', text: 'text-cyan-600', border: 'border-cyan-500' },
-  { name: 'Sky', class: 'sky', bg: 'bg-sky-500', light: 'bg-sky-50', text: 'text-sky-600', border: 'border-sky-500' },
-];
+import { ChildProfile, YearGroup } from '../types';
+import { Plus, X, Edit2, Save, Trash2 } from 'lucide-react';
+import { calculateSchoolYear } from './EditProfile';
 
 interface ChildFormData {
   name: string;
-  avatar: string;
-  themeColor: string;
   dob: string;
   googleEmail: string;
+}
+
+interface YearGroupFormData {
+  name: string;
 }
 
 interface ChildManagementProps {
@@ -34,6 +18,8 @@ interface ChildManagementProps {
   onAddChild: (child: Omit<ChildProfile, 'id' | 'yearGroups'>) => void;
   onUpdateChild: (id: string, child: Omit<ChildProfile, 'id' | 'yearGroups'>) => void;
   onDeleteChild: (id: string) => void;
+  onAddYearGroup: (childId: string, name: string) => void;
+  onRemoveYearGroup: (childId: string, yearGroupId: string) => void;
   onClose: () => void;
 }
 
@@ -42,26 +28,22 @@ export const ChildManagement: React.FC<ChildManagementProps> = ({
   onAddChild,
   onUpdateChild,
   onDeleteChild,
+  onAddYearGroup,
+  onRemoveYearGroup,
   onClose,
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showYearGroups, setShowYearGroups] = useState<string | null>(null);
+  const [newYearGroup, setNewYearGroup] = useState('');
   const [formData, setFormData] = useState<ChildFormData>({
     name: '',
-    avatar: '👶',
-    themeColor: 'blue',
     dob: '',
     googleEmail: '',
   });
 
   const resetForm = () => {
-    setFormData({
-      name: '',
-      avatar: '👶',
-      themeColor: 'blue',
-      dob: '',
-      googleEmail: '',
-    });
+    setFormData({ name: '', dob: '', googleEmail: '' });
     setIsAdding(false);
     setEditingId(null);
   };
@@ -71,15 +53,15 @@ export const ChildManagement: React.FC<ChildManagementProps> = ({
     if (isAdding) {
       onAddChild({
         name: formData.name,
-        avatar: formData.avatar,
-        themeColor: formData.themeColor,
+        avatar: '👶',
+        themeColor: 'blue',
         dob: formData.dob,
       });
     } else if (editingId) {
       onUpdateChild(editingId, {
         name: formData.name,
-        avatar: formData.avatar,
-        themeColor: formData.themeColor,
+        avatar: children.find(c => c.id === editingId)?.avatar || '👶',
+        themeColor: children.find(c => c.id === editingId)?.themeColor || 'blue',
         dob: formData.dob,
       });
     }
@@ -89,8 +71,6 @@ export const ChildManagement: React.FC<ChildManagementProps> = ({
   const startEdit = (child: ChildProfile) => {
     setFormData({
       name: child.name,
-      avatar: child.avatar,
-      themeColor: child.themeColor,
       dob: child.dob,
       googleEmail: '',
     });
@@ -98,8 +78,11 @@ export const ChildManagement: React.FC<ChildManagementProps> = ({
     setIsAdding(false);
   };
 
-  const getThemeColor = (themeColor: string) => {
-    return THEME_COLORS.find(c => c.class === themeColor) || THEME_COLORS[0];
+  const handleAddYearGroup = (childId: string) => {
+    if (newYearGroup.trim()) {
+      onAddYearGroup(childId, newYearGroup.trim());
+      setNewYearGroup('');
+    }
   };
 
   return (
@@ -118,24 +101,75 @@ export const ChildManagement: React.FC<ChildManagementProps> = ({
         <div className="p-6 overflow-y-auto max-h-[60vh]">
           <div className="grid gap-4 mb-6">
             {children.map((child) => {
-              const theme = getThemeColor(child.themeColor);
+              const suggestedYear = calculateSchoolYear(child.dob);
               return (
                 <div
                   key={child.id}
-                  className={`flex items-center gap-4 p-4 rounded-xl border-2 ${theme.border} ${theme.light}`}
+                  className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 bg-gray-50"
                 >
-                  <div className={`w-16 h-16 rounded-full ${theme.bg} flex items-center justify-center text-3xl`}>
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl bg-${child.themeColor}-100`}>
                     {child.avatar}
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-gray-800 text-lg">{child.name}</h3>
-                    {child.dob && (
-                      <p className="text-sm text-gray-500">DOB: {child.dob}</p>
-                    )}
-                    <p className="text-sm text-gray-400">
-                      {child.yearGroups.length} year groups,{' '}
-                      {child.yearGroups.reduce((acc, yg) => acc + yg.subjects.length, 0)} subjects
-                    </p>
+                    <div className="flex flex-wrap gap-2 text-sm text-gray-500 mt-1">
+                      {child.dob && (
+                        <span>DOB: {child.dob}</span>
+                      )}
+                      {suggestedYear && (
+                        <span className="text-green-600">Suggested: {suggestedYear}</span>
+                      )}
+                    </div>
+                    <div className="mt-2">
+                      <div className="flex flex-wrap gap-1">
+                        {child.yearGroups.map((yg) => (
+                          <span
+                            key={yg.id}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-full text-xs"
+                          >
+                            {yg.name}
+                            <button
+                              onClick={() => onRemoveYearGroup(child.id, yg.id)}
+                              className="text-gray-400 hover:text-red-500"
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        ))}
+                        {showYearGroups === child.id ? (
+                          <div className="inline-flex items-center gap-1">
+                            <input
+                              type="text"
+                              value={newYearGroup}
+                              onChange={(e) => setNewYearGroup(e.target.value)}
+                              placeholder="Year (e.g., Year 5)"
+                              className="w-32 px-2 py-1 text-xs border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              onKeyDown={(e) => e.key === 'Enter' && handleAddYearGroup(child.id)}
+                            />
+                            <button
+                              onClick={() => handleAddYearGroup(child.id)}
+                              disabled={!newYearGroup.trim()}
+                              className="px-2 py-1 bg-green-500 text-white rounded-full text-xs hover:bg-green-600 disabled:opacity-50"
+                            >
+                              Add
+                            </button>
+                            <button
+                              onClick={() => { setShowYearGroups(null); setNewYearGroup(''); }}
+                              className="px-2 py-1 bg-gray-300 text-gray-600 rounded-full text-xs hover:bg-gray-400"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setShowYearGroups(child.id)}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded-full text-xs hover:bg-blue-100"
+                          >
+                            <Plus size={12} /> Add Year
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -185,45 +219,11 @@ export const ChildManagement: React.FC<ChildManagementProps> = ({
                     onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   />
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Avatar</label>
-                <div className="flex flex-wrap gap-2">
-                  {AVATARS.slice(0, 40).map((avatar) => (
-                    <button
-                      key={avatar}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, avatar })}
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition ${
-                        formData.avatar === avatar
-                          ? 'bg-blue-100 ring-2 ring-blue-500'
-                          : 'hover:bg-gray-100'
-                      }`}
-                    >
-                      {avatar}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Theme Color</label>
-                <div className="flex flex-wrap gap-2">
-                  {THEME_COLORS.map((color) => (
-                    <button
-                      key={color.class}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, themeColor: color.class })}
-                      className={`w-10 h-10 rounded-lg ${color.bg} transition ${
-                        formData.themeColor === color.class
-                          ? 'ring-2 ring-offset-2 ring-gray-400'
-                          : ''
-                      }`}
-                      title={color.name}
-                    />
-                  ))}
+                  {formData.dob && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Suggested year: {calculateSchoolYear(formData.dob)}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -239,14 +239,14 @@ export const ChildManagement: React.FC<ChildManagementProps> = ({
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Link child's Google account for YouTube recommendations based on their watch history
+                  Link child's Google account for personalized YouTube recommendations
                 </p>
               </div>
 
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition flex items-center gap-2"
+                  className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition flex items-center gap-2"
                 >
                   <Save size={20} />
                   {isAdding ? 'Add Child' : 'Save Changes'}
@@ -254,7 +254,7 @@ export const ChildManagement: React.FC<ChildManagementProps> = ({
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-bold hover:bg-gray-300 transition"
+                  className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-300 transition"
                 >
                   Cancel
                 </button>

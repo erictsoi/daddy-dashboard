@@ -49,6 +49,37 @@
   - Seed function for sample data
 - Updated `types.ts` with DB types (DbChild, DbYearGroup, etc.)
 
+## 2026-02-09 - Profile Management System
+
+**User Request:**
+> Replace the switch profile with something like Netflix. Add edit profile page.
+
+**Requirements:**
+1. Create Netflix-style profile switcher dropdown on all dashboards
+2. Move admin profile into the dropdown with avatar, color, name
+3. Create Manage Profiles page with inline editing
+4. Add avatar picker, color selection, and DOB for admin and kids
+5. Position profile dropdown consistently on top-right
+6. Consolidate child management into Manage Profiles page
+7. Make edit forms expand inline below kid cards
+8. Allow switching back to admin from any kid dashboard
+
+**Output:**
+- Updated `ProfileSwitcher` component with:
+  - Admin profile section in dropdown
+  - Kids profiles list
+  - Manage Profiles and Sign Out actions
+  - Positioned consistently top-right
+- Created `ManageProfilesView` in App.tsx with:
+  - Admin profile editing (avatar, color, DOB)
+  - Kids list with expandable edit forms
+  - Inline year group management
+  - Add/Delete student functionality
+- Updated all views (Landing, DaddyDashboard, ChildDashboard) with ProfileSwitcher
+- Removed standalone "Manage Children" button and "Switch User" buttons
+- Added 78 emoji avatars with pagination
+- Added 15 theme colors for profile customization
+
 ## 2026-02-08 - YouTube Playlist Import Enhancement
 
 **User Request:**

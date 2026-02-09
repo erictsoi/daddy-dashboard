@@ -2,20 +2,21 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ViewState, ChildProfile, YearGroup, Subject, Lesson, ScheduleBlock, ViewOrigin, ParsedRow } from './types';
 import { INITIAL_DATA, SUGGESTED_TOPICS, CREATIVE_PROMPTS } from './constants';
 import { AuthProvider, useAuth } from './lib/AuthContext';
-import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, updateChildGoogleEmail } from './lib/dataService';
+import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, updateChildGoogleEmail, saveFullCurriculum, saveYearGroup, saveSubject, saveLesson, syncLocalDataToSupabase } from './lib/dataService';
 import { usePersistentTimer, formatTime, formatTimeReadable } from './src/lib/useTimer';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
 import { Timeline } from './components/Timeline';
 import { CurriculumBuilder } from './components/CurriculumBuilder';
 import { ChildManagement } from './components/ChildManagement';
+import { EditProfile } from './components/EditProfile';
 import { 
   Users, 
   Book, 
   Plus, 
   ChevronRight, 
+  ChevronLeft,
   PlayCircle, 
-  Settings, 
   Sparkles,
   Layout,
   GraduationCap,
@@ -28,22 +29,35 @@ import {
   Trash2,
   MoreVertical,
   RotateCcw,
+  X,
   XCircle,
   Archive,
   Lock,
   LogOut,
   UserCircle,
   UserPlus,
-  Timer
+  Timer,
+  Settings
 } from 'lucide-react';
 
 const App: React.FC = () => {
-  const { user } = useAuth() || {};
+  const { user, loading: authLoading } = useAuth() || {};
   const [view, setView] = useState<ViewState>({ type: 'LANDING' });
   const [data, setData] = useState<ChildProfile[]>([]);
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showChildManagement, setShowChildManagement] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editingChildId, setEditingChildId] = useState<string | null>(null);
+  
+  // Admin profile state
+  const [adminAvatar, setAdminAvatar] = useState(() => {
+    return localStorage.getItem('admin_avatar') || '👨‍🏫';
+  });
+  const [adminColor, setAdminColor] = useState(() => {
+    return localStorage.getItem('admin_color') || 'blue';
+  });
+  const [showEditAdmin, setShowEditAdmin] = useState(false);
   
   // Scroll Restoration
   const scrollYRef = useRef(0);
@@ -51,29 +65,72 @@ const App: React.FC = () => {
   // Schedule State
   const [schedule, setSchedule] = useState<ScheduleBlock[]>([]);
   const [isDayActive, setIsDayActive] = useState(false);
+  const lastUserIdRef = useRef<string | null>(null);
 
   // Load data on mount and when user changes
   useEffect(() => {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      console.log('Auth still loading...');
+      return;
+    }
+
+    console.log('Auth loaded, user =', user?.id || 'null');
+
+    // Only skip if we've already loaded data for this user
+    if (lastUserIdRef.current === user?.id && data.length > 0) {
+      console.log('Already loaded data for this user, skipping');
+      return;
+    }
+    lastUserIdRef.current = user?.id || null;
+
     const loadData = async () => {
+
+      console.log('loadData: user =', user?.id || 'null');
+      console.log('loadData: user email =', user?.email || 'null');
+
       setLoading(true);
       try {
         if (user) {
           // Check if user is a child by matching email
-          const childData = await fetchChildByEmail(user.email || '');
-          if (childData) {
-            setChildProfile(childData);
-            setData([]);
+          try {
+            const childData = await fetchChildByEmail(user.email || '');
+            if (childData) {
+              console.log('Found child profile:', childData.name);
+              setChildProfile(childData);
+              setData([]);
+              return;
+            }
+          } catch (e) {
+            console.log('Not a child account, checking for admin data');
+          }
+          
+          console.log('Fetching children for userId:', user.id);
+          setChildProfile(null);
+          const childrenData = await fetchChildren(user.id);
+          console.log('Got childrenData:', childrenData.length, 'children');
+          if (childrenData.length > 0) {
+            setData(childrenData);
           } else {
-            setChildProfile(null);
-            const childrenData = await fetchChildren(user.id);
-            if (childrenData.length > 0) {
-              setData(childrenData);
+            console.log('No children found in Supabase, checking localStorage');
+            // No children in Supabase - sync from localStorage
+            const localData = getLocalData();
+            console.log('Local data has', localData.length, 'children');
+            if (localData.length > 0) {
+              await syncLocalDataToSupabase(user.id);
+              const syncedData = await fetchChildren(user.id);
+              console.log('After sync, fetched', syncedData.length, 'children');
+              if (syncedData.length > 0) {
+                setData(syncedData);
+              } else {
+                setData(localData);
+              }
             } else {
-              const localData = getLocalData();
               setData(localData);
             }
           }
         } else {
+          console.log('No user, loading localStorage data');
           setChildProfile(null);
           setData(getLocalData());
         }
@@ -84,7 +141,15 @@ const App: React.FC = () => {
       setLoading(false);
     };
     loadData();
-  }, [user]);
+  }, [user, authLoading]);
+
+  // Force load data on initial mount if empty
+  useEffect(() => {
+    if (!authLoading && data.length === 0 && !user) {
+      console.log('Initial mount: loading default data');
+      setData(getLocalData());
+    }
+  }, [authLoading]);
 
   // --- Child Management Functions ---
 
@@ -96,23 +161,9 @@ const App: React.FC = () => {
     };
     setData(prev => {
       const newData = [...prev, newChild];
-      if (!user) {
-        saveLocalData(newData);
-      }
-      return newData;
-    });
-  };
-
-  const handleUpdateChild = (id: string, childData: Omit<ChildProfile, 'id' | 'yearGroups'>) => {
-    setData(prev => {
-      const newData = prev.map(child => {
-        if (child.id !== id) return child;
-        return {
-          ...child,
-          ...childData,
-        };
-      });
-      if (!user) {
+      if (user) {
+        saveFullCurriculum(newData, user.id).catch(console.error);
+      } else {
         saveLocalData(newData);
       }
       return newData;
@@ -122,7 +173,70 @@ const App: React.FC = () => {
   const handleDeleteChild = (id: string) => {
     setData(prev => {
       const newData = prev.filter(child => child.id !== id);
-      if (!user) {
+      if (user) {
+        saveFullCurriculum(newData, user.id).catch(console.error);
+      } else {
+        saveLocalData(newData);
+      }
+      return newData;
+    });
+  };
+
+  const handleUpdateChild = (id: string, updates: Partial<ChildProfile>) => {
+    setData(prev => {
+      const newData = prev.map(child => {
+        if (child.id !== id) return child;
+        return { ...child, ...updates };
+      });
+      if (user) {
+        saveFullCurriculum(newData, user.id).catch(console.error);
+      } else {
+        saveLocalData(newData);
+      }
+      return newData;
+    });
+  };
+
+  const handleUpdateChildProfile = (updates: Partial<ChildProfile>) => {
+    if (childProfile) {
+      const updated = { ...childProfile, ...updates };
+      setChildProfile(updated);
+      if (user) {
+        const allChildren = data.map(c => c.id === updated.id ? updated : c);
+        saveFullCurriculum(allChildren, user.id).catch(console.error);
+      }
+    }
+  };
+
+  const handleAddYearGroup = (childId: string, name: string) => {
+    const newYearGroup: YearGroup = {
+      id: `${childId}-${name.replace(/\s+/g, '').toLowerCase()}`,
+      name,
+      subjects: [],
+    };
+    setData(prev => {
+      const newData = prev.map(child => {
+        if (child.id !== childId) return child;
+        return { ...child, yearGroups: [...child.yearGroups, newYearGroup] };
+      });
+      if (user) {
+        saveFullCurriculum(newData, user.id).catch(console.error);
+      } else {
+        saveLocalData(newData);
+      }
+      return newData;
+    });
+  };
+
+  const handleRemoveYearGroup = (childId: string, yearGroupId: string) => {
+    setData(prev => {
+      const newData = prev.map(child => {
+        if (child.id !== childId) return child;
+        return { ...child, yearGroups: child.yearGroups.filter(yg => yg.id !== yearGroupId) };
+      });
+      if (user) {
+        saveFullCurriculum(newData, user.id).catch(console.error);
+      } else {
         saveLocalData(newData);
       }
       return newData;
@@ -252,8 +366,9 @@ const App: React.FC = () => {
           }))
         };
       });
-      // Persist to localStorage for guest mode
-      if (!user) {
+      if (user) {
+        saveFullCurriculum(newData, user.id).catch(console.error);
+      } else {
         saveLocalData(newData);
       }
       return newData;
@@ -270,6 +385,7 @@ const App: React.FC = () => {
   };
 
   const handleSoftDeleteLesson = (childId: string, subjectId: string, lessonId: string) => {
+      const scrollY = window.scrollY;
       setData(prev => {
         const newData = prev.map(child => {
             if (child.id !== childId) return child;
@@ -287,7 +403,9 @@ const App: React.FC = () => {
                 }))
             };
         });
-        if (!user) {
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
           saveLocalData(newData);
         }
         return newData;
@@ -303,7 +421,18 @@ const App: React.FC = () => {
         if (!row.isValid) return;
 
         let child = newData.find(c => c.name.toLowerCase() === row.childName.toLowerCase());
-        if (!child) return;
+        if (!child) {
+          // Create new child if doesn't exist
+          child = {
+            id: `child-${row.childName.toLowerCase().replace(/\s+/g, '-')}`,
+            name: row.childName,
+            dob: '',
+            avatar: '👶',
+            themeColor: 'blue',
+            yearGroups: []
+          };
+          newData.push(child);
+        }
 
         let yearGroup = child.yearGroups.find(yg => yg.name.toLowerCase() === row.yearGroup.toLowerCase());
         if (!yearGroup) {
@@ -317,6 +446,7 @@ const App: React.FC = () => {
 
         const fullSubjectName = `${row.subjectCategory}: ${row.subjectName}`;
         let subject = yearGroup.subjects.find(s => s.name === fullSubjectName);
+        let isNewSubject = false;
         if (!subject) {
           let color = 'bg-gray-100 text-gray-800';
           const cat = row.subjectCategory.toLowerCase();
@@ -327,13 +457,14 @@ const App: React.FC = () => {
           else if (cat.includes('creative')) color = 'bg-purple-100 text-purple-800';
 
           subject = {
-            id: Math.random().toString(36).substr(2, 9),
+            id: `${child.id}-${row.yearGroup.replace(/\s+/g, '')}-${row.subjectCategory}-${row.subjectName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
             name: fullSubjectName,
             category: row.subjectCategory as any,
             color,
             lessons: []
           };
           yearGroup.subjects.push(subject);
+          isNewSubject = true;
           touchedSubjectIds.add(subject.id);
         } else {
           if (!touchedSubjectIds.has(subject.id)) {
@@ -343,19 +474,25 @@ const App: React.FC = () => {
         }
 
         const newLesson: Lesson = {
-          id: Math.random().toString(36).substr(2, 9),
+          id: `${subject.id}-${row.lessonTitle}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
           title: row.lessonTitle,
           durationMinutes: 45,
           completed: false,
           deleted: false,
-          videoUrl: row.videoUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+          videoUrl: row.videoUrl || '',
           outcomes: row.notes ? row.notes.split(',').map((s: string) => s.trim()) : []
         };
         subject.lessons.push(newLesson);
       });
 
-      if (!user) {
+      console.log('Bulk import: saving', newData.length, 'children');
+      if (user) {
+        saveFullCurriculum(newData, user.id)
+          .then(() => console.log('Bulk import: saved to Supabase'))
+          .catch(err => console.error('Bulk import error:', err));
+      } else {
         saveLocalData(newData);
+        console.log('Bulk import: saved to localStorage');
       }
       return newData;
     });
@@ -363,6 +500,9 @@ const App: React.FC = () => {
   };
 
   const handleDeleteSubject = (childId: string, subjectId: string) => {
+      // Save scroll position before update
+      const scrollY = window.scrollY;
+      
       setData(prev => {
         const newData = prev.map(child => {
             if (child.id !== childId) return child;
@@ -374,11 +514,18 @@ const App: React.FC = () => {
                 }))
             };
         });
-        if (!user) {
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
           saveLocalData(newData);
         }
         return newData;
       });
+      
+      // Restore scroll position after state update
+      setTimeout(() => {
+        window.scrollTo(0, scrollY);
+      }, 0);
   };
 
   const handleAddLesson = (childId: string, subjectId: string, title: string) => {
@@ -409,14 +556,20 @@ const App: React.FC = () => {
                 }))
             };
         });
-        if (!user) {
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
           saveLocalData(newData);
         }
         return newData;
       });
+      setTimeout(() => {
+        window.scrollTo(0, scrollY);
+      }, 0);
   };
 
   const handleRestoreLesson = (childId: string, subjectId: string, lessonId: string) => {
+      const scrollY = window.scrollY;
       setData(prev => {
         const newData = prev.map(child => {
             if (child.id !== childId) return child;
@@ -434,14 +587,20 @@ const App: React.FC = () => {
                 }))
             };
         });
-        if (!user) {
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
           saveLocalData(newData);
         }
         return newData;
       });
+      setTimeout(() => {
+        window.scrollTo(0, scrollY);
+      }, 0);
   };
 
   const handleHardDeleteLesson = (childId: string, subjectId: string, lessonId: string) => {
+      const scrollY = window.scrollY;
       setData(prev => {
         const newData = prev.map(child => {
             if (child.id !== childId) return child;
@@ -459,7 +618,9 @@ const App: React.FC = () => {
                 }))
             };
         });
-        if (!user) {
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
           saveLocalData(newData);
         }
         return newData;
@@ -475,8 +636,15 @@ const App: React.FC = () => {
       return (
         <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
           <div className="text-center mb-8">
-            <div className={`w-32 h-32 rounded-full bg-${childProfile.themeColor}-50 flex items-center justify-center text-6xl mx-auto mb-4`}>
+            <div className={`w-32 h-32 rounded-full bg-${childProfile.themeColor}-50 flex items-center justify-center text-6xl mx-auto mb-4 relative group`}>
               {childProfile.avatar}
+              <button
+                onClick={() => { setEditingChildId('childProfile'); setShowEditProfile(true); }}
+                className="absolute bottom-0 right-0 p-3 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                title="Edit Profile"
+              >
+                <Settings size={16} className="text-gray-600" />
+              </button>
             </div>
             <h1 className="text-4xl font-bold text-gray-800 mb-2">{childProfile.name}'s Space</h1>
             <p className="text-gray-500">Ready to learn today?</p>
@@ -500,78 +668,104 @@ const App: React.FC = () => {
     }
 
     return (
-      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
-          <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold text-gray-800 mb-4">HK Homeschool Hub</h1>
-              <p className="text-xl text-gray-500">Who is learning today?</p>
-          </div>
-          
-          {user ? (
-            <div className="bg-white p-6 rounded-2xl shadow-lg mb-8 text-center">
-              <div className="flex items-center gap-4 mb-4">
-                {user.user_metadata.avatar_url && (
-                  <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-12 h-12 rounded-full" />
-                )}
-                <div className="text-left">
-                  <p className="font-bold text-gray-800">{user.user_metadata.full_name || user.email}</p>
-                  <p className="text-sm text-gray-500">Signed in</p>
-                </div>
+      <div className="min-h-screen bg-gray-100 p-6">
+          {/* Header with Sign In */}
+          <div className="flex justify-between items-center mb-12">
+              <div>
+                  <h1 className="text-4xl font-bold text-gray-800">HK Homeschool Hub</h1>
+                  <p className="text-xl text-gray-500">Who is learning today?</p>
               </div>
-              <button
-                onClick={() => signOut?.()}
-                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition"
-              >
-                Sign Out
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => signInWithGoogle?.()}
-              disabled={loading}
-              className="bg-white border border-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-50 transition flex items-center gap-2 mb-8 shadow-sm"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              {loading ? 'Loading...' : 'Sign in with Google'}
-            </button>
-          )}
+              {user ? (
+                <ProfileSwitcher
+                  user={user}
+                  data={data}
+                  adminAvatar={adminAvatar}
+                  adminColor={adminColor}
+                  adminName={user?.user_metadata?.full_name || user?.email || 'Admin'}
+                  onSignOut={() => signOut?.()}
+                  onManageProfiles={() => setView({ type: 'MANAGE_PROFILES' })}
+                  onSwitchProfile={(childId) => setView({ type: 'CHILD_DASHBOARD', childId })}
+                  onGoToLanding={() => setView({ type: 'LANDING' })}
+                  onGoToAdmin={() => setView({ type: 'HOME' })}
+                />
+              ) : (
+                <button
+                  onClick={() => signInWithGoogle?.()}
+                  disabled={loading}
+                  className="text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  </svg>
+                  {loading ? '...' : 'Sign in'}
+                </button>
+              )}
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl">
+          {/* Profile Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full max-w-5xl mx-auto">
               {/* Daddy Card */}
-              <button 
-                  onClick={() => setView({ type: 'HOME' })}
-                  className="bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 flex flex-col items-center gap-6 border border-gray-100 group"
-              >
-                  <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center text-6xl group-hover:bg-gray-200 transition">
-                      👨‍🏫
-                  </div>
-                  <div className="text-center">
-                      <h2 className="text-2xl font-bold text-gray-800">Daddy</h2>
-                      <p className="text-gray-500 mt-2">Dashboard & Admin</p>
-                  </div>
-              </button>
+              <div className="relative group">
+                <button 
+                    onClick={() => setView({ type: 'HOME' })}
+                    className="w-full bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 flex flex-col items-center gap-6 border border-gray-100 group"
+                >
+                    <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center text-6xl group-hover:bg-gray-200 transition">
+                        {adminAvatar}
+                    </div>
+                    <div className="text-center">
+                        <h2 className="text-2xl font-bold text-gray-800">Daddy</h2>
+                        <p className="text-gray-500 mt-2">Dashboard & Admin</p>
+                    </div>
+                </button>
+                {/* Edit button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowEditAdmin(true); }}
+                  className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                  title="Edit Admin Profile"
+                >
+                  <Settings size={16} className="text-gray-600" />
+                </button>
+              </div>
 
               {/* Kids Cards */}
               {data.map(child => (
-                  <button 
-                      key={child.id}
-                      onClick={() => setView({ type: 'CHILD_DASHBOARD', childId: child.id })}
-                      className={`bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 flex flex-col items-center gap-6 border-b-[8px] border-${child.themeColor}-500 group`}
-                  >
-                      <div className={`w-32 h-32 rounded-full bg-${child.themeColor}-50 flex items-center justify-center text-6xl group-hover:bg-${child.themeColor}-100 transition`}>
-                          {child.avatar}
-                      </div>
-                      <div className="text-center">
-                          <h2 className="text-2xl font-bold text-gray-800">{child.name}</h2>
-                          <p className={`text-${child.themeColor}-600 font-medium mt-2`}>Student Access</p>
-                      </div>
-                  </button>
+                  <div key={child.id} className="relative group">
+                    <button 
+                        onClick={() => setView({ type: 'CHILD_DASHBOARD', childId: child.id })}
+                        className={`w-full bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 flex flex-col items-center gap-6 border-b-[8px] border-${child.themeColor}-500`}
+                    >
+                        <div className={`w-32 h-32 rounded-full bg-${child.themeColor}-50 flex items-center justify-center text-6xl group-hover:bg-${child.themeColor}-100 transition`}>
+                            {child.avatar}
+                        </div>
+                        <div className="text-center">
+                            <h2 className="text-2xl font-bold text-gray-800">{child.name || 'Student'}</h2>
+                            <p className={`text-${child.themeColor}-600 font-medium mt-2`}>Student Access</p>
+                        </div>
+                    </button>
+                    {/* Edit button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditingChildId(child.id); setShowEditProfile(true); }}
+                      className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                      title="Edit Profile"
+                    >
+                      <Settings size={16} className="text-gray-600" />
+                    </button>
+                  </div>
               ))}
           </div>
+          
+          {/* Guest Mode Notice */}
+          {!user && (
+            <div className="mt-12 text-center max-w-2xl mx-auto">
+              <p className="text-gray-500 text-sm">
+                You're viewing the demo mode. Sign in with Google to save your custom curriculum data.
+              </p>
+            </div>
+          )}
       </div>
     );
   };
@@ -821,6 +1015,8 @@ const App: React.FC = () => {
         setView(newView);
     };
 
+    const { user, signOut } = useAuth() || {};
+
     return (
       <div className="min-h-screen bg-gray-100 pb-20">
         {/* Header */}
@@ -830,25 +1026,27 @@ const App: React.FC = () => {
               <h1 className="text-2xl font-bold text-gray-800">Daddy Dashboard</h1>
               <p className="text-gray-500 text-sm mt-1">HK Homeschool Relocation Plan</p>
             </div>
-            <div className="flex gap-3">
-                <button 
-                    onClick={() => setShowChildManagement(true)}
-                    className="text-gray-500 hover:text-gray-800 px-3 py-2 rounded-lg flex items-center gap-2 transition"
-                >
-                    <UserPlus size={16} /> Manage Children
-                </button>
-                <button 
-                    onClick={() => setView({ type: 'LANDING' })}
-                    className="text-gray-500 hover:text-gray-800 px-3 py-2 rounded-lg flex items-center gap-2 transition"
-                >
-                    <LogOut size={16} /> Switch User
-                </button>
+            <div className="flex gap-3 items-center">
                 <button 
                     onClick={() => handleNavigate({ type: 'CURRICULUM_BUILDER' })}
                     className="bg-gray-900 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition shadow-lg"
                 >
                     <Sparkles size={16} /> Build Curriculum
                 </button>
+                {user && (
+                  <ProfileSwitcher
+                    user={user}
+                    data={data}
+                    adminAvatar={adminAvatar}
+                    adminColor={adminColor}
+                    adminName={user?.user_metadata?.full_name || user?.email || 'Admin'}
+                    onSignOut={() => signOut?.()}
+                    onManageProfiles={() => setView({ type: 'MANAGE_PROFILES' })}
+                    onSwitchProfile={(childId) => setView({ type: 'CHILD_DASHBOARD', childId })}
+                    onGoToLanding={() => setView({ type: 'LANDING' })}
+                    onGoToAdmin={() => setView({ type: 'HOME' })}
+                  />
+                )}
             </div>
           </div>
         </header>
@@ -1097,7 +1295,7 @@ const App: React.FC = () => {
     const child = data.find(c => c.id === childId) || childProfile;
     if (!child) return null;
 
-    const { signOut } = useAuth() || {};
+    const { user, signOut } = useAuth() || {};
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -1107,19 +1305,22 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-gray-50">
         <div className={`bg-${child.themeColor}-600 text-white pb-24 pt-8 px-6`}>
            <div className="max-w-6xl mx-auto">
-             <div className="flex justify-between items-start mb-6">
-                 <button onClick={() => setView({ type: 'LANDING' })} className="flex items-center gap-2 text-white/80 hover:text-white transition">
-                   <ArrowLeftIcon /> Switch User
-                 </button>
-                 {childProfile && (
-                   <button 
-                     onClick={() => signOut?.()} 
-                     className="text-white/80 hover:text-white text-sm"
-                   >
-                     Sign Out
-                   </button>
-                 )}
-             </div>
+              <div className="flex justify-end items-start mb-6">
+                  {user && (
+                    <ProfileSwitcher
+                      user={user}
+                      data={data}
+                      adminAvatar={adminAvatar}
+                      adminColor={adminColor}
+                      adminName={user?.user_metadata?.full_name || user?.email || 'Admin'}
+                      onSignOut={() => signOut?.()}
+                      onManageProfiles={() => setView({ type: 'MANAGE_PROFILES' })}
+                      onSwitchProfile={(newChildId) => setView({ type: 'CHILD_DASHBOARD', childId: newChildId })}
+                      onGoToLanding={() => setView({ type: 'LANDING' })}
+                      onGoToAdmin={() => setView({ type: 'HOME' })}
+                    />
+                  )}
+              </div>
              <div className="flex items-center gap-4">
                 <span className="text-6xl">{child.avatar}</span>
                 <div>
@@ -1224,6 +1425,591 @@ const App: React.FC = () => {
     );
   };
 
+  const ManageProfilesView = () => {
+    const { user, signOut } = useAuth() || {};
+    const [isAdding, setIsAdding] = useState(false);
+    const [editingChildId, setEditingChildId] = useState<string | null>(null);
+    const [editingYearGroups, setEditingYearGroups] = useState<string | null>(null);
+    const [editingAdmin, setEditingAdmin] = useState(false);
+    
+    // Admin edit states
+    const [adminDob, setAdminDob] = useState(() => localStorage.getItem('admin_dob') || '');
+    const [newAdminAvatar, setNewAdminAvatar] = useState(adminAvatar);
+    const [newAdminColor, setNewAdminColor] = useState(() => localStorage.getItem('admin_color') || 'blue');
+    const [adminAvatarPage, setAdminAvatarPage] = useState(0);
+    
+    // Kid edit states
+    const [editName, setEditName] = useState('');
+    const [editDob, setEditDob] = useState('');
+    const [editAvatar, setEditAvatar] = useState('');
+    const [editColor, setEditColor] = useState('');
+    const [avatarPage, setAvatarPage] = useState(0);
+    const [newYearGroup, setNewYearGroup] = useState('');
+
+    const AVATARS = ['👶', '🧒', '👦', '👧', '🧑‍🦰', '👱', '🧑', '👨‍🦱', '👩‍🦱', '🧑‍🦳', '👨‍🦳', '👩‍🦳', '🧑‍🦲', '👨‍🦲', '👩‍🦲', '🧔', '👨', '👩', '🧑‍🚀', '👩‍🚀', '🧑‍🔬', '👩‍🔬', '🧑‍🎨', '👩‍🎨', '🧑‍🏫', '👩‍🏫', '🧑‍⚕️', '👩‍⚕️', '🧑‍🌾', '👩‍🌾', '🧑‍🍳', '👩‍🍳', '🧑‍🎤', '👩‍🎤', '🧑‍🎭', '👩‍🎭', '🧑‍🚒', '👩‍🚒', '🧑‍✈️', '👩‍✈️', '🦸', '🦸‍♀️', '🦹', '🦹‍♀️', '🧙', '🧙‍♀️', '🧚', '🧚‍♀️', '🧛', '🧛‍♀️', '🧜', '🧜‍♀️', '🧝', '🧝‍♀️', '🧞', '🧞‍♀️', '🧟', '🧟‍♀️', '👼', '🎅', '🤶', '🦸‍♂️', '🦹‍♂️', '🧙‍♂️', '🧚‍♂️', '🧛‍♂️', '🧜‍♂️', '🧝‍♂️', '🧞‍♂️', '🧟‍♂️'];
+    const AVATARS_PER_PAGE = 20;
+    const THEME_COLORS = [
+      { name: 'Blue', class: 'blue', bg: '#dbeafe', text: '#1e40af' },
+      { name: 'Indigo', class: 'indigo', bg: '#e0e7ff', text: '#3730a3' },
+      { name: 'Purple', class: 'purple', bg: '#f3e8ff', text: '#6b21a8' },
+      { name: 'Pink', class: 'pink', bg: '#fce7f3', text: '#9d174d' },
+      { name: 'Rose', class: 'rose', bg: '#ffe4e6', text: '#be123c' },
+      { name: 'Red', class: 'red', bg: '#fee2e2', text: '#b91c1c' },
+      { name: 'Orange', class: 'orange', bg: '#ffedd5', text: '#c2410c' },
+      { name: 'Amber', class: 'amber', bg: '#fef3c7', text: '#b45309' },
+      { name: 'Yellow', class: 'yellow', bg: '#fef9c3', text: '#a16207' },
+      { name: 'Green', class: 'green', bg: '#dcfce7', text: '#15803d' },
+      { name: 'Emerald', class: 'emerald', bg: '#d1fae5', text: '#047857' },
+      { name: 'Teal', class: 'teal', bg: '#ccfbf1', text: '#0f766e' },
+      { name: 'Cyan', class: 'cyan', bg: '#cffafe', text: '#0e7490' },
+      { name: 'Sky', class: 'sky', bg: '#e0f2fe', text: '#0369a1' },
+      { name: 'Slate', class: 'slate', bg: '#f1f5f9', text: '#475569' },
+    ];
+
+    const handleSaveAdmin = () => {
+      localStorage.setItem('admin_dob', adminDob);
+      localStorage.setItem('admin_color', newAdminColor);
+      setAdminAvatar(newAdminAvatar);
+      localStorage.setItem('admin_avatar', newAdminAvatar);
+      setEditingAdmin(false);
+    };
+
+    const handleSaveKid = () => {
+      if (!editingChildId || !editName.trim()) return;
+      
+      setData(prev => {
+        const newData = prev.map(child => {
+          if (child.id !== editingChildId) return child;
+          return { 
+            ...child, 
+            name: editName.trim(),
+            dob: editDob,
+            avatar: editAvatar,
+            themeColor: editColor,
+          };
+        });
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
+          saveLocalData(newData);
+        }
+        return newData;
+      });
+      
+      setEditingChildId(null);
+    };
+
+    const startEditingChild = (child: ChildProfile) => {
+      setEditingChildId(child.id);
+      setEditName(child.name);
+      setEditDob(child.dob);
+      setEditAvatar(child.avatar);
+      setEditColor(child.themeColor);
+      setAvatarPage(0);
+      setIsAdding(false);
+    };
+
+    const startAddingChild = () => {
+      setIsAdding(true);
+      setEditingChildId(null);
+      setEditName('');
+      setEditDob('');
+      setEditAvatar('👶');
+      setEditColor('blue');
+      setAvatarPage(0);
+    };
+
+    const handleAddChildLocal = () => {
+      if (!editName.trim()) return;
+      
+      const newChild: ChildProfile = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: editName.trim(),
+        dob: editDob,
+        avatar: editAvatar,
+        themeColor: editColor,
+        yearGroups: [],
+      };
+      
+      setData(prev => {
+        const newData = [...prev, newChild];
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
+          saveLocalData(newData);
+        }
+        return newData;
+      });
+      
+      setIsAdding(false);
+      setEditName('');
+      setEditDob('');
+    };
+
+    const cancelEdit = () => {
+      setIsAdding(false);
+      setEditingChildId(null);
+    };
+
+    const handleAddYearGroupFromView = (childId: string) => {
+      if (newYearGroup.trim()) {
+        handleAddYearGroup(childId, newYearGroup.trim());
+        setNewYearGroup('');
+      }
+    };
+
+    const totalPages = Math.ceil(AVATARS.length / AVATARS_PER_PAGE);
+
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <button 
+              onClick={() => setView({ type: 'HOME' })}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium"
+            >
+              <ArrowLeft size={20} />
+              Back to Dashboard
+            </button>
+            <h1 className="text-xl font-bold text-gray-800">Manage Profiles</h1>
+            <div className="w-24"></div>
+          </div>
+        </header>
+
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          {/* Admin Profile Section */}
+          <div className="mb-8">
+            <h2 className="text-lg font-bold text-gray-800 mb-4">Account Owner</h2>
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
+                    style={{ 
+                      backgroundColor: THEME_COLORS.find(c => c.class === newAdminColor)?.bg || '#f3f4f6'
+                    }}
+                  >
+                    {adminAvatar}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800">{user?.user_metadata?.full_name || user?.email || 'Admin'}</h3>
+                    <p className="text-sm text-gray-500">Account Administrator</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingAdmin(!editingAdmin);
+                    setNewAdminAvatar(adminAvatar);
+                    setNewAdminColor(localStorage.getItem('admin_color') || 'blue');
+                    setAdminDob(localStorage.getItem('admin_dob') || '');
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition"
+                >
+                  {editingAdmin ? 'Cancel' : 'Edit'}
+                </button>
+              </div>
+
+              {/* Admin Edit Form */}
+              {editingAdmin && (
+                <div className="px-4 pb-4 bg-gray-50 border-t border-gray-100">
+                  <div className="pt-4 space-y-4">
+                    {/* Avatar Selection */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Avatar</label>
+                      <div className="flex flex-wrap gap-2 justify-center bg-white p-3 rounded-lg border border-gray-200">
+                        {AVATARS.slice(adminAvatarPage * AVATARS_PER_PAGE, (adminAvatarPage + 1) * AVATARS_PER_PAGE).map((a) => (
+                          <button
+                            key={a}
+                            onClick={() => setNewAdminAvatar(a)}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition ${
+                              newAdminAvatar === a
+                                ? 'bg-blue-100 ring-2 ring-blue-500'
+                                : 'hover:bg-gray-100'
+                            }`}
+                          >
+                            {a}
+                          </button>
+                        ))}
+                      </div>
+                      {totalPages > 1 && (
+                        <div className="flex justify-center gap-2 mt-2">
+                          <button
+                            onClick={() => setAdminAvatarPage(p => Math.max(0, p - 1))}
+                            disabled={adminAvatarPage === 0}
+                            className="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50"
+                          >
+                            Previous
+                          </button>
+                          <span className="text-sm text-gray-600 py-1">
+                            {adminAvatarPage + 1} / {totalPages}
+                          </span>
+                          <button
+                            onClick={() => setAdminAvatarPage(p => Math.min(totalPages - 1, p + 1))}
+                            disabled={adminAvatarPage === totalPages - 1}
+                            className="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Theme Color */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Theme Color</label>
+                      <div className="flex flex-wrap gap-2">
+                        {THEME_COLORS.map((color) => (
+                          <button
+                            key={color.class}
+                            onClick={() => setNewAdminColor(color.class)}
+                            className={`w-10 h-10 rounded-lg transition ${
+                              newAdminColor === color.class ? 'ring-2 ring-offset-2 ring-gray-400' : ''
+                            }`}
+                            style={{ backgroundColor: color.bg }}
+                            title={color.name}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* DOB */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth (optional)</label>
+                      <input
+                        type="date"
+                        value={adminDob}
+                        onChange={(e) => setAdminDob(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleSaveAdmin}
+                      className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Profiles Section */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-800">Student Profiles</h2>
+              <button
+                onClick={startAddingChild}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition flex items-center gap-2"
+              >
+                <UserPlus size={18} />
+                Add Student
+              </button>
+            </div>
+
+            {/* Add New Student Form */}
+            {isAdding && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Add New Student</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="Enter student name"
+                    />
+                  </div>
+                  
+                  {/* Avatar Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Avatar</label>
+                    <div className="flex flex-wrap gap-2 justify-center bg-gray-50 p-3 rounded-lg">
+                      {AVATARS.slice(avatarPage * AVATARS_PER_PAGE, (avatarPage + 1) * AVATARS_PER_PAGE).map((a) => (
+                        <button
+                          key={a}
+                          onClick={() => setEditAvatar(a)}
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition ${
+                            editAvatar === a
+                              ? 'bg-blue-100 ring-2 ring-blue-500'
+                              : 'hover:bg-white'
+                          }`}
+                        >
+                          {a}
+                        </button>
+                      ))}
+                    </div>
+                    {totalPages > 1 && (
+                      <div className="flex justify-center gap-2 mt-2">
+                        <button
+                          onClick={() => setAvatarPage(p => Math.max(0, p - 1))}
+                          disabled={avatarPage === 0}
+                          className="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50"
+                        >
+                          Previous
+                        </button>
+                        <span className="text-sm text-gray-600 py-1">
+                          {avatarPage + 1} / {totalPages}
+                        </span>
+                        <button
+                          onClick={() => setAvatarPage(p => Math.min(totalPages - 1, p + 1))}
+                          disabled={avatarPage === totalPages - 1}
+                          className="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Theme Color */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Theme Color</label>
+                    <div className="flex flex-wrap gap-2">
+                      {THEME_COLORS.map((color) => (
+                        <button
+                          key={color.class}
+                          onClick={() => setEditColor(color.class)}
+                          className={`w-10 h-10 rounded-lg transition ${
+                            editColor === color.class ? 'ring-2 ring-offset-2 ring-gray-400' : ''
+                          }`}
+                          style={{ backgroundColor: color.bg }}
+                          title={color.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth (optional)</label>
+                    <input
+                      type="date"
+                      value={editDob}
+                      onChange={(e) => setEditDob(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleAddChildLocal}
+                      className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition"
+                    >
+                      Add Student
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              {data.map((child, index) => (
+                <div 
+                  key={child.id}
+                  className={`${index !== data.length - 1 ? 'border-b border-gray-100' : ''}`}
+                >
+                  <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition">
+                    <div className="flex items-center gap-4">
+                      <div 
+                        className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
+                        style={{ 
+                          backgroundColor: THEME_COLORS.find(c => c.class === child.themeColor)?.bg || '#f3f4f6'
+                        }}
+                      >
+                        {child.avatar || '👤'}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-800">{child.name || 'Student'}</h3>
+                        <p className="text-sm text-gray-500">{child.yearGroups.map(yg => yg.name).join(', ') || 'No year groups'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setEditingYearGroups(editingYearGroups === child.id ? null : child.id)}
+                        className="px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                      >
+                        {editingYearGroups === child.id ? 'Hide Year Groups' : 'Manage Year Groups'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (editingChildId === child.id) {
+                            setEditingChildId(null);
+                          } else {
+                            startEditingChild(child);
+                          }
+                        }}
+                        className="px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                      >
+                        {editingChildId === child.id ? 'Cancel' : 'Edit'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to delete ${child.name || 'this student'}?`)) {
+                            handleDeleteChild(child.id);
+                          }
+                        }}
+                        className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Kid Edit Form - Expand Below */}
+                  {editingChildId === child.id && (
+                    <div className="px-4 pb-4 bg-gray-50 border-t border-gray-100">
+                      <div className="pt-4 space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          />
+                        </div>
+
+                        {/* Avatar Selection */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Avatar</label>
+                          <div className="flex flex-wrap gap-2 justify-center bg-white p-3 rounded-lg border border-gray-200">
+                            {AVATARS.slice(avatarPage * AVATARS_PER_PAGE, (avatarPage + 1) * AVATARS_PER_PAGE).map((a) => (
+                              <button
+                                key={a}
+                                onClick={() => setEditAvatar(a)}
+                                className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition ${
+                                  editAvatar === a
+                                    ? 'bg-blue-100 ring-2 ring-blue-500'
+                                    : 'hover:bg-gray-100'
+                                }`}
+                              >
+                                {a}
+                              </button>
+                            ))}
+                          </div>
+                          {totalPages > 1 && (
+                            <div className="flex justify-center gap-2 mt-2">
+                              <button
+                                onClick={() => setAvatarPage(p => Math.max(0, p - 1))}
+                                disabled={avatarPage === 0}
+                                className="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50"
+                              >
+                                Previous
+                              </button>
+                              <span className="text-sm text-gray-600 py-1">
+                                {avatarPage + 1} / {totalPages}
+                              </span>
+                              <button
+                                onClick={() => setAvatarPage(p => Math.min(totalPages - 1, p + 1))}
+                                disabled={avatarPage === totalPages - 1}
+                                className="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50"
+                              >
+                                Next
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Theme Color */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Theme Color</label>
+                          <div className="flex flex-wrap gap-2">
+                            {THEME_COLORS.map((color) => (
+                              <button
+                                key={color.class}
+                                onClick={() => setEditColor(color.class)}
+                                className={`w-10 h-10 rounded-lg transition ${
+                                  editColor === color.class ? 'ring-2 ring-offset-2 ring-gray-400' : ''
+                                }`}
+                                style={{ backgroundColor: color.bg }}
+                                title={color.name}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth (optional)</label>
+                          <input
+                            type="date"
+                            value={editDob}
+                            onChange={(e) => setEditDob(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          />
+                        </div>
+
+                        <button
+                          onClick={handleSaveKid}
+                          className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition"
+                        >
+                          Save Changes
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Year Groups Management */}
+                  {editingYearGroups === child.id && (
+                    <div className="px-4 pb-4 bg-gray-50 border-t border-gray-100">
+                      <div className="pt-2 space-y-2">
+                        {child.yearGroups.map((yg) => (
+                          <div key={yg.id} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-gray-200">
+                            <span className="font-medium text-gray-700">{yg.name}</span>
+                            <button
+                              onClick={() => handleRemoveYearGroup(child.id, yg.id)}
+                              className="text-red-600 hover:bg-red-50 p-1 rounded transition"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ))}
+                        <div className="flex gap-2 mt-3">
+                          <input
+                            type="text"
+                            value={newYearGroup}
+                            onChange={(e) => setNewYearGroup(e.target.value)}
+                            placeholder="Add year group (e.g., Year 5)"
+                            className="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                          />
+                          <button
+                            onClick={() => handleAddYearGroupFromView(child.id)}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-3">
+            <button
+              onClick={() => signOut?.()}
+              className="w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-300 transition"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // --- Main Render Switch ---
 
   return (
@@ -1252,6 +2038,7 @@ const App: React.FC = () => {
       })()}
       {view.type === 'HOME' && <DaddyDashboardView />}
       {view.type === 'CHILD_DASHBOARD' && <ChildDashboard childId={view.childId} />}
+      {view.type === 'MANAGE_PROFILES' && <ManageProfilesView />}
       
       {showChildManagement && (
         <ChildManagement
@@ -1259,7 +2046,36 @@ const App: React.FC = () => {
           onAddChild={handleAddChild}
           onUpdateChild={handleUpdateChild}
           onDeleteChild={handleDeleteChild}
+          onAddYearGroup={handleAddYearGroup}
+          onRemoveYearGroup={handleRemoveYearGroup}
           onClose={() => setShowChildManagement(false)}
+        />
+      )}
+
+      {showEditProfile && editingChildId && (
+        <EditProfile
+          child={data.find(c => c.id === editingChildId) || childProfile!}
+          onSave={(updates) => {
+            if (editingChildId === 'childProfile' && childProfile) {
+              handleUpdateChildProfile(updates);
+            } else {
+              handleUpdateChild(editingChildId, updates);
+            }
+          }}
+          onClose={() => { setShowEditProfile(false); setEditingChildId(null); }}
+        />
+      )}
+
+      {/* Admin Avatar Edit Modal */}
+      {showEditAdmin && (
+        <AdminAvatarEditModal
+          currentAvatar={adminAvatar}
+          onSave={(avatar) => {
+            setAdminAvatar(avatar);
+            localStorage.setItem('admin_avatar', avatar);
+            setShowEditAdmin(false);
+          }}
+          onClose={() => setShowEditAdmin(false)}
         />
       )}
     </>
@@ -1269,5 +2085,259 @@ const App: React.FC = () => {
 // Simple Icons wrappers for use inside logic without cluttering imports
 const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
+
+// Admin Avatar Edit Modal Component
+const AdminAvatarEditModal: React.FC<{currentAvatar: string, onSave: (avatar: string) => void, onClose: () => void}> = ({ currentAvatar, onSave, onClose }) => {
+  const [avatar, setAvatar] = useState(currentAvatar);
+  const [avatarPage, setAvatarPage] = useState(0);
+  const AVATARS = ['👶', '🧒', '👦', '👧', '🧑‍🦰', '👱', '🧒', '👦', '👧', '🧒', '👦', '👧', '🧑', '👨‍🦱', '👩‍🦱', '🧑‍🦳', '👨‍🦳', '👩‍🦳', '🧑‍🦲', '👨‍🦲', '👩‍🦲', '🧔', '👨', '👩', '🧑‍🚀', '👩‍🚀', '🧑‍🔬', '👩‍🔬', '🧑‍🎨', '👩‍🎨', '🧑‍🏫', '👩‍🏫', '🧑‍⚕️', '👩‍⚕️', '🧑‍🌾', '👩‍🌾', '🧑‍🍳', '👩‍🍳', '🧑‍🎤', '👩‍🎤', '🧑‍🎭', '👩‍🎭', '🧑‍🚒', '👩‍🚒', '🧑‍✈️', '👩‍✈️', '🧑‍🚀', '👩‍🚀', '🦸', '🦸‍♀️', '🦹', '🦹‍♀️', '🧙', '🧙‍♀️', '🧚', '🧚‍♀️', '🧛', '🧛‍♀️', '🧜', '🧜‍♀️', '🧝', '🧝‍♀️', '🧞', '🧞‍♀️', '🧟', '🧟‍♀️', '👼', '🎅', '🤶', '🦸‍♂️', '🦹‍♂️', '🧙‍♂️', '🧚‍♂️', '🧛‍♂️', '🧜‍♂️', '🧝‍♂️', '🧞‍♂️', '🧟‍♂️', '👼', '🎅', '🤶'];
+  const AVATARS_PER_PAGE = 20;
+  const totalPages = Math.ceil(AVATARS.length / AVATARS_PER_PAGE);
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-800">Edit Admin Avatar</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition">
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto">
+          {/* Avatar Preview */}
+          <div className="flex items-center gap-6 mb-8 p-6 bg-gray-50 rounded-xl justify-center">
+            <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-5xl">
+              {avatar}
+            </div>
+          </div>
+
+          {/* Avatar Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Avatar</label>
+            <div className="border border-gray-200 rounded-xl p-4">
+              <div className="flex flex-wrap gap-2 justify-center">
+                {AVATARS.slice(avatarPage * AVATARS_PER_PAGE, (avatarPage + 1) * AVATARS_PER_PAGE).map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => setAvatar(a)}
+                    className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl transition ${
+                      avatar === a
+                        ? 'bg-blue-100 ring-2 ring-blue-500'
+                        : 'hover:bg-gray-100'
+                    }`}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <div className="flex justify-center gap-4 mt-4">
+                  <button
+                    onClick={() => setAvatarPage(p => Math.max(0, p - 1))}
+                    disabled={avatarPage === 0}
+                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <span className="text-sm text-gray-500">
+                    {avatarPage + 1} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setAvatarPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={avatarPage === totalPages - 1}
+                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => onSave(avatar)}
+              className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition"
+            >
+              Save Changes
+            </button>
+            <button
+              onClick={onClose}
+              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Profile Switcher Dropdown Component
+const ProfileSwitcher: React.FC<{
+  user: any;
+  data: ChildProfile[];
+  adminAvatar: string;
+  adminColor?: string;
+  adminName?: string;
+  onSignOut: () => void;
+  onManageProfiles: () => void;
+  onSwitchProfile: (childId: string) => void;
+  onGoToLanding: () => void;
+  onGoToAdmin?: () => void;
+}> = ({ user, data, adminAvatar, adminColor = 'blue', adminName, onSignOut, onManageProfiles, onSwitchProfile, onGoToLanding, onGoToAdmin }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1 transition"
+      >
+        {user?.user_metadata?.avatar_url ? (
+          <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full" />
+        ) : (
+          <div 
+            className="w-8 h-8 rounded-full flex items-center justify-center text-lg"
+            style={{ 
+              backgroundColor: adminColor === 'blue' ? '#dbeafe' : 
+                              adminColor === 'indigo' ? '#e0e7ff' :
+                              adminColor === 'purple' ? '#f3e8ff' :
+                              adminColor === 'pink' ? '#fce7f3' :
+                              adminColor === 'rose' ? '#ffe4e6' :
+                              adminColor === 'red' ? '#fee2e2' :
+                              adminColor === 'orange' ? '#ffedd5' :
+                              adminColor === 'amber' ? '#fef3c7' :
+                              adminColor === 'yellow' ? '#fef9c3' :
+                              adminColor === 'green' ? '#dcfce7' :
+                              adminColor === 'emerald' ? '#d1fae5' :
+                              adminColor === 'teal' ? '#ccfbf1' :
+                              adminColor === 'cyan' ? '#cffafe' :
+                              adminColor === 'sky' ? '#e0f2fe' :
+                              '#f1f5f9'
+            }}
+          >
+            {adminAvatar}
+          </div>
+        )}
+        <span className="font-medium text-gray-700 hidden sm:block">{user?.user_metadata?.full_name || user?.email}</span>
+        <svg className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2 w-72 bg-gray-900 text-white rounded-lg shadow-2xl py-2 z-50">
+          {/* Profiles Section */}
+          <div className="px-2 pb-2">
+            {/* Admin Profile */}
+            {onGoToAdmin && (
+              <button
+                onClick={() => {
+                  onGoToAdmin();
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-800 transition text-left"
+              >
+                <div 
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+                  style={{ 
+                    backgroundColor: adminColor === 'blue' ? '#1e40af' : 
+                                    adminColor === 'indigo' ? '#3730a3' :
+                                    adminColor === 'purple' ? '#6b21a8' :
+                                    adminColor === 'pink' ? '#9d174d' :
+                                    adminColor === 'rose' ? '#be123c' :
+                                    adminColor === 'red' ? '#b91c1c' :
+                                    adminColor === 'orange' ? '#c2410c' :
+                                    adminColor === 'amber' ? '#b45309' :
+                                    adminColor === 'yellow' ? '#a16207' :
+                                    adminColor === 'green' ? '#15803d' :
+                                    adminColor === 'emerald' ? '#047857' :
+                                    adminColor === 'teal' ? '#0f766e' :
+                                    adminColor === 'cyan' ? '#0e7490' :
+                                    adminColor === 'sky' ? '#0369a1' :
+                                    '#475569'
+                  }}
+                >
+                  {adminAvatar}
+                </div>
+                <div>
+                  <span className="font-medium">{adminName || 'Daddy'}</span>
+                  <span className="block text-xs text-gray-400">Admin</span>
+                </div>
+              </button>
+            )}
+            
+            {/* Divider if admin is shown */}
+            {onGoToAdmin && data.length > 0 && (
+              <div className="border-t border-gray-700 my-2"></div>
+            )}
+            
+            {data.map(child => (
+              <button
+                key={child.id}
+                onClick={() => {
+                  onSwitchProfile(child.id);
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-800 transition text-left"
+              >
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl`} style={{ backgroundColor: child.themeColor === 'indigo' ? '#3730a3' : child.themeColor === 'rose' ? '#be123c' : '#065f46' }}>
+                  {child.avatar || '👤'}
+                </div>
+                <span className="font-medium">{child.name || 'Student'}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-gray-700 my-2"></div>
+
+          {/* Menu Options */}
+          <div className="px-2">
+            <button
+              onClick={() => {
+                onManageProfiles();
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-800 transition text-left"
+            >
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              <span>Manage Profiles</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onSignOut();
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-800 transition text-left"
+            >
+              <LogOut size={20} className="text-gray-400" />
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 export default App;

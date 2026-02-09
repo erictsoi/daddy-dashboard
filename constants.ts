@@ -24,103 +24,113 @@ export const CREATIVE_PROMPTS = [
 // Initial Data based on user prompt
 export const INITIAL_DATA: ChildProfile[] = [
   {
-    id: 'adrian',
-    name: 'Adrian',
-    dob: '13/10/2012',
+    id: 'kid1',
+    name: '',
+    dob: '',
     avatar: '🧑‍🚀',
     themeColor: 'indigo',
     yearGroups: [
       {
-        id: 'adrian-y9',
+        id: 'kid1-y9',
         name: 'Year 9',
         subjects: [
           {
-            id: 'a9-eng',
+            id: 'k1-y9-eng',
             name: 'English: Writing Narratives',
             category: 'English',
             color: 'bg-amber-100 text-amber-800',
-            lessons: [
-              createLesson("Story Arcs & Structure", 45, ["Understand the 5 key points of a narrative arc", "Analyze a short story structure"]),
-              createLesson("Character Development", 45, ["Create character profiles", "Show don't tell techniques"]),
-              createLesson("Setting the Scene", 40, ["Using sensory imagery", "Atmosphere creation"]),
-            ]
+            lessons: []
           },
           {
-            id: 'a9-math',
+            id: 'k1-y9-math',
             name: 'Maths: Number Operations',
             category: 'Maths',
             color: 'bg-blue-100 text-blue-800',
-            lessons: [
-              createLesson("Indices & Roots", 50, ["Laws of indices", "Square and cube roots"]),
-              createLesson("Standard Form", 45, ["Converting large numbers", "Calculations in standard form"]),
-            ]
+            lessons: []
           }
         ]
       },
       {
-        id: 'adrian-y10',
+        id: 'kid1-y10',
         name: 'Year 10',
         subjects: [
            {
-            id: 'a10-sci',
+            id: 'k1-y10-sci',
             name: 'Science: Biology',
             category: 'Science',
             color: 'bg-green-100 text-green-800',
-            lessons: [
-              createLesson("Cell Structure", 60, ["Plant vs Animal cells", "Functions of organelles"]),
-              createLesson("Cell Division", 60, ["Mitosis stages", "Meiosis introduction"]),
-            ]
+            lessons: []
           }
         ]
       }
     ]
   },
   {
-    id: 'sophia',
-    name: 'Sophia',
-    dob: '29/10/2016',
+    id: 'kid2',
+    name: '',
+    dob: '',
     avatar: '👩‍🎨',
     themeColor: 'rose',
     yearGroups: [
       {
-        id: 'sophia-y5',
+        id: 'kid2-y5',
         name: 'Year 5',
         subjects: [
           {
-            id: 's5-math',
+            id: 'k2-y5-math',
             name: 'Maths: Shape & Measure',
             category: 'Maths',
             color: 'bg-blue-100 text-blue-800',
-            lessons: [
-              createLesson("Perimeter & Area", 30, ["Calculate perimeter of rectangles", "Calculate area of compound shapes"]),
-              createLesson("Angles", 30, ["Measuring angles", "Types of angles"]),
-            ]
+            lessons: []
           },
           {
-            id: 's5-sci',
+            id: 'k2-y5-sci',
             name: 'Science: Living Things',
             category: 'Science',
             color: 'bg-emerald-100 text-emerald-800',
-            lessons: [
-              createLesson("Life Cycles", 35, ["Mammals vs Amphibians", "Metamorphosis"]),
-              createLesson("Plant Reproduction", 35, ["Pollination", "Seed dispersal"]),
-            ]
+            lessons: []
           }
         ]
       },
       {
-        id: 'sophia-y6',
+        id: 'kid2-y6',
         name: 'Year 6',
         subjects: [
           {
-            id: 's6-eng',
+            id: 'k2-y6-eng',
             name: 'English: Persuasive Writing',
             category: 'English',
             color: 'bg-amber-100 text-amber-800',
-            lessons: [
-              createLesson("Rhetorical Devices", 40, ["Rule of three", "Alliteration and Facts"]),
-              createLesson("Writing a Speech", 45, ["Structure of a speech", "Opening hooks"]),
-            ]
+            lessons: []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'kid3',
+    name: '',
+    dob: '',
+    avatar: '🎓',
+    themeColor: 'emerald',
+    yearGroups: [
+      {
+        id: 'kid3-y1',
+        name: 'Year 1',
+        subjects: [
+          {
+            id: 'k3-y1-math',
+            name: 'Maths: Numbers to 20',
+            category: 'Maths',
+            color: 'bg-blue-100 text-blue-800',
+            lessons: []
+          },
+          {
+            id: 'k3-y1-eng',
+            name: 'English: Phonics',
+            category: 'English',
+            color: 'bg-amber-100 text-amber-800',
+            lessons: []
           }
         ]
       }

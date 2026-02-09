@@ -7,6 +7,109 @@
      4. Bump version in package.json
 -->
 
+## Profile Management System
+
+### Architecture
+
+```
+App.tsx
+├── ProfileSwitcher (top-right on all views)
+│   ├── Admin profile (with avatar, color, name)
+│   ├── Kids profiles list
+│   ├── Manage Profiles action
+│   └── Sign Out action
+├── ManageProfilesView
+│   ├── Admin section (expandable edit form)
+│   │   ├── Avatar picker (78 options, paginated)
+│   │   ├── Color picker (15 theme colors)
+│   │   └── DOB field
+│   └── Kids list (inline expandable edit)
+│       ├── Name field
+│       ├── Avatar picker
+│       ├── Color picker
+│       ├── DOB field
+│       └── Year groups management
+```
+
+### Profile Switcher Component
+
+**Location:** Inline in App.tsx (reusable component)
+
+**Props:**
+```typescript
+{
+  user: any;
+  data: ChildProfile[];
+  adminAvatar: string;
+  adminColor?: string;
+  adminName?: string;
+  onSignOut: () => void;
+  onManageProfiles: () => void;
+  onSwitchProfile: (childId: string) => void;
+  onGoToLanding: () => void;
+  onGoToAdmin?: () => void;
+}
+```
+
+**Features:**
+- Dropdown positioned absolute, right-aligned
+- Dark theme (bg-gray-900) for Netflix-style look
+- Admin profile shown first with "Admin" subtitle
+- Kids profiles shown with colored avatars
+- Menu actions: Manage Profiles, Sign Out
+
+### Admin Profile State
+
+**Persistence:** localStorage
+```typescript
+const [adminAvatar, setAdminAvatar] = useState(() => 
+  localStorage.getItem('admin_avatar') || '👨‍🏫'
+);
+const [adminColor, setAdminColor] = useState(() => 
+  localStorage.getItem('admin_color') || 'blue'
+);
+```
+
+**Theme Colors (15 options):**
+- Blue, Indigo, Purple, Pink, Rose
+- Red, Orange, Amber, Yellow
+- Green, Emerald, Teal, Cyan, Sky, Slate
+
+### Kids Profile Editing
+
+**Inline Edit Form:**
+- Expands below kid card when `editingChildId === child.id`
+- Contains: name input, avatar picker (paginated), color picker, DOB
+- Cancel button closes form
+- Save updates data state and persists to Supabase/localStorage
+
+**Year Groups Management:**
+- Separate expandable section per kid
+- List existing year groups with delete button
+- Input field to add new year groups
+
+### Default Profiles
+
+**INITIAL_DATA now includes 3 generic kids:**
+- kid1 (🧑‍🚀, indigo theme) - Years 9-10
+- kid2 (👩‍🎨, rose theme) - Years 5-6  
+- kid3 (🎓, emerald theme) - Year 1
+
+All with blank names (displayed as "Student" in UI)
+
+### Navigation Updates
+
+**Views with ProfileSwitcher:**
+1. LandingView - top-right in header
+2. DaddyDashboardView - top-right in header
+3. ChildDashboardView - top-right, justify-end
+4. ManageProfilesView - no switcher (this IS the profile page)
+
+**Removed:**
+- "Manage Children" button from DaddyDashboard
+- "Switch User" buttons
+- ChildManagement modal (consolidated into ManageProfilesView)
+
 ## YouTube Playlist Import Logic
 
 ### Architecture
@@ -204,3 +307,173 @@ See `supabase_schema.sql` for full schema with RLS policies.
 VITE_SUPABASE_URL=your_project_url
 VITE_SUPABASE_ANON_KEY=your_anon_key
 ```
+
+## Profile Management
+
+### User Profile Edit (Netflix-style)
+
+Kids can edit their own profiles from the landing page or child dashboard.
+
+**Features:**
+- Avatar selection with pagination (40+ emojis)
+- Theme color selection (14 colors)
+- Name customization
+- DOB NOT included (managed by Daddy in admin)
+
+**Key Files:**
+| File | Purpose |
+|------|---------|
+| `components/EditProfile.tsx` | Profile editor modal |
+| `components/ChildManagement.tsx` | Daddy admin for managing children |
+
+### Child Management (Daddy Dashboard)
+
+Daddy manages children's core settings:
+
+**Features:**
+- Add/remove children
+- DOB entry (auto-suggests school year)
+- Add/remove year groups per child
+- Link Google email for personalized recommendations
+- Delete children and all their data
+
+**Automatic Year Calculation (HK System):**
+```typescript
+// Year 1 starts at age 5, school year starts September
+const calculateSchoolYear = (dob: string) => {
+  const birthMonth = new Date(dob).getMonth();
+  const age = currentMonth >= 8 
+    ? currentYear - birthYear 
+    : currentYear - birthYear - 1;
+  const schoolYear = age - 4; // Year 1 = age 5
+  return `Year ${schoolYear}`;
+}
+```
+
+## Persistent Timer
+
+### Architecture
+
+Tracks total time spent on each subject, persisting across sessions.
+
+```
+Subject View / Lesson Player
+└── usePersistentTimer(subjectId)
+    ├── localStorage key: `timer_{subjectId}`
+    ├── Auto-saves every 30 seconds
+    └── Survives page refresh & browser close
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/lib/useTimer.ts` | Timer hook with persistence |
+| `SubjectDetail.tsx` | Shows timer in header + stats |
+| `LessonPlayer.tsx` | Shows timer during lessons |
+
+### Usage
+
+```typescript
+const { isRunning, elapsed, start, stop } = usePersistentTimer({
+  subjectId: 'math-1',
+  onTick: (seconds) => {},  // Optional callback
+  onSave: (seconds) => {},   // Optional save callback
+  autoSaveInterval: 30,      // Save every 30s
+});
+```
+
+### Timer Display
+
+- **HH:MM:SS format** during sessions
+- **Green dot indicator** when running
+- **Pause/Resume** button
+- **Persistent across** subject → lesson → exit → return
+
+## Stretch Goals
+
+### Term/Year Rewards System
+
+**Features:**
+- Daddy defines rewards per term (e.g., "Family trip to Disney", "New bike")
+- Reminders shown at:
+  - End of each term
+  - End of exam periods
+  - Beginning of new term
+
+**Database Schema Extension:**
+
+```sql
+-- Rewards table
+CREATE TABLE rewards (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL,           -- e.g., "Disney Trip"
+  description TEXT,              -- Details about reward
+  type TEXT NOT NULL,            -- 'trip', 'gift', 'experience'
+  target_term TEXT,              -- e.g., "Term 1", "Summer"
+  target_year INT,               -- e.g., 2026
+  is_claimed BOOLEAN DEFAULT FALSE,
+  child_id UUID REFERENCES children(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Term dates for reminders
+CREATE TABLE terms (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL,            -- "Term 1", "Term 2", etc.
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  academic_year INT NOT NULL,   -- 2025-2026
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Family Trip Suggestions
+
+At end of academic year, Daddy Dashboard shows:
+
+```
+📍 End of Year Trip Suggestions
+
+Based on children's interests and school performance:
+• 🎢 Theme Park Day (all subjects ≥ 80%)
+• 🏖️ Beach Trip (math average ≥ 75%)
+• 🎨 Museum Visit (humanities ≥ 70%)
+• 🏔️ Hiking Adventure (all ≥ 60%)
+
+Add custom trip suggestion...
+```
+
+### Term End Reminders
+
+```
+🎉 Term 1 Complete!
+
+Rewards available:
+✅ Adrian - Family movie night (all subjects completed!)
+⏳ Sophia - 2/3 subjects completed
+
+Upcoming: Term 2 starts on April 15, 2026
+```
+
+### Implementation Roadmap
+
+1. **Phase 1: Rewards System**
+   - Add rewards table and CRUD
+   - Simple "Claim Reward" button
+   - Display available rewards on child dashboard
+
+2. **Phase 2: Term Management**
+   - Define term dates
+   - Auto-detect current term
+   - Show term progress
+
+3. **Phase 3: Intelligent Suggestions**
+   - Analyze subject performance
+   - Suggest family activities
+   - Link rewards to achievements
+
+4. **Phase 4: Exam Period Tracking**
+   - Track exam dates
+   - Show countdowns
+   - Reward after exam completion

@@ -5,9 +5,44 @@
      2. Update PROMPTS.md with context
      3. Update IMPLEMENTATION.md with technical details
      4. Bump version in package.json
--->
+  -->
 
 ## 2026-02-09
+
+### Added
+- Netflix-style profile switcher dropdown on all dashboards (top-right position)
+- Admin profile now appears in profile switcher with avatar, color, and name
+- Manage Profiles page with inline editing for kids (expandable cards)
+- Admin profile editing with avatar picker, color selection, and DOB
+- Kids profile editing with avatar picker, color selection, and DOB
+- Inline year group management for each kid profile
+- Admin color theming that persists in localStorage
+- Profile dropdown shows admin profile first, then kids profiles
+
+### Changed
+- Removed "Switch Profile" button that went to landing page (now in dropdown)
+- Profile switcher positioned consistently on top-right across all views
+- Manage Profiles consolidates all child management functionality
+- Edit forms now expand inline below kid cards instead of separate section
+- Cancel button on kid profiles properly closes the edit form
+- Default kids profiles now have blank names (displayed as "Student")
+
+### Removed
+- "Manage Children" button from Daddy Dashboard header
+- Standalone "Switch User" buttons (replaced with profile dropdown)
+- Separate ChildManagement modal (functionality moved to Manage Profiles page)
+
+## 2026-02-09
+
+### Fixed
+- YouTube playlist import not saving to Supabase - added deterministic ID generation for subjects and lessons
+- Subjects now use stable IDs based on child-yearGroup-subjectName instead of Math.random()
+- Lessons now use stable IDs based on subjectId-lessonTitle
+- Added comprehensive debug logging to dataService.ts (saveYearGroup, saveSubject, saveLesson, saveFullCurriculum)
+
+### Changed
+- Removed default dummy YouTube video URL when no video provided (was `dQw4w9WgXcQ`, now empty string)
+- Console logging added to handleBulkImport for import debugging
 
 ### Added
 - Supabase authentication integration

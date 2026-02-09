@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { INITIAL_DATA } from '../constants'
 
 export type UserRole = 'daddy' | 'child' | 'guest'
 
@@ -49,6 +50,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     await supabase.auth.signOut()
     setUserRole('guest')
+    // Reset localStorage to default data for next user
+    localStorage.setItem('daddy_dashboard_data', JSON.stringify(INITIAL_DATA))
+    // Reload page to reset all React state
+    window.location.reload()
   }
 
   return (
