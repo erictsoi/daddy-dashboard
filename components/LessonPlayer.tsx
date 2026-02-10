@@ -6,6 +6,7 @@ import { usePersistentTimer, formatTime, formatTimeReadable } from '../src/lib/u
 interface Props {
   child: ChildProfile;
   subject: Subject;
+  topicId: string;
   lesson: Lesson;
   onBack: () => void;
   onComplete: (lessonId: string, timeSpentSeconds: number) => void;
@@ -21,13 +22,13 @@ const getYouTubeID = (url: string | undefined): string => {
 const tc = (color: string, suffix: string = '') => `bg-${color}${suffix ? '-' + suffix : ''}`;
 const tcText = (color: string, suffix: string = '') => `text-${color}${suffix ? '-' + suffix : ''}`;
 
-export const LessonPlayer: React.FC<Props> = ({ child, subject, lesson, onBack, onComplete }) => {
+export const LessonPlayer: React.FC<Props> = ({ child, subject, topicId, lesson, onBack, onComplete }) => {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [key, setKey] = useState(0);
   const videoId = getYouTubeID(lesson.videoUrl);
   
   const { isRunning, elapsed, start, stop, reset } = usePersistentTimer({
-    subjectId: subject.id,
+    subjectId: topicId,
     onTick: () => {},
     onSave: () => {},
     autoSaveInterval: 30,
@@ -38,7 +39,7 @@ export const LessonPlayer: React.FC<Props> = ({ child, subject, lesson, onBack, 
     start();
     setKey(k => k + 1);
     return () => stop();
-  }, [subject.id]);
+  }, [topicId]);
 
   const themeBg = tc(child.themeColor);
   const themeBg600 = tc(child.themeColor, '600');
@@ -140,20 +141,44 @@ export const LessonPlayer: React.FC<Props> = ({ child, subject, lesson, onBack, 
              </button>
            </div>
 
-           <div className="p-6 flex-1 overflow-y-auto">
-             <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-               <BookOpen size={18} className={themeText600} />
-               Learning Outcomes
-             </h3>
-             <ul className="space-y-3">
-               {lesson.outcomes.map((outcome, idx) => (
-                 <li key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 shadow-sm">
-                   <div className={'mt-1 min-w-[6px] h-[6px] rounded-full ' + themeText600.replace('text-', 'bg-')} />
-                   <span className="text-gray-600 text-sm leading-relaxed">{outcome}</span>
-                 </li>
-               ))}
-             </ul>
-           </div>
+            <div className="p-6 flex-1 overflow-y-auto">
+              {lesson.lessonFocus && (
+                <div className="mb-6">
+                  <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <BookOpen size={18} className={themeText600} />
+                    Lesson Aims
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-relaxed p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    {lesson.lessonFocus}
+                  </p>
+                </div>
+              )}
+              
+              <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <BookOpen size={18} className={themeText600} />
+                Learning Outcomes
+              </h3>
+              <ul className="space-y-3">
+                {lesson.outcomes.map((outcome, idx) => (
+                  <li key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 shadow-sm">
+                    <div className={'mt-1 min-w-[6px] h-[6px] rounded-full ' + themeText600.replace('text-', 'bg-')} />
+                    <span className="text-gray-600 text-sm leading-relaxed">{outcome}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {lesson.lessonNotes && (
+                <div className="mt-6">
+                  <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <BookOpen size={18} className={themeText600} />
+                    Notes
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-relaxed p-3 bg-amber-50 rounded-lg border border-amber-100">
+                    {lesson.lessonNotes}
+                  </p>
+                </div>
+              )}
+            </div>
 
            <div className="p-6 bg-white border-t border-gray-200">
              {lesson.completed ? (

@@ -20,7 +20,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
   const [defaultChild, setDefaultChild] = useState('Sophia');
   const [defaultYear, setDefaultYear] = useState('Year 5');
   const [defaultSubject, setDefaultSubject] = useState('English');
-  const [defaultSubcategory, setDefaultSubcategory] = useState('Writing Narratives');
+  const [defaultSubcategory, setDefaultSubcategory] = useState('Reading Comprehension');
   const [expandedCount, setExpandedCount] = useState(0);
 
   useEffect(() => {
@@ -77,22 +77,23 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
       const childName = cols[0]?.trim() || '';
       const yearGroup = cols[1]?.trim() || '';
       const subjectCategory = cols[2]?.trim() || '';
-      const subjectName = cols[3]?.trim() || '';
-      const ytPlaylistFocus = cols[4]?.trim() || '';
-      const notes = cols[5]?.trim() || '';
-      const videoUrl = cols[6]?.trim() || '';
+      const topicName = cols[3]?.trim() || '';
+      const lessonTitle = cols[4]?.trim() || '';
+      const lessonFocus = cols[5]?.trim() || '';
+      const lessonNotes = cols[6]?.trim() || '';
+      const videoUrl = cols[7]?.trim() || cols[6]?.trim() || '';
 
       const isYouTubeUrl = /(?:youtube\.com|youtu\.be)/i.test(videoUrl);
-      const lessonTitle = ytPlaylistFocus || (isYouTubeUrl ? 'YouTube Playlist' : 'Lesson');
-      const isValid = !!(childName && yearGroup && subjectCategory && subjectName && videoUrl);
+      const isValid = !!(childName && yearGroup && subjectCategory && topicName && videoUrl);
 
       return {
         childName,
         yearGroup,
         subjectCategory,
-        subjectName,
-        lessonTitle,
-        notes,
+        subjectName: topicName,
+        lessonTitle: lessonTitle || topicName || 'Lesson',
+        lessonFocus,
+        lessonNotes,
         videoUrl,
         isValid,
         isYouTubeUrl,
@@ -162,10 +163,12 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
       if (row.youTubeType === 'playlist' && row.expandedLessons && row.expandedLessons.length > 0) {
         playlistCount++;
         for (const lesson of row.expandedLessons) {
+          const position = lesson.position + 1;
           expanded.push({
             ...row,
-            lessonTitle: lesson.title,
+            lessonTitle: `Video ${position} - ${lesson.title}`,
             videoUrl: lesson.videoUrl,
+            videoPosition: position,
             isYouTubeUrl: true,
             youTubeType: 'video',
             expandedLessons: undefined,
@@ -211,10 +214,10 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
             </button>
             <div>
               <h1 className="text-xl font-bold text-gray-800">Curriculum Importer</h1>
-              <p className="text-sm text-gray-500">Bulk add lessons from spreadsheet or YouTube</p>
+              <p className="text-sm text-gray-500">Step 1: Paste data → Step 2: Parse URLs → Step 3: Expand Playlists → Step 4: Import</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
             {isProcessing && (
               <span className="text-sm text-gray-600 flex items-center gap-2">
                 <Loader2 size={16} className="animate-spin" /> {processingProgress}
@@ -228,9 +231,10 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
                   ? 'bg-red-600 text-white hover:bg-red-700 shadow-md'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
+              title="Convert YouTube URLs to playlist format"
             >
               <Youtube size={18} />
-              {unprocessedYouTube.length > 0 ? `Process ${unprocessedYouTube.length} YouTube` : 'All Processed'}
+              {unprocessedYouTube.length > 0 ? `Parse ${unprocessedYouTube.length} URLs` : 'URLs Parsed'}
             </button>
             <button
               onClick={expandPlaylists}
@@ -240,9 +244,10 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
                   ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-md'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
+              title="Convert playlists into individual video lessons"
             >
               <Link size={18} />
-              {playlistRows.length > 0 ? `Expand ${playlistRows.length} Playlists` : 'No Playlists'}
+              {playlistRows.length > 0 ? `Expand ${playlistRows.length} Playlists` : 'Playlists Expanded'}
             </button>
             <button
               onClick={handleImport}
@@ -252,6 +257,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
                   ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
+              title="Save all lessons to curriculum"
             >
               <Save size={18} />
               Import {totalLessons} Lessons
@@ -270,7 +276,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
                   inputMode === 'paste' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                <Copy size={16} /> Paste
+                <Copy size={16} /> Paste Spreadsheet
               </button>
               <button
                 onClick={() => setInputMode('playlist')}
@@ -278,32 +284,46 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
                   inputMode === 'playlist' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                <Link size={16} /> Playlist
+                <Link size={16} /> Paste Playlist URL
               </button>
             </div>
 
             {inputMode === 'paste' ? (
               <>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <h3 className="font-semibold text-blue-800 mb-2">How to Import:</h3>
+                  <ol className="text-xs text-blue-700 space-y-1">
+                    <li><span className="font-bold">1.</span> Paste your data in the box below</li>
+                    <li><span className="font-bold">2.</span> Click <span className="bg-red-100 px-1 rounded">Parse URLs</span> to process YouTube links</li>
+                    <li><span className="font-bold">3.</span> Click <span className="bg-purple-100 px-1 rounded">Expand Playlists</span> to turn playlists into individual videos</li>
+                    <li><span className="font-bold">4.</span> Click <span className="bg-blue-100 px-1 rounded">Import</span> to save everything</li>
+                  </ol>
+                </div>
                 <h2 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
                   <FileText size={18} className="text-blue-500" /> Paste Data Here
                 </h2>
                 <p className="text-xs text-gray-500 mb-3">
                   Copy columns from Excel/Sheets: <br />
-                  <span className="font-mono bg-gray-100 px-1">Who | Year | Subject | Subcategory | Lesson Title | Notes | Link</span>
+                  <span className="font-mono bg-gray-100 px-1">Who | Year | Subject | Topic | Lesson Title | Lesson Focus | Notes | Video URL</span>
                 </p>
                 <textarea
-                  className="w-full h-96 p-3 text-xs font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none whitespace-nowrap overflow-auto"
-                  placeholder={`Sophia\tYr 5\tEnglish\tReading\tShort Stories\tNotes...\thttps://...`}
+                  className="w-full h-64 p-3 text-xs font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none whitespace-nowrap overflow-auto"
+                  placeholder={`Sophia\tYear 5\tEnglish\tReading Comprehension\tVideo 1 - Inference Skills\tinference skills\tBBC curriculum videos\thttps://...`}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                 />
               </>
             ) : (
               <>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <h3 className="font-semibold text-blue-800 mb-2">Playlist Mode</h3>
+                  <p className="text-xs text-blue-700">
+                    Paste a YouTube playlist URL. All videos will be imported as lessons under the default values below.
+                  </p>
+                </div>
                 <h2 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <Link size={18} className="text-red-500" /> YouTube Playlist
+                  <Link size={18} className="text-red-500" /> YouTube Playlist URL
                 </h2>
-                <p className="text-xs text-gray-500 mb-3">Paste a YouTube playlist URL to import all videos as lessons.</p>
                 <input
                   type="url"
                   className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
@@ -325,22 +345,13 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
                   <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-xs text-red-600 font-medium">{playlistError}</p>
                     <p className="text-xs text-red-500 mt-1">
-                      YouTube is blocking playlist scraping. Try:
-                      <br />1. Using Paste Mode with video URLs
-                      <br />2. Adding videos one by one manually
-                      <br />3. Using a YouTube API key (VITE_YOUTUBE_API_KEY)
+                      Try using Paste Mode instead, or add a YouTube API key.
                     </p>
-                    <div className="mt-2 pt-2 border-t border-red-200">
-                      <p className="text-xs font-medium text-red-700 mb-1">Manual Paste Template:</p>
-                      <code className="block text-xs bg-white p-2 rounded border border-red-200 text-red-600 font-mono">
-                        {`${defaultChild}\t${defaultYear}\t${defaultSubject}\t${defaultSubcategory}\tVideo 1 Title\t\thttps://youtube.com/watch?v=VIDEO_ID_1`}
-                      </code>
-                    </div>
                   </div>
                 )}
 
                 <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
-                  <p className="text-xs font-medium text-gray-600">Default Values</p>
+                  <p className="text-xs font-medium text-gray-600">Default Values (applied to all videos)</p>
                   <input
                     type="text"
                     className="w-full p-2 text-sm border border-gray-300 rounded-lg"
@@ -365,7 +376,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
                   <input
                     type="text"
                     className="w-full p-2 text-sm border border-gray-300 rounded-lg"
-                    placeholder="Subcategory (e.g., Writing Narratives)"
+                    placeholder="Topic (e.g., Reading Comprehension)"
                     value={defaultSubcategory}
                     onChange={(e) => setDefaultSubcategory(e.target.value)}
                   />
@@ -375,16 +386,19 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
           </div>
 
           <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-800">
-            <h3 className="font-bold mb-1 flex items-center gap-2">
-              <AlertCircle size={16} /> Quick Tips
+            <h3 className="font-bold mb-2 flex items-center gap-2">
+              <AlertCircle size={16} /> Two Ways to Import
             </h3>
-            <ul className="list-disc pl-4 space-y-1 opacity-80">
-              <li>Ensure columns are in the correct order.</li>
-              <li>"Who" must match "Adrian" or "Sophia".</li>
-              <li>YouTube URLs will be processed automatically.</li>
-              <li>Playlists expand into individual lessons.</li>
-              <li>Click "Process YouTube" to expand playlist URLs.</li>
-            </ul>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="font-bold bg-blue-200 px-1.5 rounded text-xs">1</span>
+                <span><span className="font-semibold">Paste Spreadsheet:</span> Copy 8 columns from Excel/Sheets and paste below</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-bold bg-blue-200 px-1.5 rounded text-xs">2</span>
+                <span><span className="font-semibold">Playlist URL:</span> Paste a YouTube playlist link with default values</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -428,7 +442,7 @@ function PreviewTable({ rows }: PreviewTableProps) {
   }
 
   const groups = rows.reduce<Record<string, ParsedRow[]>>((acc, row) => {
-    const key = `${row.subjectCategory}|${row.subjectName}`;
+    const key = `${row.yearGroup}|${row.subjectCategory}|${row.subjectName}`;
     if (!acc[key]) acc[key] = [];
     acc[key].push(row);
     return acc;
@@ -438,7 +452,7 @@ function PreviewTable({ rows }: PreviewTableProps) {
     <div className="flex-1 overflow-auto max-h-[600px]">
       <div className="divide-y divide-gray-200">
         {Object.entries(groups).map(([key, groupRows]) => {
-          const [category, subject] = key.split('|');
+          const [year, category, topic] = key.split('|');
           const allVideos = groupRows.flatMap((row) =>
             row.expandedLessons?.map((l) => ({ title: l.title, position: l.position, videoUrl: l.videoUrl })) ||
             (row.lessonTitle ? [{ title: row.lessonTitle, position: 0, videoUrl: row.videoUrl }] : [])
@@ -446,7 +460,7 @@ function PreviewTable({ rows }: PreviewTableProps) {
 
           return (
             <div key={key}>
-              <PreviewGroupRow category={category} subject={subject} videos={allVideos} />
+              <PreviewGroupRow year={year} category={category} topic={topic} videos={allVideos} />
             </div>
           );
         })}
@@ -456,21 +470,24 @@ function PreviewTable({ rows }: PreviewTableProps) {
 }
 
 interface PreviewGroupRowProps {
+  year: string;
   category: string;
-  subject: string;
+  topic: string;
   videos: { title: string; position: number; videoUrl: string }[];
 }
 
-function PreviewGroupRow({ category, subject, videos }: PreviewGroupRowProps) {
+function PreviewGroupRow({ year, category, topic, videos }: PreviewGroupRowProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
     <div>
       <button onClick={() => setIsExpanded(!isExpanded)} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 text-left bg-gray-50">
         <ChevronRight size={18} className={`text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-        <span className="font-medium text-gray-800">{category}</span>
+        <span className="font-medium text-gray-800">{year}</span>
         <ChevronRight size={14} className="text-gray-400" />
-        <span className="font-medium text-gray-800">{subject}</span>
+        <span className="font-medium text-indigo-700">{category}</span>
+        <ChevronRight size={14} className="text-gray-400" />
+        <span className="font-medium text-gray-800">{topic}</span>
         <span className="ml-auto text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">{videos.length} videos</span>
       </button>
       {isExpanded && (

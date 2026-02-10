@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ViewState, ChildProfile, YearGroup, Subject, Lesson, ScheduleBlock, ViewOrigin, ParsedRow } from './types';
-import { INITIAL_DATA, SUGGESTED_TOPICS, CREATIVE_PROMPTS } from './constants';
+import { INITIAL_DATA } from './constants';
 import { AuthProvider, useAuth } from './lib/AuthContext';
 import { supabase } from './lib/supabase'
-import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, updateChildGoogleEmail, saveFullCurriculum, saveYearGroup, saveSubject, saveLesson, syncLocalDataToSupabase, hardDeleteLessonFromSupabase, softDeleteLessonInSupabase, restoreLessonInSupabase, hardDeleteSubjectFromSupabase, cleanupDuplicateLessons } from './lib/dataService';
+import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, updateChildGoogleEmail, saveFullCurriculum, uploadToSupabase, loadFromSupabase, restoreLessonInSupabase, hardDeleteLessonFromSupabase, softDeleteLessonInSupabase, hardDeleteSubjectFromSupabase, migrateChildToTopicStructure } from './lib/dataService';
 import { usePersistentTimer, formatTime, formatTimeReadable } from './src/lib/useTimer';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
@@ -15,8 +15,9 @@ import {
   Users, 
   Book, 
   Plus, 
-  ChevronRight, 
+  ChevronRight,
   ChevronLeft,
+  ChevronDown,
   PlayCircle, 
   Sparkles,
   Layout,
@@ -30,6 +31,7 @@ import {
   Trash2,
   MoreVertical,
   RotateCcw,
+  Edit2,
   X,
   XCircle,
   Archive,
@@ -38,7 +40,9 @@ import {
   UserCircle,
   UserPlus,
   Timer,
-  Settings
+  Settings,
+  UploadCloud,
+  DownloadCloud
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -278,9 +282,11 @@ const App: React.FC = () => {
         const adrianSub = adrianPool[i % adrianPool.length];
         const sophiaSub = sophiaPool[i % sophiaPool.length];
         
-        // Pick specific lessons (first incomplete)
-        const adrianLesson = adrianSub.lessons.find(l => !l.completed && !l.deleted) || adrianSub.lessons.find(l => !l.deleted) || adrianSub.lessons[0];
-        const sophiaLesson = sophiaSub.lessons.find(l => !l.completed && !l.deleted) || sophiaSub.lessons.find(l => !l.deleted) || sophiaSub.lessons[0];
+        // Pick specific lessons (first incomplete, from any topic)
+        const adrianLessons = adrianSub.topics.flatMap(t => t.lessons);
+        const sophiaLessons = sophiaSub.topics.flatMap(t => t.lessons);
+        const adrianLesson = adrianLessons.find(l => !l.completed && !l.deleted) || adrianLessons.find(l => !l.deleted) || adrianLessons[0];
+        const sophiaLesson = sophiaLessons.find(l => !l.completed && !l.deleted) || sophiaLessons.find(l => !l.deleted) || sophiaLessons[0];
 
         // Device logic
         const adrianHasDevice = deviceToggle;
@@ -293,7 +299,7 @@ const App: React.FC = () => {
             endTime,
             adrian: {
                 subjectId: adrianSub.id,
-                subjectName: adrianSub.name.split(':')[1]?.trim() || adrianSub.name,
+                subjectName: adrianSub.name,
                 lessonId: adrianLesson.id,
                 lessonTitle: adrianLesson.title,
                 hasDevice: adrianHasDevice
@@ -344,7 +350,7 @@ const App: React.FC = () => {
 
   // --- Curriculum Actions ---
 
-  const handleCompleteLesson = (childId: string, subjectId: string, lessonId: string, timeSpentSeconds: number) => {
+  const handleCompleteLesson = (childId: string, subjectId: string, topicId: string, lessonId: string, timeSpentSeconds: number) => {
     setData(prev => {
       const newData = prev.map(child => {
         if (child.id !== childId) return child;
@@ -356,7 +362,13 @@ const App: React.FC = () => {
               if (sub.id !== subjectId) return sub;
               return {
                 ...sub,
-                lessons: sub.lessons.map(l => l.id === lessonId ? { ...l, completed: true, timeSpentSeconds } : l)
+                topics: sub.topics.map(topic => {
+                  if (topic.id !== topicId) return topic;
+                  return {
+                    ...topic,
+                    lessons: topic.lessons.map(l => l.id === lessonId ? { ...l, completed: true, timeSpentSeconds } : l)
+                  };
+                })
               };
             })
           }))
@@ -380,52 +392,17 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSoftDeleteLesson = async (childId: string, subjectId: string, lessonId: string) => {
-      const scrollY = window.scrollY;
-
-      if (user) {
-        await softDeleteLessonInSupabase(lessonId).catch(err => {
-          console.error('Failed to soft delete lesson in Supabase:', err);
-        });
-      }
-
-      setData(prev => {
-        const newData = prev.map(child => {
-            if (child.id !== childId) return child;
-            return {
-                ...child,
-                yearGroups: child.yearGroups.map(yg => ({
-                    ...yg,
-                    subjects: yg.subjects.map(sub => {
-                        if (sub.id !== subjectId) return sub;
-                        return {
-                            ...sub,
-                            lessons: sub.lessons.map(l => l.id === lessonId ? { ...l, deleted: true } : l)
-                        };
-                    })
-                }))
-            };
-        });
-        if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
-        return newData;
-      });
-  };
-
   const handleBulkImport = (rows: ParsedRow[]) => {
     setData(prevData => {
       const newData = [...prevData];
-      const touchedSubjectIds = new Set<string>();
+      const touchedTopicIds = new Set<string>();
 
       rows.forEach(row => {
         if (!row.isValid) return;
 
+        // Find or create child
         let child = newData.find(c => c.name.toLowerCase() === row.childName.toLowerCase());
         if (!child) {
-          // Create new child if doesn't exist
           child = {
             id: `child-${row.childName.toLowerCase().replace(/\s+/g, '-')}`,
             name: row.childName,
@@ -437,6 +414,7 @@ const App: React.FC = () => {
           newData.push(child);
         }
 
+        // Find or create year group
         let yearGroup = child.yearGroups.find(yg => yg.name.toLowerCase() === row.yearGroup.toLowerCase());
         if (!yearGroup) {
           yearGroup = {
@@ -447,9 +425,8 @@ const App: React.FC = () => {
           child.yearGroups.push(yearGroup);
         }
 
-        const fullSubjectName = `${row.subjectCategory}: ${row.subjectName}`;
-        let subject = yearGroup.subjects.find(s => s.name === fullSubjectName);
-        let isNewSubject = false;
+        // Find or create subject (English, Maths, Science)
+        let subject = yearGroup.subjects.find(s => s.name.toLowerCase() === row.subjectCategory.toLowerCase());
         if (!subject) {
           let color = 'bg-gray-100 text-gray-800';
           const cat = row.subjectCategory.toLowerCase();
@@ -460,32 +437,41 @@ const App: React.FC = () => {
           else if (cat.includes('creative')) color = 'bg-purple-100 text-purple-800';
 
           subject = {
-            id: `${child.id}-${row.yearGroup.replace(/\s+/g, '')}-${row.subjectCategory}-${row.subjectName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
-            name: fullSubjectName,
+            id: `${child.id}-${row.yearGroup.replace(/\s+/g, '')}-${row.subjectCategory}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
+            name: row.subjectCategory,
             category: row.subjectCategory as any,
             color,
-            lessons: []
+            topics: []
           };
           yearGroup.subjects.push(subject);
-          isNewSubject = true;
-          touchedSubjectIds.add(subject.id);
-        } else {
-          if (!touchedSubjectIds.has(subject.id)) {
-            subject.lessons = [];
-            touchedSubjectIds.add(subject.id);
-          }
         }
 
+        // Find or create topic (Reading Comprehension, Algebra, etc.)
+        const topicName = row.subjectName;
+        let topic = subject.topics.find(t => t.name.toLowerCase() === topicName.toLowerCase());
+        if (!topic) {
+          topic = {
+            id: `${subject.id}-${topicName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
+            name: topicName,
+            lessons: []
+          };
+          subject.topics.push(topic);
+        }
+
+        // Add lesson to topic
         const newLesson: Lesson = {
-          id: `${subject.id}-${row.lessonTitle}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
-          title: row.lessonTitle,
+          id: `${topic.id}-${row.videoPosition || topic.lessons.length + 1}-${Date.now()}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
+          title: row.lessonTitle || `${row.videoPosition || topic.lessons.length + 1}. ${topic.name}`,
           durationMinutes: 45,
           completed: false,
           deleted: false,
           videoUrl: row.videoUrl || '',
-          outcomes: row.notes ? row.notes.split(',').map((s: string) => s.trim()) : []
+          outcomes: row.lessonFocus ? row.lessonFocus.split(',').map((s: string) => s.trim()) : [],
+          lessonFocus: row.lessonFocus || '',
+          lessonNotes: row.lessonNotes || '',
+          videoPosition: row.videoPosition || topic.lessons.length + 1
         };
-        subject.lessons.push(newLesson);
+        topic.lessons.push(newLesson);
       });
 
       console.log('Bulk import: saving', newData.length, 'children');
@@ -535,7 +521,7 @@ const App: React.FC = () => {
       }, 0);
   };
 
-  const handleAddLesson = (childId: string, subjectId: string, title: string) => {
+  const handleAddLesson = (childId: string, subjectId: string, topicId: string, title: string) => {
       if (!title.trim()) return;
       setData(prev => {
         const newData = prev.map(child => {
@@ -546,18 +532,24 @@ const App: React.FC = () => {
                     ...yg,
                     subjects: yg.subjects.map(sub => {
                         if (sub.id !== subjectId) return sub;
-                        const newLesson: Lesson = {
-                            id: Math.random().toString(36).substr(2, 9),
-                            title,
-                            durationMinutes: 45,
-                            completed: false,
-                            deleted: false,
-                            outcomes: [],
-                            videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-                        };
                         return {
                             ...sub,
-                            lessons: [...sub.lessons, newLesson]
+                            topics: sub.topics.map(topic => {
+                                if (topic.id !== topicId) return topic;
+                                const newLesson: Lesson = {
+                                    id: Math.random().toString(36).substr(2, 9),
+                                    title,
+                                    durationMinutes: 45,
+                                    completed: false,
+                                    deleted: false,
+                                    outcomes: [],
+                                    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+                                };
+                                return {
+                                    ...topic,
+                                    lessons: [...topic.lessons, newLesson]
+                                };
+                            })
                         };
                     })
                 }))
@@ -570,14 +562,9 @@ const App: React.FC = () => {
         }
         return newData;
       });
-      setTimeout(() => {
-        window.scrollTo(0, scrollY);
-      }, 0);
   };
 
-  const handleRestoreLesson = async (childId: string, subjectId: string, lessonId: string) => {
-      const scrollY = window.scrollY;
-
+  const handleRestoreLesson = async (childId: string, subjectId: string, topicId: string, lessonId: string) => {
       if (user) {
         await restoreLessonInSupabase(lessonId).catch(err => {
           console.error('Failed to restore lesson in Supabase:', err);
@@ -595,7 +582,13 @@ const App: React.FC = () => {
                         if (sub.id !== subjectId) return sub;
                         return {
                             ...sub,
-                            lessons: sub.lessons.map(l => l.id === lessonId ? { ...l, deleted: false } : l)
+                            topics: sub.topics.map(topic => {
+                                if (topic.id !== topicId) return topic;
+                                return {
+                                    ...topic,
+                                    lessons: topic.lessons.map(l => l.id === lessonId ? { ...l, deleted: false } : l)
+                                };
+                            })
                         };
                     })
                 }))
@@ -608,17 +601,63 @@ const App: React.FC = () => {
         }
         return newData;
       });
-      setTimeout(() => {
-        window.scrollTo(0, scrollY);
-      }, 0);
   };
 
-  const handleHardDeleteLesson = async (childId: string, subjectId: string, lessonId: string) => {
-      const scrollY = window.scrollY;
+  const handleHardDeleteLesson = (childId: string, subjectId: string, topicId: string, lessonId: string) => {
+      console.log('Deleting lesson:', lessonId, 'from topic:', topicId);
+      
+      if (!lessonId) {
+        console.error('Cannot delete: lessonId is undefined');
+        return;
+      }
 
       if (user) {
-        await hardDeleteLessonFromSupabase(lessonId).catch(err => {
+        hardDeleteLessonFromSupabase(lessonId).catch(err => {
           console.error('Failed to hard delete lesson in Supabase:', err);
+        });
+      }
+
+      setData(prevData => {
+        // Deep clone to avoid mutation issues
+        const newData = JSON.parse(JSON.stringify(prevData));
+        
+        const targetChild = newData.find((c: any) => c.id === childId);
+        if (!targetChild) return prevData;
+        
+        const targetYG = targetChild.yearGroups.find((yg: any) => 
+          yg.subjects.some((s: any) => s.id === subjectId)
+        );
+        if (!targetYG) return prevData;
+        
+        const targetSub = targetYG.subjects.find((s: any) => s.id === subjectId);
+        if (!targetSub) return prevData;
+        
+        const targetTopic = targetSub.topics.find((t: any) => t.id === topicId);
+        if (!targetTopic) {
+          console.error('Topic not found:', topicId);
+          console.log('Available topics:', targetSub.topics.map((t: any) => t.id));
+          return prevData;
+        }
+        
+        const originalCount = targetTopic.lessons.length;
+        targetTopic.lessons = targetTopic.lessons.filter((l: any) => l.id !== lessonId);
+        
+        console.log(`Deleted ${originalCount - targetTopic.lessons.length} lessons`);
+        
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
+          saveLocalData(newData);
+        }
+        
+        return newData;
+      });
+  };
+
+  const handleSoftDeleteLesson = (childId: string, subjectId: string, topicId: string, lessonId: string) => {
+      if (user) {
+        softDeleteLessonInSupabase(lessonId).catch(err => {
+          console.error('Failed to soft delete lesson in Supabase:', err);
         });
       }
 
@@ -633,7 +672,13 @@ const App: React.FC = () => {
                         if (sub.id !== subjectId) return sub;
                         return {
                             ...sub,
-                            lessons: sub.lessons.filter(l => l.id !== lessonId)
+                            topics: sub.topics.map(topic => {
+                                if (topic.id !== topicId) return topic;
+                                return {
+                                    ...topic,
+                                    lessons: topic.lessons.map(l => l.id === lessonId ? { ...l, deleted: true } : l)
+                                };
+                            })
                         };
                     })
                 }))
@@ -969,63 +1014,231 @@ const App: React.FC = () => {
     const yg = child?.yearGroups.find(y => y.subjects.some(s => s.id === subjectId));
     const subject = yg?.subjects.find(s => s.id === subjectId);
     
-    const [newLessonTitle, setNewLessonTitle] = useState("");
     const [showTrash, setShowTrash] = useState(false);
+    const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
+    const [addingLessonTo, setAddingLessonTo] = useState<string | null>(null);
+    const [newLessonTitle, setNewLessonTitle] = useState("");
+    const [editingLesson, setEditingLesson] = useState<{ lessonId: string; title: string; focus: string; notes: string; videoUrl: string } | null>(null);
+    const [editingTopic, setEditingTopic] = useState<{ topicId: string; name: string } | null>(null);
     
     // Admin Mode Check
     const isReadOnly = origin === 'CHILD_DASHBOARD';
 
-    // Persistent timer for subject
-    const { isRunning, elapsed, start, stop } = usePersistentTimer({
-      subjectId,
-      onTick: () => {},
-      onSave: () => {},
-      autoSaveInterval: 30,
-    });
+    const toggleTopic = (topicId: string) => {
+      const newExpanded = new Set(expandedTopics);
+      if (newExpanded.has(topicId)) {
+        newExpanded.delete(topicId);
+      } else {
+        newExpanded.add(topicId);
+      }
+      setExpandedTopics(newExpanded);
+    };
 
-    // Start timer when viewing subject
+    // Expand all topics by default
     useEffect(() => {
-      start();
-      return () => stop();
-    }, [subjectId]);
+      if (subject?.topics) {
+        const allTopicIds = subject.topics.map(t => t.id);
+        setExpandedTopics(new Set(allTopicIds));
+      }
+    }, [subject?.topics]);
 
-    // Scroll to top when mounting detail view
-    useEffect(() => {
-        window.scrollTo(0, 0);
-    }, []);
+    // Aggregate stats across all topics
+    const allActiveLessons = subject?.topics.flatMap(t => t.lessons.filter(l => !l.deleted)) || [];
+    const allDeletedLessons = subject?.topics.flatMap(t => t.lessons.filter(l => l.deleted)) || [];
 
-    const handleBack = () => {
-        stop();
-        if (origin === 'HOME') {
-            setView({ type: 'HOME' });
+    const handleToggleComplete = (lessonId: string) => {
+      setData(prev => {
+        const newData = prev.map(ch => {
+            if (ch.id !== childId) return ch;
+            return {
+                ...ch,
+                yearGroups: ch.yearGroups.map(y => ({
+                    ...y,
+                    subjects: y.subjects.map(s => {
+                        if (s.id !== subjectId) return s;
+                        return {
+                            ...s,
+                            topics: s.topics.map(t => ({
+                                ...t,
+                                lessons: t.lessons.map(l => {
+                                    if (l.id !== lessonId) return l;
+                                    return { ...l, completed: !l.completed };
+                                })
+                            }))
+                        };
+                    })
+                }))
+            };
+        });
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
         } else {
-            setView({ type: 'CHILD_DASHBOARD', childId });
+          saveLocalData(newData);
         }
+        return newData;
+      });
+    };
+
+    const handleDeleteTopic = (topicId: string) => {
+      if (!confirm('Delete this topic and all its lessons?')) return;
+      
+      // Delete from Supabase if exists
+      if (user) {
+        hardDeleteSubjectFromSupabase(topicId).catch(err => {
+          console.error('Failed to delete topic from Supabase:', err);
+        });
+      }
+
+      setData(prev => {
+        const newData = prev.map(ch => {
+          if (ch.id !== childId) return ch;
+          return {
+            ...ch,
+            yearGroups: ch.yearGroups.map(y => ({
+              ...y,
+              subjects: y.subjects.map(s => {
+                if (s.id !== subjectId) return s;
+                const updatedTopics = s.topics.filter(t => t.id !== topicId);
+                // Only return subject if it still has topics
+                if (updatedTopics.length === 0) {
+                  return null;
+                }
+                return {
+                  ...s,
+                  topics: updatedTopics
+                };
+              }).filter(Boolean) // Remove null subjects (no topics left)
+            }))
+          };
+        });
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
+          saveLocalData(newData);
+        }
+        return newData;
+      });
+    };
+
+    const handleAddLessonSubmit = (topicId: string) => {
+      if (!newLessonTitle.trim()) return;
+      handleAddLesson(childId, subjectId, topicId, newLessonTitle);
+      setNewLessonTitle("");
+      setAddingLessonTo(null);
+    };
+
+    const handleStartEditLesson = (lesson: Lesson) => {
+      setEditingLesson({
+        lessonId: lesson.id,
+        title: lesson.title,
+        focus: lesson.lessonFocus || '',
+        notes: lesson.lessonNotes || '',
+        videoUrl: lesson.videoUrl || ''
+      });
+    };
+
+    const handleSaveLesson = () => {
+      if (!editingLesson) return;
+      setData(prev => {
+        const newData = prev.map(ch => {
+          if (ch.id !== childId) return ch;
+          return {
+            ...ch,
+            yearGroups: ch.yearGroups.map(y => ({
+              ...y,
+              subjects: y.subjects.map(s => {
+                if (s.id !== subjectId) return s;
+                return {
+                  ...s,
+                  topics: s.topics.map(t => ({
+                    ...t,
+                    lessons: t.lessons.map(l => {
+                      if (l.id !== editingLesson.lessonId) return l;
+                      return {
+                        ...l,
+                        title: editingLesson.title,
+                        lessonFocus: editingLesson.focus || undefined,
+                        lessonNotes: editingLesson.notes || undefined,
+                        videoUrl: editingLesson.videoUrl || undefined
+                      };
+                    })
+                  }))
+                };
+              })
+            }))
+          };
+        });
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
+          saveLocalData(newData);
+        }
+        return newData;
+      });
+      setEditingLesson(null);
+    };
+
+    const handleStartEditTopic = (topic: any) => {
+      setEditingTopic({
+        topicId: topic.id,
+        name: topic.name
+      });
+    };
+
+    const handleSaveTopic = () => {
+      if (!editingTopic) return;
+      setData(prev => {
+        const newData = prev.map(ch => {
+          if (ch.id !== childId) return ch;
+          return {
+            ...ch,
+            yearGroups: ch.yearGroups.map(y => ({
+              ...y,
+              subjects: y.subjects.map(s => {
+                if (s.id !== subjectId) return s;
+                return {
+                  ...s,
+                  topics: s.topics.map(t => {
+                    if (t.id !== editingTopic.topicId) return t;
+                    return {
+                      ...t,
+                      name: editingTopic.name
+                    };
+                  })
+                };
+              })
+            }))
+          };
+        });
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
+          saveLocalData(newData);
+        }
+        return newData;
+      });
+      setEditingTopic(null);
     };
 
     if (!child || !subject) return <div>Subject not found</div>;
-
-    const activeLessons = subject.lessons.filter(l => !l.deleted);
-    const deletedLessons = subject.lessons.filter(l => l.deleted);
 
     return (
         <div className="min-h-screen bg-white">
             <header className={`bg-${child.themeColor}-600 text-white p-6 sticky top-0 z-10 shadow-md`}>
                 <div className="max-w-4xl mx-auto">
-                    <button onClick={handleBack} className="flex items-center gap-2 hover:opacity-80 mb-4 transition">
+                    <button onClick={() => {
+                        if (origin === 'HOME') {
+                            setView({ type: 'HOME' });
+                        } else {
+                            setView({ type: 'CHILD_DASHBOARD', childId });
+                        }
+                    }} className="flex items-center gap-2 hover:opacity-80 mb-4 transition">
                         <ArrowLeft size={20}/> Back to {isReadOnly ? `${child.name}'s Space` : 'Daddy Dashboard'}
                     </button>
                     <div className="flex justify-between items-end">
                         <div>
                              <h1 className="text-3xl font-bold">{subject.name}</h1>
                              <p className="opacity-90">{child.name} • {yg?.name}</p>
-                        </div>
-                        <div className="text-right">
-                            <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-lg">
-                                <Timer size={18} />
-                                <span className="font-mono font-bold">{formatTime(elapsed)}</span>
-                                {isRunning && <span className="text-green-300">●</span>}
-                            </div>
                         </div>
                         <div className="text-4xl opacity-50 ml-4">{child.avatar}</div>
                     </div>
@@ -1037,168 +1250,293 @@ const App: React.FC = () => {
                  <div className="flex gap-4">
                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex-1">
                          <div className="text-sm text-gray-500">Active Lessons</div>
-                         <div className="text-2xl font-bold text-gray-800">{activeLessons.length}</div>
+                         <div className="text-2xl font-bold text-gray-800">{allActiveLessons.length}</div>
                      </div>
                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex-1">
                          <div className="text-sm text-gray-500">Completed</div>
                          <div className={`text-2xl font-bold text-${child.themeColor}-600`}>
-                             {activeLessons.filter(l => l.completed).length}
+                             {allActiveLessons.filter(l => l.completed).length}
                          </div>
                      </div>
                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex-1">
-                         <div className="text-sm text-gray-500">Time Spent</div>
-                         <div className={`text-2xl font-bold text-${child.themeColor}-600`}>
-                             {formatTimeReadable(elapsed)}
-                         </div>
+                         <div className="text-sm text-gray-500">Topics</div>
+                         <div className="text-2xl font-bold text-gray-800">{subject.topics.length}</div>
                      </div>
                  </div>
 
-                 {/* Lesson List */}
-                 <div className="space-y-3">
-                     <h2 className="text-xl font-bold text-gray-800">Curriculum Path</h2>
-                     {activeLessons.length === 0 ? (
+                 {/* Topics List */}
+                 <div className="space-y-4">
+                     <h2 className="text-xl font-bold text-gray-800">Topics</h2>
+                     
+                     {subject.topics.length === 0 ? (
                          <div className="p-8 text-center text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
-                             No active lessons. {isReadOnly ? "Ask Daddy to add some!" : "Add one below!"}
+                             No topics yet. Add curriculum to create topics!
                          </div>
                      ) : (
-                         activeLessons.map((lesson, idx) => (
-                             <div key={lesson.id} className="group flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-blue-300 hover:shadow-md transition">
-                                 <div className="flex items-center gap-4 overflow-hidden">
-                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                                         lesson.completed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'
-                                     }`}>
-                                         {idx + 1}
+                         subject.topics.map((topic) => {
+                           const topicActiveLessons = topic.lessons.filter(l => !l.deleted);
+                           const topicCompleted = topicActiveLessons.filter(l => l.completed).length;
+                           const isExpanded = expandedTopics.has(topic.id);
+                           
+                           return (
+                              <div key={topic.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                                {editingTopic?.topicId === topic.id ? (
+                                  <div className="px-6 py-4 bg-gray-50 flex items-center gap-3">
+                                    <input
+                                      type="text"
+                                      autoFocus
+                                      value={editingTopic.name}
+                                      onChange={(e) => setEditingTopic({ ...editingTopic, name: e.target.value })}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleSaveTopic();
+                                        if (e.key === 'Escape') setEditingTopic(null);
+                                      }}
+                                      className="flex-1 p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    />
+                                    <button
+                                      onClick={handleSaveTopic}
+                                      className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingTopic(null)}
+                                      className="px-3 py-1 text-gray-500 text-sm hover:text-gray-700"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button 
+                                    onClick={() => toggleTopic(topic.id)}
+                                    className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition"
+                                  >
+                                     <div className="flex items-center gap-3">
+                                       {isExpanded ? (
+                                         <ChevronDown size={20} className="text-gray-500" />
+                                       ) : (
+                                         <ChevronRight size={20} className="text-gray-500" />
+                                       )}
+                                       <span className="font-semibold text-gray-800">{topic.name}</span>
+                                       <span className="text-sm text-gray-500">
+                                         {topicActiveLessons.length} lessons ({topicCompleted} done)
+                                       </span>
                                      </div>
-                                     <div className="min-w-0">
-                                         <h3 className={`font-medium truncate ${lesson.completed ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                                             {lesson.title}
-                                         </h3>
-                                         <div className="flex gap-2 text-xs text-gray-400">
-                                            <span className="flex items-center gap-1"><Clock size={12}/> {lesson.durationMinutes}m</span>
-                                            {lesson.videoUrl && <span className="flex items-center gap-1"><PlayCircle size={12}/> Video</span>}
-                                         </div>
-                                     </div>
+                                      {!isReadOnly && (
+                                        <div className="flex items-center gap-2">
+                                          <button 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleStartEditTopic(topic);
+                                            }}
+                                            className="p-2 text-gray-400 hover:text-blue-500 transition"
+                                            title="Edit topic"
+                                          >
+                                            <Edit2 size={16} />
+                                          </button>
+                                          <button 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDeleteTopic(topic.id);
+                                            }}
+                                            className="p-2 text-gray-400 hover:text-red-500 transition"
+                                          >
+                                            <Trash2 size={16} />
+                                          </button>
+                                        </div>
+                                      )}
+                                  </button>
+                                )}
+                               
+                               {isExpanded && (
+                                 <div className="divide-y divide-gray-100 bg-white">
+                                    {topicActiveLessons.length === 0 ? (
+                                      <div className="px-6 py-4 text-center text-gray-400 text-sm">
+                                        No lessons in this topic
+                                      </div>
+                                    ) : (
+                                      topicActiveLessons.map((lesson, idx) => {
+                                        const isEditing = editingLesson?.lessonId === lesson.id;
+                                        
+                                        return (
+                                          <div key={lesson.id} className="p-4">
+                                            {isEditing ? (
+                                              <div className="space-y-3">
+                                                <input
+                                                  type="text"
+                                                  autoFocus
+                                                  value={editingLesson.title}
+                                                  onChange={(e) => setEditingLesson({ ...editingLesson, title: e.target.value })}
+                                                  className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                  placeholder="Lesson title"
+                                                />
+                                                <input
+                                                  type="text"
+                                                  value={editingLesson.focus}
+                                                  onChange={(e) => setEditingLesson({ ...editingLesson, focus: e.target.value })}
+                                                  className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                  placeholder="Lesson focus/aims"
+                                                />
+                                                <input
+                                                  type="text"
+                                                  value={editingLesson.notes}
+                                                  onChange={(e) => setEditingLesson({ ...editingLesson, notes: e.target.value })}
+                                                  className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                  placeholder="Notes"
+                                                />
+                                                <input
+                                                  type="text"
+                                                  value={editingLesson.videoUrl}
+                                                  onChange={(e) => setEditingLesson({ ...editingLesson, videoUrl: e.target.value })}
+                                                  className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                  placeholder="Video URL"
+                                                />
+                                                <div className="flex gap-2">
+                                                  <button
+                                                    onClick={handleSaveLesson}
+                                                    className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700"
+                                                  >
+                                                    Save
+                                                  </button>
+                                                  <button
+                                                    onClick={() => setEditingLesson(null)}
+                                                    className="px-3 py-1 text-gray-500 text-sm hover:text-gray-700"
+                                                  >
+                                                    Cancel
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition rounded-lg">
+                                                <div className="flex items-center gap-4 overflow-hidden">
+                                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                                    lesson.completed 
+                                                      ? 'bg-green-100 text-green-700' 
+                                                      : 'bg-gray-100 text-gray-600'
+                                                  }`}>
+                                                    {lesson.completed ? <CheckCircle size={16} /> : idx + 1}
+                                                  </div>
+                                                  <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-gray-800 truncate">{lesson.title}</div>
+                                                    {lesson.lessonFocus && (
+                                                      <div className="text-sm text-gray-500 truncate">{lesson.lessonFocus}</div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                  {lesson.videoUrl && (
+                                                    <PlayCircle 
+                                                      size={24} 
+                                                      className="text-red-500 cursor-pointer hover:scale-110 transition"
+                                                      onClick={() => setView({ 
+                                                        type: 'LESSON_PLAYER', 
+                                                        childId, 
+                                                        subjectId: subject.id,
+                                                        lessonId: lesson.id,
+                                                        origin 
+                                                      })}
+                                                    />
+                                                  )}
+                                                  {!isReadOnly && (
+                                                    <>
+                                                      <button 
+                                                        onClick={() => handleStartEditLesson(lesson)}
+                                                        className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                                                        title="Edit lesson"
+                                                      >
+                                                        <Edit2 size={16} />
+                                                      </button>
+                                                      <button 
+                                                        onClick={() => {
+                                                          if (confirm('Delete this lesson?')) {
+                                                            handleHardDeleteLesson(childId, subjectId, topic.id, lesson.id);
+                                                          }
+                                                        }}
+                                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                                                        title="Delete lesson"
+                                                      >
+                                                        <Trash2 size={16} />
+                                                      </button>
+                                                      <button 
+                                                        onClick={() => handleToggleComplete(lesson.id)}
+                                                        className={`p-2 rounded-lg transition ${
+                                                          lesson.completed 
+                                                            ? 'text-green-500 hover:bg-green-50' 
+                                                            : 'text-gray-300 hover:text-green-500'
+                                                        }`}
+                                                      >
+                                                        <CheckCircle size={20} />
+                                                      </button>
+                                                    </>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })
+                                    )}
+                                   
+                                    {/* Add Lesson button for this topic */}
+                                    {!isReadOnly && (
+                                      <div className="p-4 bg-gray-50 border-t border-gray-100">
+                                        {addingLessonTo === topic.id ? (
+                                          <div className="flex gap-2">
+                                            <input 
+                                              type="text"
+                                              autoFocus
+                                              value={newLessonTitle}
+                                              onChange={(e) => setNewLessonTitle(e.target.value)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleAddLessonSubmit(topic.id);
+                                                if (e.key === 'Escape') {
+                                                  setAddingLessonTo(null);
+                                                  setNewLessonTitle("");
+                                                }
+                                              }}
+                                              placeholder="Lesson title..."
+                                              className="flex-1 p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            />
+                                            <button 
+                                              onClick={() => handleAddLessonSubmit(topic.id)}
+                                              disabled={!newLessonTitle.trim()}
+                                              className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                                            >
+                                              Add
+                                            </button>
+                                            <button 
+                                              onClick={() => {
+                                                setAddingLessonTo(null);
+                                                setNewLessonTitle("");
+                                              }}
+                                              className="px-3 py-1 text-gray-500 text-sm hover:text-gray-700"
+                                            >
+                                              Cancel
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <button 
+                                            onClick={() => setAddingLessonTo(topic.id)}
+                                            className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg hover:border-blue-500 hover:text-blue-500 transition flex items-center justify-center gap-2"
+                                          >
+                                            <Plus size={16} /> Add Lesson
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
                                  </div>
-                                 
-                                 <div className="flex items-center gap-2">
-                                     <button 
-                                         onClick={() => setView({ type: 'LESSON_PLAYER', childId, subjectId, lessonId: lesson.id, origin })}
-                                         className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition ${
-                                             lesson.completed 
-                                             ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
-                                             : `bg-${child.themeColor}-50 text-${child.themeColor}-700 hover:bg-${child.themeColor}-100`
-                                         }`}
-                                     >
-                                         {lesson.completed ? 'Review' : 'Start'} <Play size={14}/>
-                                     </button>
-                                     {!isReadOnly && (
-                                         <button 
-                                             onClick={(e) => {
-                                                 e.stopPropagation();
-                                                 handleSoftDeleteLesson(childId, subjectId, lesson.id);
-                                             }}
-                                             title="Move to Trash"
-                                             className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
-                                         >
-                                             <Trash2 size={16}/>
-                                         </button>
-                                     )}
-                                 </div>
+                               )}
                              </div>
-                         ))
+                           );
+                         })
                      )}
                  </div>
+      </div>
+          </div>
+      );
+    };
 
-                 {/* Add Lesson - Only for Admin */}
-                 {!isReadOnly && (
-                     <div className="pt-4 border-t border-gray-200">
-                         <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Add New Lesson</h3>
-                         <div className="flex gap-3">
-                             <input 
-                                 type="text" 
-                                 value={newLessonTitle}
-                                 onChange={(e) => setNewLessonTitle(e.target.value)}
-                                 onKeyDown={(e) => e.key === 'Enter' && handleAddLesson(childId, subjectId, newLessonTitle)}
-                                 placeholder="e.g. Introduction to Algebra..."
-                                 className="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                             />
-                             <button 
-                                 onClick={() => {
-                                     handleAddLesson(childId, subjectId, newLessonTitle);
-                                     setNewLessonTitle("");
-                                 }}
-                                 disabled={!newLessonTitle.trim()}
-                                 className="bg-gray-900 text-white px-6 rounded-xl font-bold hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
-                             >
-                                 Add
-                             </button>
-                         </div>
-                     </div>
-                 )}
-
-                 {/* Trash / Archive Section - Only for Admin */}
-                 {!isReadOnly && deletedLessons.length > 0 && (
-                     <div className="pt-8 border-t border-gray-200">
-                         <button 
-                             onClick={() => setShowTrash(!showTrash)}
-                             className="flex items-center gap-2 text-gray-500 hover:text-gray-800 font-medium text-sm mb-4"
-                         >
-                             <Archive size={16}/> {showTrash ? 'Hide Trash' : `Show Trash (${deletedLessons.length})`}
-                         </button>
-
-                         {showTrash && (
-                             <div className="space-y-2 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                 {deletedLessons.map((lesson) => (
-                                     <div key={lesson.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg opacity-75">
-                                         <span className="text-gray-500 line-through text-sm font-medium">{lesson.title}</span>
-                                         <div className="flex gap-2">
-                                             <button 
-                                                 onClick={() => handleRestoreLesson(childId, subjectId, lesson.id)}
-                                                 className="p-1.5 text-blue-500 hover:bg-blue-50 rounded"
-                                                 title="Restore Lesson"
-                                             >
-                                                 <RotateCcw size={16}/>
-                                             </button>
-                                             <button 
-                                                 onClick={() => {
-                                                     if(confirm('Permanently delete this lesson?')) {
-                                                         handleHardDeleteLesson(childId, subjectId, lesson.id);
-                                                     }
-                                                 }}
-                                                 className="p-1.5 text-red-500 hover:bg-red-50 rounded"
-                                                 title="Permanently Delete"
-                                             >
-                                                 <XCircle size={16}/>
-                                             </button>
-                                         </div>
-                                     </div>
-                                 ))}
-                             </div>
-                         )}
-                     </div>
-                 )}
-                  
-                 {!isReadOnly && (
-                     <div className="flex justify-end pt-8">
-                         <button 
-                             onClick={() => {
-                                 if(confirm('Are you sure you want to delete this entire subject and all lessons?')) {
-                                     handleDeleteSubject(childId, subjectId);
-                                     setView({ type: 'HOME' });
-                                 }
-                             }}
-                             className="text-red-500 text-sm hover:underline flex items-center gap-2"
-                         >
-                             <Trash2 size={14}/> Delete Entire Subject
-                         </button>
-                     </div>
-                 )}
-            </div>
-        </div>
-    );
-  };
-
-  const DaddyDashboardView = () => {
+    const DaddyDashboardView = () => {
     // Restore scroll position on mount
     useEffect(() => {
         window.scrollTo(0, scrollYRef.current);
@@ -1214,13 +1552,14 @@ const App: React.FC = () => {
     // Bulk selection state for subjects
     const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set());
     const [showBulkActions, setShowBulkActions] = useState(false);
+    const [editingSubject, setEditingSubject] = useState<{ subjectId: string; category: string; topicName: string } | null>(null);
 
-    const toggleSubjectSelection = (subjectId: string) => {
+    const toggleSubjectSelection = (cardId: string) => {
       const newSelected = new Set(selectedSubjects);
-      if (newSelected.has(subjectId)) {
-        newSelected.delete(subjectId);
+      if (newSelected.has(cardId)) {
+        newSelected.delete(cardId);
       } else {
-        newSelected.add(subjectId);
+        newSelected.add(cardId);
       }
       setSelectedSubjects(newSelected);
       setShowBulkActions(newSelected.size > 0);
@@ -1230,7 +1569,11 @@ const App: React.FC = () => {
       const allIds = new Set<string>();
       data.forEach(child => {
         child.yearGroups.forEach(yg => {
-          yg.subjects.forEach(s => allIds.add(s.id));
+          yg.subjects.forEach(subject => {
+            subject.topics.forEach(topic => {
+              allIds.add(`${subject.id}-${topic.id}`);
+            });
+          });
         });
       });
       setSelectedSubjects(allIds);
@@ -1243,25 +1586,27 @@ const App: React.FC = () => {
     };
 
     const handleBulkDeleteSubjects = async () => {
-      if (!confirm(`Permanently delete ${selectedSubjects.size} subjects? This cannot be undone.`)) return;
+      if (!confirm(`Delete ${selectedSubjects.size} topics? This cannot be undone.`)) return;
 
-      // Collect all subject-child pairs first (before state updates)
-      const deletions: { childId: string; subjectId: string }[] = [];
-      for (const child of data) {
-        for (const yg of child.yearGroups) {
-          for (const subject of yg.subjects) {
-            if (selectedSubjects.has(subject.id)) {
-              deletions.push({ childId: child.id, subjectId: subject.id });
+      // Delete from Supabase first
+      for (const cardId of selectedSubjects) {
+        // Extract topic id from cardId (format: subjectId-topicId)
+        const topicId = cardId.split('-').slice(-1)[0];
+        if (topicId) {
+          // We need to find the actual topic to get its id
+          for (const child of data) {
+            for (const yg of child.yearGroups) {
+              for (const subject of yg.subjects) {
+                const topic = subject.topics.find(t => `${subject.id}-${t.id}` === cardId);
+                if (topic) {
+                  await hardDeleteSubjectFromSupabase(topic.id).catch(err => {
+                    console.error('Failed to delete topic from Supabase:', err);
+                  });
+                }
+              }
             }
           }
         }
-      }
-
-      // Delete from Supabase first
-      for (const { subjectId } of deletions) {
-        await hardDeleteSubjectFromSupabase(subjectId).catch(err => {
-          console.error('Failed to delete subject from Supabase:', err);
-        });
       }
 
       // Then update local state
@@ -1270,7 +1615,10 @@ const App: React.FC = () => {
           ...child,
           yearGroups: child.yearGroups.map(yg => ({
             ...yg,
-            subjects: yg.subjects.filter(s => !selectedSubjects.has(s.id))
+            subjects: yg.subjects.map(subject => ({
+              ...subject,
+              topics: subject.topics.filter(topic => !selectedSubjects.has(`${subject.id}-${topic.id}`))
+            }))
           }))
         }));
         if (user) {
@@ -1280,6 +1628,44 @@ const App: React.FC = () => {
       });
 
       clearSelection();
+    };
+
+    const handleStartEditSubject = (subject: any) => {
+      setEditingSubject({
+        subjectId: subject.id,
+        category: subject.category,
+        topicName: subject.topics[0]?.name || ''
+      });
+    };
+
+    const handleSaveSubject = () => {
+      if (!editingSubject) return;
+      setData(prev => {
+        const newData = prev.map(child => ({
+          ...child,
+          yearGroups: child.yearGroups.map(yg => ({
+            ...yg,
+            subjects: yg.subjects.map(s => {
+              if (s.id !== editingSubject.subjectId) return s;
+              return {
+                ...s,
+                category: editingSubject.category,
+                topics: s.topics.map(t => ({
+                  ...t,
+                  name: editingSubject.topicName || t.name
+                }))
+              };
+            })
+          }))
+        }));
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
+          saveLocalData(newData);
+        }
+        return newData;
+      });
+      setEditingSubject(null);
     };
 
     return (
@@ -1314,18 +1700,46 @@ const App: React.FC = () => {
                     <Sparkles size={16} /> Build Curriculum
                 </button>
                 {user && (
-                  <ProfileSwitcher
-                    user={user}
-                    data={data}
-                    adminAvatar={adminAvatar}
-                    adminColor={adminColor}
-                    adminName={user?.user_metadata?.full_name || user?.email || 'Admin'}
-                    onSignOut={() => signOut?.()}
-                    onManageProfiles={() => setView({ type: 'MANAGE_PROFILES' })}
-                    onSwitchProfile={(childId) => setView({ type: 'CHILD_DASHBOARD', childId })}
-                    onGoToLanding={() => setView({ type: 'LANDING' })}
-                    onGoToAdmin={() => setView({ type: 'HOME' })}
-                  />
+                  <>
+                    <button 
+                        onClick={async () => {
+                          const result = await uploadToSupabase(user.id);
+                          showStatus(result.message, result.success ? 'success' : 'error');
+                        }}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition shadow-lg"
+                        title="Upload local data to Supabase"
+                    >
+                        <UploadCloud size={16} /> Upload
+                    </button>
+                    <button 
+                        onClick={async () => {
+                          const result = await loadFromSupabase(user.id);
+                          if (result.success && result.data) {
+                            setData(result.data);
+                            saveLocalData(result.data);
+                            showStatus(result.message, 'success');
+                          } else {
+                            showStatus(result.message, 'error');
+                          }
+                        }}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition shadow-lg"
+                        title="Load data from Supabase"
+                    >
+                        <DownloadCloud size={16} /> Load
+                    </button>
+                    <ProfileSwitcher
+                      user={user}
+                      data={data}
+                      adminAvatar={adminAvatar}
+                      adminColor={adminColor}
+                      adminName={user?.user_metadata?.full_name || user?.email || 'Admin'}
+                      onSignOut={() => signOut?.()}
+                      onManageProfiles={() => setView({ type: 'MANAGE_PROFILES' })}
+                      onSwitchProfile={(childId) => setView({ type: 'CHILD_DASHBOARD', childId })}
+                      onGoToLanding={() => setView({ type: 'LANDING' })}
+                      onGoToAdmin={() => setView({ type: 'HOME' })}
+                    />
+                  </>
                 )}
             </div>
           </div>
@@ -1346,7 +1760,7 @@ const App: React.FC = () => {
                         {data.map(child => {
                            const recentSubjects = child.yearGroups
                              .flatMap(yg => yg.subjects)
-                             .filter(s => s.lessons.some(l => !l.deleted))
+                             .filter(s => s.topics.flatMap(t => t.lessons).some(l => !l.deleted))
                              .slice(0, 4);
 
                            return (
@@ -1363,8 +1777,9 @@ const App: React.FC = () => {
                                 
                                 <div className="grid grid-cols-2 gap-3 mb-6">
                                    {recentSubjects.map(sub => {
-                                      const activeTotal = sub.lessons.filter(l => !l.deleted).length;
-                                      const activeCompleted = sub.lessons.filter(l => l.completed && !l.deleted).length;
+                                      const allLessons = sub.topics.flatMap(t => t.lessons);
+                                      const activeTotal = allLessons.filter(l => !l.deleted).length;
+                                      const activeCompleted = allLessons.filter(l => l.completed && !l.deleted).length;
                                       return (
                                           <div key={sub.id} className="p-3 rounded-xl border border-gray-100 shadow-sm bg-white hover:shadow-md transition cursor-default">
                                              <div className="flex items-center gap-2 mb-2">
@@ -1372,7 +1787,7 @@ const App: React.FC = () => {
                                                 <div className="text-xs font-bold text-gray-700 truncate w-full">{sub.category}</div>
                                              </div>
                                              <div className="text-[11px] text-gray-500 truncate mb-3 leading-tight min-h-[1.5em]">
-                                                {sub.name.includes(':') ? sub.name.split(':')[1].trim() : sub.name}
+                                                {sub.name}
                                              </div>
                                              <ProgressBar 
                                                 current={activeCompleted || 1} 
@@ -1498,110 +1913,164 @@ const App: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Year Groups */}
-                      <div className="space-y-12 pl-2">
-                          {child.yearGroups.map(yg => {
-                              const ygTotal = yg.subjects.reduce((acc, s) => acc + s.lessons.filter(l=>!l.deleted).length, 0);
-                              const ygCompleted = yg.subjects.reduce((acc, s) => acc + s.lessons.filter(l => l.completed && !l.deleted).length, 0);
-                              const percent = ygTotal > 0 ? Math.round((ygCompleted / ygTotal) * 100) : 0;
+                       {/* Year Groups */}
+                       <div className="space-y-12 pl-2">
+                           {child.yearGroups.map(yg => {
+                               const ygTotal = yg.subjects.reduce((acc, s) => acc + s.topics.flatMap(t => t.lessons).filter(l=>!l.deleted).length, 0);
+                               const ygCompleted = yg.subjects.reduce((acc, s) => acc + s.topics.flatMap(t => t.lessons).filter(l => l.completed && !l.deleted).length, 0);
+                               const percent = ygTotal > 0 ? Math.round((ygCompleted / ygTotal) * 100) : 0;
 
-                              return (
-                                  <div key={yg.id} className="relative">
-                                      {/* Vertical Line Connector */}
-                                      <div className="absolute left-[-24px] top-12 bottom-0 w-1 bg-gray-200 rounded-full hidden lg:block"></div>
+                               return (
+                                   <div key={yg.id} className="relative">
+                                       {/* Vertical Line Connector */}
+                                       <div className="absolute left-[-24px] top-12 bottom-0 w-1 bg-gray-200 rounded-full hidden lg:block"></div>
 
-                                      {/* Year Group Header & Progress */}
-                                      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-                                          <div className="flex items-center gap-3">
-                                              <div className={`w-10 h-10 rounded-full bg-white text-${child.themeColor}-600 flex items-center justify-center font-bold shadow-sm border border-${child.themeColor}-200`}>
-                                                  {yg.name.replace(/[^0-9]/g, '')}
-                                              </div>
-                                              <h3 className="text-2xl font-bold text-gray-800">{yg.name}</h3>
-                                          </div>
-                                          
-                                          {/* Compact Progress Bar for Year */}
-                                          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200 md:ml-4">
-                                              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Curriculum Progress</span>
-                                              <div className="w-24">
-                                                <ProgressBar current={ygCompleted} total={ygTotal} heightClass="h-2" colorClass={`bg-${child.themeColor}-500`} />
-                                              </div>
-                                              <span className={`text-sm font-bold text-${child.themeColor}-600`}>{percent}%</span>
-                                          </div>
-                                      </div>
+                                       {/* Year Group Header & Progress */}
+                                       <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+                                           <div className="flex items-center gap-3">
+                                               <div className={`w-10 h-10 rounded-full bg-white text-${child.themeColor}-600 flex items-center justify-center font-bold shadow-sm border border-${child.themeColor}-200`}>
+                                                   {yg.name.replace(/[^0-9]/g, '')}
+                                               </div>
+                                               <h3 className="text-2xl font-bold text-gray-800">{yg.name}</h3>
+                                           </div>
+                                           
+                                           {/* Compact Progress Bar for Year */}
+                                           <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200 md:ml-4">
+                                               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Curriculum Progress</span>
+                                               <div className="w-24">
+                                                 <ProgressBar current={ygCompleted} total={ygTotal} heightClass="h-2" colorClass={`bg-${child.themeColor}-500`} />
+                                               </div>
+                                               <span className={`text-sm font-bold text-${child.themeColor}-600`}>{percent}%</span>
+                                           </div>
+                                       </div>
 
-                                      {/* 4-Column Grid of Mini Cards */}
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                          {yg.subjects.map(subject => {
-                                              const subCompleted = subject.lessons.filter(l => l.completed && !l.deleted).length;
-                                              const subTotal = subject.lessons.filter(l => !l.deleted).length;
-                                              const isSelected = selectedSubjects.has(subject.id);
+                                        {/* 4-Column Grid of Mini Cards */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            {yg.subjects.flatMap(subject => 
+                                              subject.topics.map(topic => {
+                                                const topicLessons = topic.lessons.filter(l => !l.deleted);
+                                                const topicCompleted = topicLessons.filter(l => l.completed).length;
+                                                const topicTotal = topicLessons.length;
+                                                const cardId = `${subject.id}-${topic.id}`;
+                                                const isSelected = selectedSubjects.has(cardId);
+                                                const isEditing = editingSubject?.subjectId === cardId;
 
-                                              return (
-                                                  <div 
-                                                      key={subject.id}
-                                                      onClick={() => showBulkActions ? toggleSubjectSelection(subject.id) : handleNavigate({ type: 'SUBJECT_DETAIL', childId: child.id, subjectId: subject.id, origin: 'HOME' })}
-                                                      className={`relative p-3 rounded-xl border shadow-sm bg-white hover:shadow-md transition cursor-pointer group flex flex-col justify-between ${
-                                                        isSelected ? 'border-blue-400 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300'
-                                                      }`}
-                                                  >
-                                                      {showBulkActions && (
-                                                        <div className={`absolute top-2 left-2 w-5 h-5 rounded border-2 flex items-center justify-center z-10 ${
-                                                          isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300 bg-white'
-                                                        }`}>
-                                                          {isSelected && <CheckCircle size={14} className="text-white" />}
-                                                        </div>
-                                                      )}
-
-                                                      <div className="flex items-center gap-2 mb-2 pr-6">
-                                                         <div className={`w-2 h-2 rounded-full ${
-                                                            subject.color.includes('blue') ? 'bg-blue-500' : 
-                                                            subject.color.includes('green') ? 'bg-green-500' : 
-                                                            subject.color.includes('amber') ? 'bg-amber-500' : 
-                                                            subject.color.includes('rose') ? 'bg-rose-500' : 
-                                                            subject.color.includes('indigo') ? 'bg-indigo-500' : 
-                                                            'bg-gray-400'
-                                                         }`}></div>
-                                                         <div className="text-xs font-bold text-gray-500 uppercase tracking-wider flex-1 truncate">{subject.category}</div>
-                                                         {subCompleted === subTotal && subTotal > 0 && <CheckCircle size={14} className="text-green-500" />}
-                                                      </div>
-                                                      
-                                                      {!showBulkActions && (
-                                                      <button
-                                                          onClick={(e) => {
-                                                              e.stopPropagation();
-                                                              if(window.confirm(`Are you sure you want to delete "${subject.name}"?`)) {
-                                                                  handleDeleteSubject(child.id, subject.id);
-                                                              }
-                                                          }}
-                                                          className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors z-20"
-                                                          title="Delete Subject"
-                                                      >
-                                                          <Trash2 size={16} />
-                                                      </button>
-                                                      )}
-
-                                                      <div>
-                                                          {/* Subject Name */}
-                                                          <div className="font-bold text-gray-800 text-xs mb-3 truncate group-hover:text-blue-600 transition-colors">
-                                                              {subject.name.includes(':') ? subject.name.split(':')[1].trim() : subject.name}
+                                                return (
+                                                    <div 
+                                                        key={cardId}
+                                                        onClick={() => showBulkActions ? toggleSubjectSelection(cardId) : handleNavigate({ type: 'SUBJECT_DETAIL', childId: child.id, subjectId: subject.id, origin: 'HOME' })}
+                                                        className={`relative p-3 rounded-xl border shadow-sm bg-white hover:shadow-md transition cursor-pointer group flex flex-col justify-between ${
+                                                          isSelected ? 'border-blue-400 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300'
+                                                        }`}
+                                                    >
+                                                        {showBulkActions && (
+                                                          <div className={`absolute top-2 left-2 w-5 h-5 rounded border-2 flex items-center justify-center z-10 ${
+                                                            isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300 bg-white'
+                                                          }`}>
+                                                            {isSelected && <CheckCircle size={14} className="text-white" />}
                                                           </div>
-                                                      </div>
+                                                        )}
 
-                                                      {/* Stats & Progress */}
-                                                      <div className="space-y-1">
-                                                           <div className="flex justify-between text-[10px] text-gray-400 font-medium">
-                                                              <span>{subCompleted}/{subTotal} completed</span>
+                                                        {isEditing ? (
+                                                          <div className="space-y-2">
+                                                            <input
+                                                              type="text"
+                                                              autoFocus
+                                                              value={editingSubject.category}
+                                                              onChange={(e) => setEditingSubject({ ...editingSubject, category: e.target.value })}
+                                                              onClick={(e) => e.stopPropagation()}
+                                                              className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                              placeholder="Category (English, Maths, etc.)"
+                                                            />
+                                                            <input
+                                                              type="text"
+                                                              value={editingSubject.topicName}
+                                                              onChange={(e) => setEditingSubject({ ...editingSubject, topicName: e.target.value })}
+                                                              onClick={(e) => e.stopPropagation()}
+                                                              className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                              placeholder="Topic name"
+                                                            />
+                                                            <div className="flex gap-2">
+                                                              <button
+                                                                onClick={(e) => { e.stopPropagation(); handleSaveSubject(); }}
+                                                                className="flex-1 bg-blue-600 text-white px-2 py-1 rounded-lg text-xs hover:bg-blue-700"
+                                                              >
+                                                                Save
+                                                              </button>
+                                                              <button
+                                                                onClick={(e) => { e.stopPropagation(); setEditingSubject(null); }}
+                                                                className="px-2 py-1 text-gray-500 text-xs hover:text-gray-700"
+                                                              >
+                                                                Cancel
+                                                              </button>
+                                                            </div>
+                                                          </div>
+                                                        ) : (
+                                                          <>
+                                                            <div className="flex items-center gap-2 mb-2 pr-6">
+                                                               <div className={`w-2 h-2 rounded-full ${
+                                                                  subject.color.includes('blue') ? 'bg-blue-500' : 
+                                                                  subject.color.includes('green') ? 'bg-green-500' : 
+                                                                  subject.color.includes('amber') ? 'bg-amber-500' : 
+                                                                  subject.color.includes('rose') ? 'bg-rose-500' : 
+                                                                  subject.color.includes('indigo') ? 'bg-indigo-500' : 
+                                                                  'bg-gray-400'
+                                                               }`}></div>
+                                                               <div className="text-xs font-bold text-gray-500 uppercase tracking-wider flex-1 truncate">{subject.category}</div>
+                                                               {topicCompleted === topicTotal && topicTotal > 0 && <CheckCircle size={14} className="text-green-500" />}
+                                                            </div>
+                                                            
+                                                            {!showBulkActions && (
+                                                              <button
+                                                                  onClick={(e) => {
+                                                                      e.stopPropagation();
+                                                                      handleStartEditSubject({ ...subject, id: cardId });
+                                                                  }}
+                                                                  className="absolute top-2 right-8 p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors z-20"
+                                                                  title="Edit"
+                                                              >
+                                                                  <Edit2 size={14} />
+                                                              </button>
+                                                            )}
+
+                                                            {!showBulkActions && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if(window.confirm(`Delete "${topic.name}" and all its lessons?`)) {
+                                                                        handleDeleteTopic(topic.id);
+                                                                    }
+                                                                }}
+                                                                className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors z-20"
+                                                                title="Delete Topic"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                            )}
+
+                                                             <div>
+                                                                 <div className="font-bold text-gray-800 text-xs mb-3 truncate group-hover:text-blue-600 transition-colors">
+                                                                     {topic.name}
+                                                                 </div>
+                                                             </div>
+
+                                                           <div className="space-y-1">
+                                                                <div className="flex justify-between text-[10px] text-gray-400 font-medium">
+                                                                   <span>{topicCompleted}/{topicTotal} completed</span>
+                                                                </div>
+                                                                <ProgressBar 
+                                                                   current={topicCompleted} 
+                                                                   total={topicTotal} 
+                                                                   heightClass="h-1.5" 
+                                                                   colorClass={`bg-${child.themeColor}-500`} 
+                                                                />
                                                            </div>
-                                                           <ProgressBar 
-                                                              current={subCompleted} 
-                                                              total={subTotal} 
-                                                              heightClass="h-1.5" 
-                                                              colorClass={`bg-${child.themeColor}-500`} 
-                                                           />
-                                                      </div>
-                                                  </div>
-                                              );
-                                          })}
+                                                          </>
+                                                        )}
+                                                   </div>
+                                                );
+                                              })
+                                            )}
                                           
                                           {/* Add Subject Placeholder - Matching Mini Card Height */}
                                           <div 
@@ -1627,7 +2096,13 @@ const App: React.FC = () => {
   };
 
   const ChildDashboard = ({ childId }: { childId: string }) => {
-    const child = data.find(c => c.id === childId) || childProfile;
+    let child = data.find(c => c.id === childId);
+    
+    // Fallback to childProfile if needed, with migration
+    if (!child && childProfile?.id === childId) {
+      child = migrateChildToTopicStructure(childProfile);
+    }
+    
     if (!child) return null;
 
     const { user, signOut } = useAuth() || {};
@@ -1703,15 +2178,16 @@ const App: React.FC = () => {
              </div>
           )}
 
-          {child.yearGroups.map((yg) => (
-            <div key={yg.id}>
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
-                <GraduationCap className={`text-${child.themeColor}-600`} /> {yg.name} Curriculum
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {yg.subjects.map(subject => {
-                  const completedCount = subject.lessons.filter(l => l.completed && !l.deleted).length;
-                  const totalCount = subject.lessons.filter(l => !l.deleted).length;
+           {child.yearGroups.map((yg) => (
+             <div key={yg.id}>
+               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                 <GraduationCap className={`text-${child.themeColor}-600`} /> {yg.name} Curriculum
+               </h2>
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                 {yg.subjects.map(subject => {
+                   const allLessons = subject.topics.flatMap(t => t.lessons);
+                   const completedCount = allLessons.filter(l => l.completed && !l.deleted).length;
+                   const totalCount = allLessons.filter(l => !l.deleted).length;
                   
                   return (
                     <div 
@@ -1733,9 +2209,9 @@ const App: React.FC = () => {
                              {completedCount === totalCount && totalCount > 0 && <CheckCircle size={14} className="text-green-500" />}
                           </div>
 
-                          <div className="font-bold text-gray-800 text-xs mb-3 truncate group-hover:text-blue-600 transition-colors">
-                              {subject.name.includes(':') ? subject.name.split(':')[1].trim() : subject.name}
-                          </div>
+                           <div className="font-bold text-gray-800 text-xs mb-3 truncate group-hover:text-blue-600 transition-colors">
+                               {subject.topics[0]?.name || subject.name}
+                           </div>
                       </div>
                       
                       <div className="space-y-1">
@@ -2354,18 +2830,20 @@ const App: React.FC = () => {
       {view.type === 'SUBJECT_DETAIL' && <SubjectDetail childId={view.childId} subjectId={view.subjectId} origin={view.origin} />}
       {view.type === 'LESSON_PLAYER' && (() => {
         const child = data.find(c => c.id === view.childId);
-        const yearGroup = child?.yearGroups.find(yg => yg.subjects.some(s => s.id === view.subjectId));
-        const subject = yearGroup?.subjects.find(s => s.id === view.subjectId);
-        const lesson = subject?.lessons.find(l => l.id === view.lessonId);
+        const yearGroup = child?.yearGroups.find(yg => yg.subjects.some(s => s.topics.some(t => t.id === view.subjectId)));
+        const subject = yearGroup?.subjects.find(s => s.topics.some(t => t.id === view.subjectId));
+        const topic = subject?.topics.find(t => t.id === view.subjectId);
+        const lesson = topic?.lessons.find(l => l.id === view.lessonId);
 
-        if (child && subject && lesson) {
+        if (child && subject && topic && lesson) {
           return (
             <LessonPlayer 
               child={child} 
-              subject={subject} 
+              subject={subject}
+              topicId={topic.id}
               lesson={lesson} 
-              onBack={() => setView({ type: 'SUBJECT_DETAIL', childId: view.childId, subjectId: view.subjectId, origin: view.origin })}
-              onComplete={(id, time) => handleCompleteLesson(child.id, subject.id, id, time)}
+              onBack={() => setView({ type: 'SUBJECT_DETAIL', childId: view.childId, subjectId: subject.id, origin: view.origin })}
+              onComplete={(id, time) => handleCompleteLesson(child.id, subject.id, topic.id, id, time)}
             />
           );
         }

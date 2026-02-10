@@ -3,24 +3,33 @@ export interface Lesson {
   title: string;
   durationMinutes: number;
   completed: boolean;
-  videoUrl?: string; // YouTube ID or URL
+  videoUrl?: string;
   outcomes: string[];
-  deleted?: boolean; // New flag for trash functionality
-  timeSpentSeconds?: number; // Record actual time used
+  lessonFocus?: string;
+  lessonNotes?: string;
+  deleted?: boolean;
+  timeSpentSeconds?: number;
+  videoPosition?: number;
+}
+
+export interface Topic {
+  id: string;
+  name: string; // Topic name (e.g., "Reading Comprehension", "Algebra")
+  lessons: Lesson[];
+  timeSpentSeconds?: number;
 }
 
 export interface Subject {
   id: string;
-  name: string;
+  name: string; // Subject (e.g., "English", "Maths", "Science")
+  topics: Topic[];
   category: 'Maths' | 'English' | 'Science' | 'Humanities' | 'Languages' | 'Creative' | 'Other';
-  lessons: Lesson[];
   color: string;
-  timeSpentSeconds?: number; // Persistent timer tracking total time spent on subject
 }
 
 export interface YearGroup {
   id: string;
-  name: string; // e.g., "Year 9"
+  name: string; // e.g., "Year 5", "Year 9"
   subjects: Subject[];
 }
 
@@ -29,7 +38,7 @@ export interface ChildProfile {
   name: string;
   dob: string;
   avatar: string;
-  themeColor: string; // Tailwind color class prefix (e.g., 'blue', 'pink')
+  themeColor: string;
   yearGroups: YearGroup[];
 }
 
@@ -67,24 +76,26 @@ export interface ScheduleBlock {
 }
 
 export interface ExpandedLesson {
-  title: string;
+  title: string; // Video title from YouTube
   videoUrl: string;
   videoId: string;
-  position: number;
+  position: number; // Position in playlist (1, 2, 3...)
 }
 
 export interface ParsedRow {
   childName: string;
   yearGroup: string;
-  subjectCategory: string;
-  subjectName: string;
+  subjectCategory: string; // Subject (English, Maths, Science)
+  subjectName: string; // Topic (Reading Comprehension, Algebra)
   lessonTitle: string;
-  notes: string;
+  lessonFocus?: string;
+  lessonNotes?: string;
   videoUrl: string;
   isValid: boolean;
   isYouTubeUrl: boolean;
   youTubeType?: 'video' | 'playlist';
   expandedLessons?: ExpandedLesson[];
+  videoPosition?: number;
 }
 
 // Supabase Database Types
@@ -127,9 +138,17 @@ export interface DbSubject {
   created_at: string;
 }
 
-export interface DbLesson {
+export interface DbTopic {
   id: string;
   subject_id: string;
+  name: string;
+  order_index: number;
+  created_at: string;
+}
+
+export interface DbLesson {
+  id: string;
+  topic_id: string;
   title: string;
   video_url: string | null;
   duration_minutes: number;
@@ -138,6 +157,9 @@ export interface DbLesson {
   time_spent_seconds: number;
   deleted: boolean;
   order_index: number;
+  lesson_focus?: string | null;
+  lesson_notes?: string | null;
+  video_position?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -149,9 +171,13 @@ export interface ChildWithRelations extends DbChild {
 }
 
 export interface YearGroupWithRelations extends DbYearGroup {
-  subjects: SubjectWithLessons[];
+  subjects: SubjectWithTopics[];
 }
 
-export interface SubjectWithLessons extends DbSubject {
+export interface SubjectWithTopics extends DbSubject {
+  topics: TopicWithLessons[];
+}
+
+export interface TopicWithLessons extends DbTopic {
   lessons: DbLesson[];
 }
