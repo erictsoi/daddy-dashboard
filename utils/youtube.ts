@@ -120,6 +120,9 @@ export async function fetchPlaylistVideos(playlistUrl: string, apiKey?: string):
     return videos;
   } catch (error) {
     console.error('All playlist fetching methods failed:', error);
+    if (!effectiveApiKey) {
+      throw new Error('Playlist scraping failed. Please add a YouTube Data API key (VITE_YOUTUBE_API_KEY) to your .env file, or paste video URLs manually using Paste Mode.');
+    }
     throw error;
   }
 }
@@ -172,20 +175,29 @@ export async function scrapePlaylistFromBrowser(playlistId: string): Promise<You
 
   const corsProxies = [
     'https://r.jina.ai/http://',
-    'https://api.allorigins.win/raw?url=',
+    'https://api.allorigins.win/get?url=',
     'https://corsproxy.io/?',
   ];
 
+  console.log(`[YouTube] Scraping playlist: ${playlistId}`);
+
   for (const proxy of corsProxies) {
     try {
+      console.log(`[YouTube] Trying proxy: ${proxy}`);
       let html = '';
       
       if (proxy.includes('jina.ai')) {
         const response = await fetch(`${proxy}${youtubeUrl}`);
+        console.log(`[YouTube] Jina AI response: ${response.status}`);
         if (response.ok) {
           const text = await response.text();
-          const lines = text.split('\n');
+          console.log(`[YouTube] Jina AI text length: ${text.length}`);
+          
+          // Try multiple parsing strategies
           const videos: YouTubeVideo[] = [];
+          
+          // Strategy 1: Look for "Video X: Title" format
+          const lines = text.split('\n');
           let videoIndex = 0;
           for (const line of lines) {
             if (line.startsWith('Video ')) {
@@ -201,16 +213,76 @@ export async function scrapePlaylistFromBrowser(playlistId: string): Promise<You
               }
             }
           }
+          
+          // Strategy 2: Look for markdown links with video titles
+          if (videos.length === 0) {
+            const mdLinkRegex = /\[([^\]]+)\]\(https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/g;
+            let match;
+            const seen = new Set<string>();
+            while ((match = mdLinkRegex.exec(text)) !== null) {
+              const title = match[1].trim();
+              const videoId = match[2];
+              if (!seen.has(videoId) && title.length > 3) {
+                seen.add(videoId);
+                videos.push({
+                  id: videoId,
+                  title: cleanTitle(title),
+                  position: videos.length,
+                  url: `https://www.youtube.com/watch?v=${videoId}&list=${playlistId}`,
+                });
+              }
+            }
+          }
+          
+          // Strategy 3: Extract from initial data in page
+          if (videos.length === 0) {
+            const ytInitialDataMatch = text.match(/var ytInitialData = ({.+?});<\/script>/);
+            if (ytInitialDataMatch) {
+              try {
+                const data = JSON.parse(ytInitialDataMatch[1]);
+                const playlistItems = data?.contents?.twoColumnBrowseResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents?.[0]?.playlistVideoListRenderer?.contents;
+                if (playlistItems && Array.isArray(playlistItems)) {
+                  for (const item of playlistItems) {
+                    const videoData = item.playlistVideoRenderer;
+                    if (videoData && videoData.videoId) {
+                      videos.push({
+                        id: videoData.videoId,
+                        title: videoData.title?.runs?.[0]?.text || `Video ${videos.length + 1}`,
+                        position: videos.length,
+                        url: `https://www.youtube.com/watch?v=${videoData.videoId}&list=${playlistId}`,
+                      });
+                    }
+                  }
+                }
+              } catch (e) {
+                console.log('[YouTube] Failed to parse ytInitialData:', e);
+              }
+            }
+          }
+          
+          console.log(`[YouTube] Jina AI found ${videos.length} videos`);
           if (videos.length > 0) return videos;
         }
       } else {
         const targetUrl = encodeURIComponent(youtubeUrl);
         const response = await fetch(`${proxy}${targetUrl}`);
+        console.log(`[YouTube] Proxy response: ${response.status}`);
         if (!response.ok) continue;
-        html = await response.text();
+        
+        // Handle allorigins JSON response
+        if (proxy.includes('allorigins')) {
+          const data = await response.json();
+          html = data.contents || '';
+        } else {
+          html = await response.text();
+        }
+        console.log(`[YouTube] HTML length: ${html.length}`);
       }
       
-      if (!html) continue;
+      if (!html) {
+        console.log(`[YouTube] No HTML content from proxy`);
+        continue;
+      }
 
       const titleMatches: string[] = [];
       const titleRegex = /"title":\{"runs":\[\{"text":"([^"]+)"/g;
@@ -222,6 +294,7 @@ export async function scrapePlaylistFromBrowser(playlistId: string): Promise<You
           titleMatches.push(title);
         }
       }
+      console.log(`[YouTube] Found ${titleMatches.length} titles`);
 
       const videoIds: string[] = [];
       const seen = new Set<string>();
@@ -233,6 +306,7 @@ export async function scrapePlaylistFromBrowser(playlistId: string): Promise<You
           videoIds.push(id);
         }
       }
+      console.log(`[YouTube] Found ${videoIds.length} video IDs`);
 
       const videos: YouTubeVideo[] = [];
       const maxLength = Math.min(titleMatches.length, videoIds.length);
@@ -244,8 +318,10 @@ export async function scrapePlaylistFromBrowser(playlistId: string): Promise<You
           url: `https://www.youtube.com/watch?v=${videoIds[i]}&list=${playlistId}`,
         });
       }
+      console.log(`[YouTube] Created ${videos.length} video objects`);
       if (videos.length > 0) return videos;
     } catch (error) {
+      console.error(`[YouTube] Proxy error:`, error);
       continue;
     }
   }
