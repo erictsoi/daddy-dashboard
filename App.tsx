@@ -2,8 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ViewState, ChildProfile, YearGroup, Subject, Lesson, ScheduleBlock, ViewOrigin, ParsedRow } from './types';
 import { INITIAL_DATA, SUGGESTED_TOPICS, CREATIVE_PROMPTS } from './constants';
 import { AuthProvider, useAuth } from './lib/AuthContext';
-import { supabase } from './lib/supabase'
-import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, updateChildGoogleEmail, saveFullCurriculum, saveYearGroup, saveSubject, saveLesson, syncLocalDataToSupabase, hardDeleteLessonFromSupabase, softDeleteLessonInSupabase, restoreLessonInSupabase, hardDeleteSubjectFromSupabase, cleanupDuplicateLessons } from './lib/dataService';
+import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, updateChildGoogleEmail, saveFullCurriculum, saveYearGroup, saveSubject, saveLesson, syncLocalDataToSupabase } from './lib/dataService';
 import { usePersistentTimer, formatTime, formatTimeReadable } from './src/lib/useTimer';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
@@ -60,14 +59,6 @@ const App: React.FC = () => {
   });
   const [showEditAdmin, setShowEditAdmin] = useState(false);
   
-  // Supabase status indicator
-  const [supabaseStatus, setSupabaseStatus] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
-  
-  const showStatus = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
-    setSupabaseStatus({ message, type });
-    setTimeout(() => setSupabaseStatus(null), 4000);
-  };
-  
   // Scroll Restoration
   const scrollYRef = useRef(0);
   
@@ -121,9 +112,22 @@ const App: React.FC = () => {
           if (childrenData.length > 0) {
             setData(childrenData);
           } else {
-            // No children in Supabase - start fresh (don't sync from localStorage for logged-in users)
-            console.log('No children found in Supabase - using empty state');
-            setData([]);
+            console.log('No children found in Supabase, checking localStorage');
+            // No children in Supabase - sync from localStorage
+            const localData = getLocalData();
+            console.log('Local data has', localData.length, 'children');
+            if (localData.length > 0) {
+              await syncLocalDataToSupabase(user.id);
+              const syncedData = await fetchChildren(user.id);
+              console.log('After sync, fetched', syncedData.length, 'children');
+              if (syncedData.length > 0) {
+                setData(syncedData);
+              } else {
+                setData(localData);
+              }
+            } else {
+              setData(localData);
+            }
           }
         } else {
           console.log('No user, loading localStorage data');
@@ -380,15 +384,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSoftDeleteLesson = async (childId: string, subjectId: string, lessonId: string) => {
+  const handleSoftDeleteLesson = (childId: string, subjectId: string, lessonId: string) => {
       const scrollY = window.scrollY;
-
-      if (user) {
-        await softDeleteLessonInSupabase(lessonId).catch(err => {
-          console.error('Failed to soft delete lesson in Supabase:', err);
-        });
-      }
-
       setData(prev => {
         const newData = prev.map(child => {
             if (child.id !== childId) return child;
@@ -502,15 +499,10 @@ const App: React.FC = () => {
     setView({ type: 'HOME' });
   };
 
-  const handleDeleteSubject = async (childId: string, subjectId: string) => {
+  const handleDeleteSubject = (childId: string, subjectId: string) => {
+      // Save scroll position before update
       const scrollY = window.scrollY;
-
-      if (user) {
-        await hardDeleteSubjectFromSupabase(subjectId).catch(err => {
-          console.error('Failed to delete subject from Supabase:', err);
-        });
-      }
-
+      
       setData(prev => {
         const newData = prev.map(child => {
             if (child.id !== childId) return child;
@@ -529,7 +521,8 @@ const App: React.FC = () => {
         }
         return newData;
       });
-
+      
+      // Restore scroll position after state update
       setTimeout(() => {
         window.scrollTo(0, scrollY);
       }, 0);
@@ -575,15 +568,8 @@ const App: React.FC = () => {
       }, 0);
   };
 
-  const handleRestoreLesson = async (childId: string, subjectId: string, lessonId: string) => {
+  const handleRestoreLesson = (childId: string, subjectId: string, lessonId: string) => {
       const scrollY = window.scrollY;
-
-      if (user) {
-        await restoreLessonInSupabase(lessonId).catch(err => {
-          console.error('Failed to restore lesson in Supabase:', err);
-        });
-      }
-
       setData(prev => {
         const newData = prev.map(child => {
             if (child.id !== childId) return child;
@@ -613,15 +599,8 @@ const App: React.FC = () => {
       }, 0);
   };
 
-  const handleHardDeleteLesson = async (childId: string, subjectId: string, lessonId: string) => {
+  const handleHardDeleteLesson = (childId: string, subjectId: string, lessonId: string) => {
       const scrollY = window.scrollY;
-
-      if (user) {
-        await hardDeleteLessonFromSupabase(lessonId).catch(err => {
-          console.error('Failed to hard delete lesson in Supabase:', err);
-        });
-      }
-
       setData(prev => {
         const newData = prev.map(child => {
             if (child.id !== childId) return child;
@@ -785,182 +764,9 @@ const App: React.FC = () => {
               <p className="text-gray-500 text-sm">
                 You're viewing the demo mode. Sign in with Google to save your custom curriculum data.
               </p>
-             </div>
-           )}
-
-           {/* Admin Utilities - Debug Tools */}
-           {user && (
-             <div className="mt-12 pt-8 border-t border-gray-200 max-w-5xl mx-auto w-full">
-               <h3 className="text-lg font-bold text-gray-800 mb-4">Admin Debug Tools</h3>
-               <div className="flex flex-wrap gap-4">
-                 <button
-                    onClick={async () => {
-                      const { data: subjects, error } = await supabase?.from('subjects').select('id, name').order('name');
-                      if (error) {
-                        showStatus('Error: ' + error.message, 'error');
-                        return;
-                      }
-
-                      const nameCounts: Record<string, number> = {};
-                      subjects?.forEach(s => {
-                        nameCounts[s.name] = (nameCounts[s.name] || 0) + 1;
-                      });
-
-                      const duplicates = Object.entries(nameCounts).filter(([_, count]) => count > 1);
-
-                      if (duplicates.length > 0) {
-                        showStatus(`${subjects?.length || 0} subjects, ${duplicates.length} duplicates found`, 'error');
-                      } else {
-                        showStatus(`${subjects?.length || 0} subjects, no duplicates`, 'success');
-                      }
-                    }}
-                    className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium hover:bg-blue-200 transition flex items-center gap-2"
-                  >
-                    <Book size={16} />
-                    Check Subjects
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      if (!confirm('This will DELETE ALL data from Supabase. Continue?')) return;
-                      
-                      showStatus('Deleting lessons...', 'info');
-                      
-                      // Delete lessons first (due to foreign key constraints)
-                      const { error: lesError } = await supabase?.from('lessons').delete() || { error: null };
-                      if (lesError) {
-                        showStatus('Error deleting lessons: ' + lesError.message, 'error');
-                        return;
-                      }
-                      
-                      showStatus('Deleting subjects...', 'info');
-                      // Delete subjects
-                      const { error: subError } = await supabase?.from('subjects').delete() || { error: null };
-                      if (subError) {
-                        showStatus('Error deleting subjects: ' + subError.message, 'error');
-                        return;
-                      }
-                      
-                      showStatus('Deleting year groups...', 'info');
-                      // Delete year groups
-                      const { error: ygError } = await supabase?.from('year_groups').delete() || { error: null };
-                      if (ygError) {
-                        showStatus('Error deleting year groups: ' + ygError.message, 'error');
-                        return;
-                      }
-                      
-                      showStatus('All data deleted! Reloading...', 'success');
-                      setTimeout(() => window.location.reload(), 1500);
-                    }}
-                    className="px-4 py-2 bg-red-100 text-red-800 rounded-lg font-medium hover:bg-red-200 transition flex items-center gap-2"
-                  >
-                    <Trash2 size={16} />
-                    Nuke All Data
-                  </button>
-
-                  <button
-                    onClick={async () => {
-                      // Get all subjects with their year_group info
-                      const { data: subjects, error: fetchError } = await supabase
-                        ?.from('subjects')
-                        .select('id, name, category, year_group_id')
-                        .order('name') || { data: null, error: null };
-
-                      if (fetchError) {
-                        showStatus('Error fetching subjects: ' + fetchError.message, 'error');
-                        return;
-                      }
-
-                      if (!subjects || subjects.length === 0) {
-                        showStatus('No subjects found!', 'info');
-                        return;
-                      }
-
-                      // Get year groups and children to map IDs to names
-                      const { data: yearGroups, error: ygError } = await supabase
-                        ?.from('year_groups')
-                        .select('id, child_id, name')
-                        || { data: null, error: null };
-
-                      const { data: children, error: childError } = await supabase
-                        ?.from('children')
-                        .select('id, name')
-                        || { data: null, error: null };
-
-                      if (ygError || childError) {
-                        showStatus('Error fetching year groups or children', 'error');
-                        return;
-                      }
-
-                      // Create maps for lookups
-                      const ygToInfo = new Map<string, { childId: string; childName: string; ygName: string }>();
-                      yearGroups?.forEach(yg => {
-                        const child = children?.find(c => c.id === yg.child_id);
-                        ygToInfo.set(yg.id, { 
-                          childId: yg.child_id, 
-                          childName: child?.name || 'Unknown',
-                          ygName: yg.name 
-                        });
-                      });
-
-                      // Build key: child_id + year_group_id + subject_name
-                      const keyCounts: Record<string, { ids: string[]; info: { childName: string; ygName: string; subjectName: string; category: string } }> = {};
-                      subjects.forEach(s => {
-                        const ygInfo = ygToInfo.get(s.year_group_id);
-                        if (!ygInfo) return;
-                        
-                        const key = `${ygInfo.childId}::${s.year_group_id}::${s.name}`;
-                        if (!keyCounts[key]) {
-                          keyCounts[key] = { ids: [], info: { childName: ygInfo.childName, ygName: ygInfo.ygName, subjectName: s.name, category: s.category } };
-                        }
-                        keyCounts[key].ids.push(s.id);
-                      });
-
-                      // Find true duplicates
-                      const duplicates = Object.entries(keyCounts).filter(([_, data]) => data.ids.length > 1);
-                      
-                      if (duplicates.length === 0) {
-                        showStatus('No duplicate subjects found!', 'success');
-                        return;
-                      }
-
-                      // Collect IDs to delete
-                      const toDelete: string[] = [];
-                      duplicates.forEach(([_, data]) => {
-                        toDelete.push(...data.ids.slice(1));
-                      });
-
-                      // Show detailed confirmation with child/year/subject/category
-                      const dupList = duplicates.map(([_, data]) => 
-                        `• ${data.info.subjectName} (${data.info.category})\n  ${data.info.childName} • ${data.info.ygName} • ${data.ids.length}x`
-                      ).join('\n\n');
-
-                      if (!confirm(`Found ${duplicates.length} duplicate groups:\n\n${dupList}\n\nOnly 1 copy of each will be kept.\n\nContinue?`)) return;
-
-                      // Delete duplicates
-                      showStatus(`Deleting ${toDelete.length} duplicate subjects...`, 'info');
-                      const { error: delError } = await supabase
-                        ?.from('subjects')
-                        .delete()
-                        .in('id', toDelete) || { error: null };
-
-                      if (delError) {
-                        showStatus('Error deleting duplicates: ' + delError.message, 'error');
-                        return;
-                      }
-
-                      showStatus(`Deleted ${toDelete.length} duplicate subjects! Reloading...`, 'success');
-                      setTimeout(() => window.location.reload(), 1500);
-                    }}
-                    className="px-4 py-2 bg-amber-100 text-amber-800 rounded-lg font-medium hover:bg-amber-200 transition flex items-center gap-2"
-                  >
-                    <XCircle size={16} />
-                    Delete Duplicates
-                  </button>
-                </div>
-              </div>
-            )}
-       </div>
+            </div>
+          )}
+      </div>
     );
   };
 
@@ -1211,77 +1017,6 @@ const App: React.FC = () => {
 
     const { user, signOut } = useAuth() || {};
 
-    // Bulk selection state for subjects
-    const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set());
-    const [showBulkActions, setShowBulkActions] = useState(false);
-
-    const toggleSubjectSelection = (subjectId: string) => {
-      const newSelected = new Set(selectedSubjects);
-      if (newSelected.has(subjectId)) {
-        newSelected.delete(subjectId);
-      } else {
-        newSelected.add(subjectId);
-      }
-      setSelectedSubjects(newSelected);
-      setShowBulkActions(newSelected.size > 0);
-    };
-
-    const selectAllSubjects = () => {
-      const allIds = new Set<string>();
-      data.forEach(child => {
-        child.yearGroups.forEach(yg => {
-          yg.subjects.forEach(s => allIds.add(s.id));
-        });
-      });
-      setSelectedSubjects(allIds);
-      setShowBulkActions(true);
-    };
-
-    const clearSelection = () => {
-      setSelectedSubjects(new Set());
-      setShowBulkActions(false);
-    };
-
-    const handleBulkDeleteSubjects = async () => {
-      if (!confirm(`Permanently delete ${selectedSubjects.size} subjects? This cannot be undone.`)) return;
-
-      // Collect all subject-child pairs first (before state updates)
-      const deletions: { childId: string; subjectId: string }[] = [];
-      for (const child of data) {
-        for (const yg of child.yearGroups) {
-          for (const subject of yg.subjects) {
-            if (selectedSubjects.has(subject.id)) {
-              deletions.push({ childId: child.id, subjectId: subject.id });
-            }
-          }
-        }
-      }
-
-      // Delete from Supabase first
-      for (const { subjectId } of deletions) {
-        await hardDeleteSubjectFromSupabase(subjectId).catch(err => {
-          console.error('Failed to delete subject from Supabase:', err);
-        });
-      }
-
-      // Then update local state
-      setData(prev => {
-        const newData = prev.map(child => ({
-          ...child,
-          yearGroups: child.yearGroups.map(yg => ({
-            ...yg,
-            subjects: yg.subjects.filter(s => !selectedSubjects.has(s.id))
-          }))
-        }));
-        if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
-        }
-        return newData;
-      });
-
-      clearSelection();
-    };
-
     return (
       <div className="min-h-screen bg-gray-100 pb-20">
         {/* Header */}
@@ -1291,21 +1026,6 @@ const App: React.FC = () => {
               <h1 className="text-2xl font-bold text-gray-800">Daddy Dashboard</h1>
               <p className="text-gray-500 text-sm mt-1">HK Homeschool Relocation Plan</p>
             </div>
-            
-            {/* Supabase Status Indicator */}
-            {supabaseStatus && (
-              <div className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
-                supabaseStatus.type === 'success' ? 'bg-green-100 text-green-700' :
-                supabaseStatus.type === 'error' ? 'bg-red-100 text-red-700' :
-                'bg-blue-100 text-blue-700'
-              }`}>
-                {supabaseStatus.type === 'success' && <CheckCircle size={16} />}
-                {supabaseStatus.type === 'error' && <XCircle size={16} />}
-                {supabaseStatus.type === 'info' && <Clock size={16} />}
-                {supabaseStatus.message}
-              </div>
-            )}
-            
             <div className="flex gap-3 items-center">
                 <button 
                     onClick={() => handleNavigate({ type: 'CURRICULUM_BUILDER' })}
@@ -1446,57 +1166,15 @@ const App: React.FC = () => {
                               <h2 className="text-4xl font-bold text-gray-900">{child.name}</h2>
                               <p className={`text-${child.themeColor}-600 font-bold mt-1 uppercase tracking-wide`}>Homeschool Track</p>
                           </div>
-                          <div className="ml-auto flex items-center gap-3">
+                          <div className="ml-auto">
                               <button 
                                 onClick={() => handleNavigate({ type: 'CHILD_DASHBOARD', childId: child.id })}
                                 className={`px-5 py-2 rounded-lg bg-gray-50 text-${child.themeColor}-700 font-semibold hover:bg-${child.themeColor}-50 transition flex items-center gap-2 text-sm shadow-sm border border-gray-200`}
                               >
                                 View Dashboard <ChevronRight size={16} />
                               </button>
-                              {/* Bulk Select Toggle */}
-                              {child.yearGroups.flatMap(yg => yg.subjects).length > 0 && (
-                                <button
-                                  onClick={() => showBulkActions ? clearSelection() : setShowBulkActions(true)}
-                                  className={`px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2 text-sm shadow-sm border ${
-                                    showBulkActions 
-                                      ? 'bg-blue-100 text-blue-700 border-blue-300' 
-                                      : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                                  }`}
-                                >
-                                  {showBulkActions ? 'Done' : 'Select Subjects'}
-                                </button>
-                              )}
                           </div>
                       </div>
-
-                      {/* Bulk Actions Toolbar */}
-                      {showBulkActions && selectedSubjects.size > 0 && (
-                        <div className="flex items-center gap-4 p-4 mb-6 bg-blue-50 border border-blue-200 rounded-xl">
-                          <span className="text-sm font-medium text-blue-700">
-                            {selectedSubjects.size} selected
-                          </span>
-                          <button
-                            onClick={selectAllSubjects}
-                            className="text-sm text-blue-600 hover:text-blue-700"
-                          >
-                            Select All
-                          </button>
-                          <button
-                            onClick={clearSelection}
-                            className="text-sm text-gray-500 hover:text-gray-700"
-                          >
-                            Clear
-                          </button>
-                          <div className="flex-1" />
-                          <button
-                            onClick={handleBulkDeleteSubjects}
-                            className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition flex items-center gap-2"
-                          >
-                            <Trash2 size={16} />
-                            Delete Selected
-                          </button>
-                        </div>
-                      )}
 
                       {/* Year Groups */}
                       <div className="space-y-12 pl-2">
@@ -1534,24 +1212,13 @@ const App: React.FC = () => {
                                           {yg.subjects.map(subject => {
                                               const subCompleted = subject.lessons.filter(l => l.completed && !l.deleted).length;
                                               const subTotal = subject.lessons.filter(l => !l.deleted).length;
-                                              const isSelected = selectedSubjects.has(subject.id);
 
                                               return (
                                                   <div 
                                                       key={subject.id}
-                                                      onClick={() => showBulkActions ? toggleSubjectSelection(subject.id) : handleNavigate({ type: 'SUBJECT_DETAIL', childId: child.id, subjectId: subject.id, origin: 'HOME' })}
-                                                      className={`relative p-3 rounded-xl border shadow-sm bg-white hover:shadow-md transition cursor-pointer group flex flex-col justify-between ${
-                                                        isSelected ? 'border-blue-400 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300'
-                                                      }`}
+                                                      onClick={() => handleNavigate({ type: 'SUBJECT_DETAIL', childId: child.id, subjectId: subject.id, origin: 'HOME' })}
+                                                      className="relative p-3 rounded-xl border border-gray-200 shadow-sm bg-white hover:shadow-md hover:border-blue-300 transition cursor-pointer group flex flex-col justify-between"
                                                   >
-                                                      {showBulkActions && (
-                                                        <div className={`absolute top-2 left-2 w-5 h-5 rounded border-2 flex items-center justify-center z-10 ${
-                                                          isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300 bg-white'
-                                                        }`}>
-                                                          {isSelected && <CheckCircle size={14} className="text-white" />}
-                                                        </div>
-                                                      )}
-
                                                       <div className="flex items-center gap-2 mb-2 pr-6">
                                                          <div className={`w-2 h-2 rounded-full ${
                                                             subject.color.includes('blue') ? 'bg-blue-500' : 
@@ -1565,7 +1232,6 @@ const App: React.FC = () => {
                                                          {subCompleted === subTotal && subTotal > 0 && <CheckCircle size={14} className="text-green-500" />}
                                                       </div>
                                                       
-                                                      {!showBulkActions && (
                                                       <button
                                                           onClick={(e) => {
                                                               e.stopPropagation();
@@ -1578,7 +1244,6 @@ const App: React.FC = () => {
                                                       >
                                                           <Trash2 size={16} />
                                                       </button>
-                                                      )}
 
                                                       <div>
                                                           {/* Subject Name */}

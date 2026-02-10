@@ -36,12 +36,8 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
     setPlaylistError('');
 
     try {
-      console.log('[CurriculumBuilder] Loading playlist:', playlistUrl);
       const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
-      console.log('[CurriculumBuilder] API Key available:', !!apiKey);
-      
       const videos = await fetchPlaylistVideos(playlistUrl, apiKey);
-      console.log('[CurriculumBuilder] Loaded', videos.length, 'videos');
 
       const cleanUrl = cleanPlaylistUrl(playlistUrl);
       const newRow: ParsedRow = {
@@ -63,9 +59,8 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
         })),
       };
       setParsedRows([newRow]);
-    } catch (error) {
-      console.error('[CurriculumBuilder] Error loading playlist:', error);
-      setPlaylistError(`Failed to load playlist: ${error instanceof Error ? error.message : 'Unknown error'}. Check the URL and try again.`);
+    } catch {
+      setPlaylistError('Failed to load playlist. Check the URL.');
     } finally {
       setIsLoadingPlaylist(false);
     }
@@ -321,23 +316,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
                 >
                   {isLoadingPlaylist ? <Loader2 size={16} className="animate-spin" /> : 'Load Playlist'}
                 </button>
-                {playlistError && (
-                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-xs text-red-600 font-medium">{playlistError}</p>
-                    <p className="text-xs text-red-500 mt-1">
-                      YouTube is blocking playlist scraping. Try:
-                      <br />1. Using Paste Mode with video URLs
-                      <br />2. Adding videos one by one manually
-                      <br />3. Using a YouTube API key (VITE_YOUTUBE_API_KEY)
-                    </p>
-                    <div className="mt-2 pt-2 border-t border-red-200">
-                      <p className="text-xs font-medium text-red-700 mb-1">Manual Paste Template:</p>
-                      <code className="block text-xs bg-white p-2 rounded border border-red-200 text-red-600 font-mono">
-                        {`${defaultChild}\t${defaultYear}\t${defaultSubject}\t${defaultSubcategory}\tVideo 1 Title\t\thttps://youtube.com/watch?v=VIDEO_ID_1`}
-                      </code>
-                    </div>
-                  </div>
-                )}
+                {playlistError && <p className="mt-2 text-xs text-red-500">{playlistError}</p>}
 
                 <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
                   <p className="text-xs font-medium text-gray-600">Default Values</p>

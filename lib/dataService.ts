@@ -155,6 +155,17 @@ export const syncLocalDataToSupabase = async (userId: string): Promise<void> => 
 export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => {
   console.log('fetchChildren: loading for userId', userId);
   
+  // First, let's check what children exist for this user
+  const { data: allChildren, error: allError } = await supabase
+    .from('children')
+    .select('id, user_id, name')
+  
+  if (allError) {
+    console.error('Error checking all children:', allError);
+  } else {
+    console.log('All children in DB:', allChildren);
+  }
+  
   const { data: children, error } = await supabase
     .from('children')
     .select('*')
@@ -169,81 +180,48 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
   console.log('fetchChildren: found', children?.length || 0, 'children for userId', userId);
   if (!children || children.length === 0) return []
 
-  // Fetch all related data in parallel for better performance
-  const childIds = children.map(c => c.id);
-  
-  const yearGroupsResult = await supabase
-    .from('year_groups')
-    .select('*')
-    .in('child_id', childIds)
-    .order('order_index')
-    
-  if (yearGroupsResult.error) throw yearGroupsResult.error
-  const yearGroups = yearGroupsResult.data || [];
-
-  const yearGroupIds = yearGroups.map(yg => yg.id);
-  
-  const subjectsResult = await supabase
-    .from('subjects')
-    .select('*')
-    .in('year_group_id', yearGroupIds)
-    .order('order_index')
-    
-  if (subjectsResult.error) throw subjectsResult.error
-  const subjects = subjectsResult.data || [];
-
-  const subjectIds = subjects.map(s => s.id);
-  
-  const lessonsResult = await supabase
-    .from('lessons')
-    .select('*')
-    .in('subject_id', subjectIds)
-    .order('order_index')
-    
-  if (lessonsResult.error) throw lessonsResult.error
-  const lessons = lessonsResult.data || [];
-
-  // Build the tree in memory
-  const yearGroupsByChild = new Map<string, typeof yearGroups>();
-  const subjectsByYG = new Map<string, typeof subjects>();
-  const lessonsBySubject = new Map<string, typeof lessons>();
-
-  for (const yg of yearGroups) {
-    const list = yearGroupsByChild.get(yg.child_id) || [];
-    list.push(yg);
-    yearGroupsByChild.set(yg.child_id, list);
-  }
-
-  for (const sub of subjects) {
-    const list = subjectsByYG.get(sub.year_group_id) || [];
-    list.push(sub);
-    subjectsByYG.set(sub.year_group_id, list);
-  }
-
-  for (const lesson of lessons) {
-    const list = lessonsBySubject.get(lesson.subject_id) || [];
-    list.push(lesson);
-    lessonsBySubject.set(lesson.subject_id, list);
-  }
-
   const childrenWithData: ChildProfile[] = []
 
   for (const child of children) {
-    const childYearGroups = yearGroupsByChild.get(child.id) || [];
+    console.log('Fetching year groups for child:', child.name);
+    const { data: yearGroups, error: ygError } = await supabase
+      .from('year_groups')
+      .select('*')
+      .eq('child_id', child.id)
+      .order('order_index')
+
+    if (ygError) throw ygError
+
     const yearGroupsWithSubjects: YearGroup[] = []
 
-    for (const yg of childYearGroups) {
-      const ygSubjects = subjectsByYG.get(yg.id) || [];
+    for (const yg of yearGroups || []) {
+      const { data: subjects, error: subError } = await supabase
+        .from('subjects')
+        .select('*')
+        .eq('year_group_id', yg.id)
+        .order('order_index')
+
+      if (subError) throw subError
+      
+      console.log(`  ${yg.name}: ${subjects?.length || 0} subjects`);
       const subjectsWithLessons: Subject[] = []
 
-      for (const sub of ygSubjects) {
-        const subLessons = lessonsBySubject.get(sub.id) || [];
+      for (const sub of subjects || []) {
+        const { data: lessons, error: lesError } = await supabase
+          .from('lessons')
+          .select('*')
+          .eq('subject_id', sub.id)
+          .order('order_index')
+
+        if (lesError) throw lesError
+        
+        console.log(`    ${sub.name}: ${lessons?.length || 0} lessons`);
         subjectsWithLessons.push({
           id: sub.id,
           name: sub.name,
           category: sub.category as any,
           color: sub.color,
-          lessons: subLessons.map(l => ({
+          lessons: (lessons || []).map(l => ({
             id: l.id,
             title: l.title,
             durationMinutes: l.duration_minutes,
@@ -462,151 +440,4 @@ export const saveFullCurriculum = async (children: ChildProfile[], userId: strin
     }
   }
   console.log('saveFullCurriculum: complete');
-}
-
-export const hardDeleteLessonFromSupabase = async (lessonId: string): Promise<void> => {
-  console.log('Hard deleting lesson from Supabase:', lessonId);
-  if (!supabase) {
-    console.warn('Supabase not configured, skipping hard delete');
-    return;
-  }
-  const { error } = await supabase
-    .from('lessons')
-    .delete()
-    .eq('id', lessonId);
-
-  if (error) {
-    console.error('Error hard deleting lesson from Supabase:', error);
-    throw error;
-  }
-  console.log('Lesson hard deleted from Supabase:', lessonId);
-}
-
-export const softDeleteLessonInSupabase = async (lessonId: string): Promise<void> => {
-  console.log('Soft deleting lesson in Supabase:', lessonId);
-  if (!supabase) {
-    console.warn('Supabase not configured, skipping soft delete');
-    return;
-  }
-  const { error } = await supabase
-    .from('lessons')
-    .update({ deleted: true })
-    .eq('id', lessonId);
-
-  if (error) {
-    console.error('Error soft deleting lesson in Supabase:', error);
-    throw error;
-  }
-  console.log('Lesson soft deleted in Supabase:', lessonId);
-}
-
-export const restoreLessonInSupabase = async (lessonId: string): Promise<void> => {
-  console.log('Restoring lesson in Supabase:', lessonId);
-  if (!supabase) {
-    console.warn('Supabase not configured, skipping restore');
-    return;
-  }
-  const { error } = await supabase
-    .from('lessons')
-    .update({ deleted: false })
-    .eq('id', lessonId);
-
-  if (error) {
-    console.error('Error restoring lesson in Supabase:', error);
-    throw error;
-  }
-  console.log('Lesson restored in Supabase:', lessonId);
-}
-
-export const hardDeleteSubjectFromSupabase = async (subjectId: string): Promise<void> => {
-  console.log('Hard deleting subject from Supabase:', subjectId);
-  if (!supabase) {
-    console.warn('Supabase not configured, skipping hard delete');
-    return;
-  }
-  const { error } = await supabase
-    .from('subjects')
-    .delete()
-    .eq('id', subjectId);
-
-  if (error) {
-    console.error('Error hard deleting subject from Supabase:', error);
-    throw error;
-  }
-  console.log('Subject hard deleted from Supabase:', subjectId);
-}
-
-export const cleanupDuplicateLessons = async (childId: string): Promise<number> => {
-  console.log('Cleaning up duplicate lessons for child:', childId);
-  if (!supabase) {
-    console.warn('Supabase not configured, skipping cleanup');
-    return 0;
-  }
-
-  // Get all lessons for this child's subjects
-  const { data: subjects, error: subError } = await supabase
-    .from('subjects')
-    .select('id, name')
-    .eq('child_id', childId);
-
-  if (subError) {
-    console.error('Error fetching subjects for cleanup:', subError);
-    return 0;
-  }
-
-  if (!subjects || subjects.length === 0) {
-    console.log('No subjects found for child');
-    return 0;
-  }
-
-  let deletedCount = 0;
-
-  for (const subject of subjects) {
-    // Get all lessons for this subject
-    const { data: lessons, error: lesError } = await supabase
-      .from('lessons')
-      .select('id, title, video_url, created_at')
-      .eq('subject_id', subject.id)
-      .order('created_at', { ascending: true });
-
-    if (lesError) {
-      console.error('Error fetching lessons for subject:', subject.name, lesError);
-      continue;
-    }
-
-    if (!lessons || lessons.length === 0) continue;
-
-    // Find duplicates by title
-    const seenTitles = new Map<string, string>();
-    const duplicates: string[] = [];
-
-    for (const lesson of lessons) {
-      const titleKey = lesson.title.toLowerCase().trim();
-      if (seenTitles.has(titleKey)) {
-        // This is a duplicate - keep the earliest one, delete others
-        duplicates.push(lesson.id);
-      } else {
-        seenTitles.set(titleKey, lesson.id);
-      }
-    }
-
-    // Delete duplicates
-    if (duplicates.length > 0) {
-      console.log(`Found ${duplicates.length} duplicate lessons in ${subject.name}`);
-      const { error: delError } = await supabase
-        .from('lessons')
-        .delete()
-        .in('id', duplicates);
-
-      if (delError) {
-        console.error('Error deleting duplicates:', delError);
-      } else {
-        deletedCount += duplicates.length;
-        console.log(`Deleted ${duplicates.length} duplicate lessons from ${subject.name}`);
-      }
-    }
-  }
-
-  console.log(`Cleanup complete: deleted ${deletedCount} duplicate lessons`);
-  return deletedCount;
 }
