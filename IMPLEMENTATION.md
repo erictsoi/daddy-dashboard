@@ -477,3 +477,172 @@ Upcoming: Term 2 starts on April 15, 2026
    - Track exam dates
    - Show countdowns
    - Reward after exam completion
+
+---
+
+## Data Cleanup & Deduplication Tools
+
+### Overview
+
+Added admin tools to manage data integrity issues that arise from:
+- Multiple uploads with different ID generation
+- Importing curriculum multiple times
+- Test data confusion
+
+### Header Buttons
+
+Located in Daddy Dashboard header (right side):
+
+| Button | Icon | Purpose |
+|--------|------|---------|
+| 🗑️ Clear Data | Trash | Clears localStorage, refreshes page |
+| 🔄 Deduplicate | Recycle | Removes duplicate children by name |
+| 💥 Nuke Supabase | Explosion | Deletes ALL data from Supabase |
+| 🧹 Clean DB | Broom | Removes duplicate rows from all tables |
+| 🎬 Dedupe Lessons | Film | Removes duplicate lessons locally |
+
+### Usage Scenarios
+
+#### Scenario 1: "Upload says 3 kids but I have 2"
+1. Click 🔄 Deduplicate → Confirm
+2. Waits for reload
+3. Done - duplicates removed
+
+#### Scenario 2: "Everything is duplicated"
+1. Click 🧹 Clean DB → Confirm twice
+2. Waits for reload
+3. All duplicate rows removed
+
+#### Scenario 3: "Start completely fresh"
+1. Click 💥 Nuke Supabase → Confirm twice
+2. Waits for reload
+3. Add kids via Manage Profiles
+4. Build curriculum
+5. Upload once
+
+#### Scenario 4: "LocalStorage has wrong data"
+1. Click 🗑️ Clear Data → Confirm
+2. Page reloads with empty state
+3. Load from Supabase or rebuild
+
+### Deduplication Logic
+
+#### Children Deduplication
+```typescript
+// Find duplicates by name
+const nameCount: Record<string, string[]> = {};
+children.forEach(c => {
+  if (!nameCount[c.name]) nameCount[c.name] = [];
+  nameCount[c.name].push(c.id);
+});
+
+// Keep first, delete rest
+const duplicates = Object.values(nameCount).flatMap(ids => ids.slice(1));
+await supabase.from('children').delete().in('id', duplicates);
+```
+
+#### Lesson Deduplication
+```typescript
+// Find duplicates by videoUrl
+const urlCount: Record<string, string[]> = {};
+lessons.forEach(l => {
+  if (l.video_url) {
+    if (!urlCount[l.video_url]) urlCount[l.video_url] = [];
+    urlCount[l.video_url].push(l.id);
+  }
+});
+
+// Keep first, delete rest
+const duplicates = Object.values(urlCount).flatMap(ids => ids.slice(1));
+await supabase.from('lessons').delete().in('id', duplicates);
+```
+
+#### Topic Deduplication
+```typescript
+// Find duplicates by subject_id + name
+const nameCount: Record<string, string[]> = {};
+topics.forEach(t => {
+  const key = `${t.subject_id}::${t.name}`;
+  if (!nameCount[key]) nameCount[key] = [];
+  nameCount[key].push(t.id);
+});
+
+// Keep first, delete rest
+```
+
+### Debug Logging
+
+Added console logging to help diagnose issues:
+
+```typescript
+// getLocalData()
+console.log('getLocalData: key=', STORAGE_KEY, 'has data=', !!stored);
+console.log('getLocalData: parsed type=', typeof parsed, 'length=', parsed?.length);
+
+// saveLocalData()
+console.log('saveLocalData: saving', data.length, 'children:', data.map(c => c.name));
+
+// uploadToSupabase()
+console.log('uploadToSupabase: localData:', localData.length, 'children');
+console.log('Uploaded children IDs:', localData.map(c => c.id));
+```
+
+### Common Issues & Solutions
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Upload says X kids, have Y | ID mismatch between uploads | Use 💥 Nuke Supabase, upload fresh |
+| 2x lessons showing | Import ran twice | Use 🧹 Clean DB or 🎬 Dedupe Lessons |
+| Test data keeps appearing | getLocalData fallback | Use 🗑️ Clear Data |
+| 135 kids loaded | Test data in Supabase | Use 💥 Nuke Supabase |
+| Can't upload | localStorage empty | Add kids via Manage Profiles first |
+
+### ID Generation Fixes
+
+#### Before (caused duplicates)
+```typescript
+id: Math.random().toString(36).substr(2, 9)  // "abc123xyz"
+id: generateUuid()  // New UUID every time
+```
+
+#### After (preserves IDs)
+```typescript
+// ensureUuid() - preserves existing UUIDs
+if (id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+  return id  // Keep existing UUID
+}
+return generateUuid()  // Only generate for new records
+```
+
+#### Child ID Fix
+```typescript
+// handleAddChildLocal - use proper UUID
+id: crypto.randomUUID()
+```
+
+#### Topic ID Fix
+```typescript
+// handleBulkImport - sanitize empty names
+const topicName = row.subjectName || 'General';
+id: `${subject.id}-${topicName.replace(/[^a-z0-9]/gi, '-')}`.toLowerCase().replace(/-+/g, '-').slice(0, 50)
+```
+
+### Lesson Import Deduplication
+
+Prevents importing same lesson twice:
+
+```typescript
+// Check if lesson exists by video URL
+const videoId = row.videoUrl?.includes('youtu') ? 
+  row.videoUrl.split('/').pop()?.split('?')[0] : null;
+
+const lessonExists = topic.lessons.some(l => {
+  if (videoId && l.videoUrl?.includes(videoId)) return true;
+  return false;
+});
+
+if (lessonExists) {
+  console.log('Lesson already exists, skipping:', row.videoUrl);
+  return;  // Skip this lesson
+}
+```

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ViewState, ChildProfile, YearGroup, Subject, Lesson, ScheduleBlock, ViewOrigin, ParsedRow } from './types';
+import { ViewState, ChildProfile, YearGroup, Subject, Topic, Lesson, ScheduleBlock, ViewOrigin, ParsedRow } from './types';
 import { INITIAL_DATA } from './constants';
 import { AuthProvider, useAuth } from './lib/AuthContext';
 import { supabase } from './lib/supabase'
@@ -79,6 +79,7 @@ const App: React.FC = () => {
   const [schedule, setSchedule] = useState<ScheduleBlock[]>([]);
   const [isDayActive, setIsDayActive] = useState(false);
   const lastUserIdRef = useRef<string | null>(null);
+  const isFetchingRef = useRef(false);
 
   // Load data on mount and when user changes
   useEffect(() => {
@@ -95,7 +96,15 @@ const App: React.FC = () => {
       console.log('Already loaded data for this user, skipping');
       return;
     }
+    
+    // Prevent parallel fetches from React Strict Mode double-rendering
+    if (isFetchingRef.current) {
+      console.log('Fetch already in progress, skipping');
+      return;
+    }
+    
     lastUserIdRef.current = user?.id || null;
+    isFetchingRef.current = true;
 
     const loadData = async () => {
 
@@ -108,10 +117,12 @@ const App: React.FC = () => {
           // Check if user is a child by matching email
           try {
             const childData = await fetchChildByEmail(user.email || '');
-            if (childData) {
-              console.log('Found child profile:', childData.name);
-              setChildProfile(childData);
-              setData([]);
+            if (childData && childData.length > 0) {
+              console.log('Found child profile:', childData[0].name);
+              setChildProfile(childData[0]);
+              setData(childData);
+              isFetchingRef.current = false;
+              setLoading(false);
               return;
             }
           } catch (e) {
@@ -139,17 +150,12 @@ const App: React.FC = () => {
         setData(getLocalData());
       }
       setLoading(false);
+      isFetchingRef.current = false;
     };
     loadData();
   }, [user, authLoading]);
 
-  // Force load data on initial mount if empty
-  useEffect(() => {
-    if (!authLoading && data.length === 0 && !user) {
-      console.log('Initial mount: loading default data');
-      setData(getLocalData());
-    }
-  }, [authLoading]);
+
 
   // --- Child Management Functions ---
 
@@ -243,109 +249,100 @@ const App: React.FC = () => {
     });
   };
 
-  // --- Schedule Generator Logic ---
-  
-  const generateSchedule = (hours: number) => {
-    const blocks: ScheduleBlock[] = [];
-    const now = new Date();
-    // Round to next 5 minutes for cleanliness
-    now.setMinutes(Math.ceil(now.getMinutes() / 5) * 5, 0, 0);
-    
-    let currentTime = new Date(now);
-    
-    // Get flattened subjects with incomplete lessons
-    const getActiveSubjects = (childId: string) => {
-      const child = data.find(c => c.id === childId);
-      if (!child) return [];
-      // Flatten all subjects from all years
-      return child.yearGroups.flatMap(yg => yg.subjects)
-             .filter(s => s.lessons.some(l => !l.completed && !l.deleted));
-    };
+   // --- Schedule Generator Logic ---
+   
+   const generateSchedule = (hours: number) => {
+     const blocks: ScheduleBlock[] = [];
+     const now = new Date();
+     now.setMinutes(Math.ceil(now.getMinutes() / 5) * 5, 0, 0);
+     
+     let currentTime = new Date(now);
+     
+     const childrenWithLessons = data.filter(child => {
+       const subjects = child.yearGroups.flatMap(yg => yg.subjects);
+       const lessons = subjects.flatMap(s => s.topics.flatMap(t => t.lessons));
+       return lessons.some(l => !l.completed && !l.deleted);
+     });
+     
+     if (childrenWithLessons.length === 0) {
+       alert("Please add more subjects/lessons first!");
+       return;
+     }
 
-    const adrianPool = getActiveSubjects('adrian');
-    const sophiaPool = getActiveSubjects('sophia');
-    
-    // Fallback if everything is done (shouldn't happen in demo really)
-    if (adrianPool.length === 0 || sophiaPool.length === 0) {
-      alert("Please add more subjects/lessons first!");
-      return;
-    }
+     let deviceIndex = 0;
 
-    let deviceToggle = true; // Toggle who gets the "device" (video) vs "offline" work
+     for (let i = 0; i < hours; i++) {
+         const startTime = new Date(currentTime);
+         const endTime = new Date(currentTime.getTime() + 50 * 60000);
+         
+         const blockChildren: ScheduleBlock['children'] = {};
+         
+         childrenWithLessons.forEach((child, idx) => {
+           const subjects = child.yearGroups.flatMap(yg => yg.subjects);
+           const subject = subjects[idx % subjects.length];
+           if (!subject) return;
+           
+           const topic = subject.topics.find(t => t.lessons.some(l => !l.completed && !l.deleted)) || subject.topics.find(t => t.lessons.some(l => !l.deleted)) || subject.topics[0];
+           if (!topic) return;
+           
+           const lessons = topic.lessons;
+           const lesson = lessons.find(l => !l.completed && !l.deleted) || lessons.find(l => !l.deleted) || lessons[0];
+           if (!lesson) return;
+           
+           const hasDevice = deviceIndex % childrenWithLessons.length === idx;
+           
+           blockChildren[child.id] = {
+             subjectId: subject.id,
+             topicId: topic.id,
+             subjectName: subject.name,
+             lessonId: lesson.id,
+             lessonTitle: lesson.title,
+             hasDevice
+           };
+         });
+         
+         blocks.push({
+             id: `block-${i}`,
+             type: 'academic',
+             startTime,
+             endTime,
+             children: blockChildren
+         });
 
-    for (let i = 0; i < hours; i++) {
-        // --- Academic Block ---
-        const startTime = new Date(currentTime);
-        const endTime = new Date(currentTime.getTime() + 50 * 60000); // 50 mins
-        
-        // Pick subjects cyclically
-        const adrianSub = adrianPool[i % adrianPool.length];
-        const sophiaSub = sophiaPool[i % sophiaPool.length];
-        
-        // Pick specific lessons (first incomplete, from any topic)
-        const adrianLessons = adrianSub.topics.flatMap(t => t.lessons);
-        const sophiaLessons = sophiaSub.topics.flatMap(t => t.lessons);
-        const adrianLesson = adrianLessons.find(l => !l.completed && !l.deleted) || adrianLessons.find(l => !l.deleted) || adrianLessons[0];
-        const sophiaLesson = sophiaLessons.find(l => !l.completed && !l.deleted) || sophiaLessons.find(l => !l.deleted) || sophiaLessons[0];
+         currentTime = endTime;
 
-        // Device logic
-        const adrianHasDevice = deviceToggle;
-        const sophiaHasDevice = !deviceToggle;
+         if (i < hours - 1) {
+             if (i === 1) {
+                 const lunchEnd = new Date(currentTime.getTime() + 40 * 60000);
+                 blocks.push({
+                     id: `lunch-${i}`,
+                     type: 'lunch',
+                     startTime: currentTime,
+                     endTime: lunchEnd,
+                     label: "Lunch & Free Time",
+                     children: {}
+                 });
+                 currentTime = lunchEnd;
+             } else {
+                 const breakEnd = new Date(currentTime.getTime() + 10 * 60000);
+                 blocks.push({
+                     id: `break-${i}`,
+                     type: 'break',
+                     startTime: currentTime,
+                     endTime: breakEnd,
+                     label: "Refresh Break",
+                     children: {}
+                 });
+                 currentTime = breakEnd;
+             }
+         }
+         
+         deviceIndex++;
+     }
 
-        blocks.push({
-            id: `block-${i}`,
-            type: 'academic',
-            startTime,
-            endTime,
-            adrian: {
-                subjectId: adrianSub.id,
-                subjectName: adrianSub.name,
-                lessonId: adrianLesson.id,
-                lessonTitle: adrianLesson.title,
-                hasDevice: adrianHasDevice
-            },
-            sophia: {
-                subjectId: sophiaSub.id,
-                subjectName: sophiaSub.name.split(':')[1]?.trim() || sophiaSub.name,
-                lessonId: sophiaLesson.id,
-                lessonTitle: sophiaLesson.title,
-                hasDevice: sophiaHasDevice
-            }
-        });
-
-        currentTime = endTime;
-
-        // --- Break / Lunch Logic ---
-        if (i < hours - 1) { // Don't add break after last block
-            if (i === 1) { // Lunch after 2nd block
-                const lunchEnd = new Date(currentTime.getTime() + 40 * 60000);
-                blocks.push({
-                    id: `lunch-${i}`,
-                    type: 'lunch',
-                    startTime: currentTime,
-                    endTime: lunchEnd,
-                    label: "Lunch & Free Time"
-                });
-                currentTime = lunchEnd;
-            } else { // Short break
-                const breakEnd = new Date(currentTime.getTime() + 10 * 60000);
-                blocks.push({
-                    id: `break-${i}`,
-                    type: 'break',
-                    startTime: currentTime,
-                    endTime: breakEnd,
-                    label: "Refresh Break"
-                });
-                currentTime = breakEnd;
-            }
-        }
-        
-        deviceToggle = !deviceToggle; // Switch device priority next block
-    }
-
-    setSchedule(blocks);
-    setIsDayActive(true);
-  };
+     setSchedule(blocks);
+     setIsDayActive(true);
+   };
 
 
   // --- Curriculum Actions ---
@@ -447,21 +444,38 @@ const App: React.FC = () => {
         }
 
         // Find or create topic (Reading Comprehension, Algebra, etc.)
-        const topicName = row.subjectName;
+        const topicName = row.subjectName || 'General';
         let topic = subject.topics.find(t => t.name.toLowerCase() === topicName.toLowerCase());
         if (!topic) {
+          const sanitizedTopicName = topicName.replace(/[^a-z0-9]/gi, '-').toLowerCase().replace(/-+/g, '-');
           topic = {
-            id: `${subject.id}-${topicName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
+            id: `${subject.id}-topic-${sanitizedTopicName}-${Date.now()}`.slice(0, 50),
             name: topicName,
             lessons: []
           };
           subject.topics.push(topic);
         }
 
+        // Check if lesson already exists (by videoUrl or by position)
+        const videoId = row.videoUrl?.includes('youtu') ? row.videoUrl.split('/').pop()?.split('?')[0] : null;
+        const lessonExists = topic.lessons.some(l => {
+          if (videoId && l.videoUrl?.includes(videoId)) return true;
+          return false;
+        });
+        if (lessonExists) {
+          console.log('Lesson already exists, skipping:', row.videoUrl);
+          return;
+        }
+
+        // Generate title from notes or video URL
+        const lessonTitle = row.lessonTitle || 
+          row.lessonNotes || 
+          (row.videoUrl ? `Lesson ${topic.lessons.length + 1}` : `Lesson ${topic.lessons.length + 1}`);
+
         // Add lesson to topic
         const newLesson: Lesson = {
-          id: `${topic.id}-${row.videoPosition || topic.lessons.length + 1}-${Date.now()}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
-          title: row.lessonTitle || `${row.videoPosition || topic.lessons.length + 1}. ${topic.name}`,
+          id: `${topic.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
+          title: lessonTitle,
           durationMinutes: 45,
           completed: false,
           deleted: false,
@@ -1307,11 +1321,13 @@ const App: React.FC = () => {
                                     </button>
                                   </div>
                                 ) : (
-                                  <button 
-                                    onClick={() => toggleTopic(topic.id)}
-                                    className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition"
+                                  <div 
+                                    className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition cursor-pointer"
                                   >
-                                     <div className="flex items-center gap-3">
+                                     <div 
+                                       className="flex items-center gap-3 flex-1"
+                                       onClick={() => toggleTopic(topic.id)}
+                                     >
                                        {isExpanded ? (
                                          <ChevronDown size={20} className="text-gray-500" />
                                        ) : (
@@ -1345,7 +1361,7 @@ const App: React.FC = () => {
                                           </button>
                                         </div>
                                       )}
-                                  </button>
+                                  </div>
                                 )}
                                
                                {isExpanded && (
@@ -1432,6 +1448,7 @@ const App: React.FC = () => {
                                                         type: 'LESSON_PLAYER', 
                                                         childId, 
                                                         subjectId: subject.id,
+                                                        topicId: topic.id,
                                                         lessonId: lesson.id,
                                                         origin 
                                                       })}
@@ -1668,6 +1685,39 @@ const App: React.FC = () => {
       setEditingSubject(null);
     };
 
+    const handleDeleteTopicAtPath = (childId: string, subjectId: string, topicId: string) => {
+      if (!confirm('Delete this topic and all its lessons?')) return;
+      
+      setData(prev => {
+        const newData = prev.map(ch => {
+          if (ch.id !== childId) return ch;
+          return {
+            ...ch,
+            yearGroups: ch.yearGroups.map(y => ({
+              ...y,
+              subjects: y.subjects.map(s => {
+                if (s.id !== subjectId) return s;
+                const updatedTopics = s.topics.filter(t => t.id !== topicId);
+                if (updatedTopics.length === 0) {
+                  return null;
+                }
+                return {
+                  ...s,
+                  topics: updatedTopics
+                };
+              }).filter(Boolean)
+            }))
+          };
+        });
+        if (user) {
+          saveFullCurriculum(newData, user.id).catch(console.error);
+        } else {
+          saveLocalData(newData);
+        }
+        return newData;
+      });
+    };
+
     return (
       <div className="min-h-screen bg-gray-100 pb-20">
         {/* Header */}
@@ -1703,11 +1753,11 @@ const App: React.FC = () => {
                   <>
                     <button 
                         onClick={async () => {
-                          const result = await uploadToSupabase(user.id);
+                          const result = await uploadToSupabase(user.id, data);
                           showStatus(result.message, result.success ? 'success' : 'error');
                         }}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition shadow-lg"
-                        title="Upload local data to Supabase"
+                        title="Upload current data to Supabase"
                     >
                         <UploadCloud size={16} /> Upload
                     </button>
@@ -1741,9 +1791,267 @@ const App: React.FC = () => {
                     />
                   </>
                 )}
+                <button
+                  onClick={() => {
+                    if (confirm('Clear all local data? This cannot be undone.')) {
+                      localStorage.removeItem('daddy_dashboard_data');
+                      localStorage.removeItem('admin_avatar');
+                      localStorage.removeItem('admin_color');
+                      window.location.reload();
+                    }
+                  }}
+                  className="text-red-500 hover:text-red-700 text-sm px-2 py-1"
+                  title="Clear local storage"
+                >
+                  🗑️ Clear Data
+                </button>
+                {user && (
+                  <>
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Delete duplicate children from Supabase? Only one per name will be kept.')) return;
+                        
+                        showStatus('Finding duplicates...', 'info');
+                        try {
+                          const { data: children } = await supabase
+                            .from('children')
+                            .select('id, name')
+                            .eq('user_id', user.id);
+                          
+                          if (!children || children.length === 0) {
+                            showStatus('No children found', 'error');
+                            return;
+                          }
+                          
+                          const nameCount: Record<string, string[]> = {};
+                          children.forEach(c => {
+                            if (!nameCount[c.name]) nameCount[c.name] = [];
+                            nameCount[c.name].push(c.id);
+                          });
+                          
+                          const duplicates: string[] = [];
+                          Object.values(nameCount).forEach(ids => {
+                            if (ids.length > 1) duplicates.push(...ids.slice(1));
+                          });
+                          
+                          if (duplicates.length === 0) {
+                            showStatus('No duplicates found!', 'success');
+                            return;
+                          }
+                          
+                          if (!confirm(`Found ${duplicates.length} duplicates. Delete them?`)) return;
+                          
+                          showStatus('Deleting duplicates...', 'info');
+                          for (const childId of duplicates) {
+                            const { data: ygs } = await supabase.from('year_groups').select('id').eq('child_id', childId);
+                            if (ygs) {
+                              const ygIds = ygs.map(y => y.id);
+                              const { data: subs } = await supabase.from('subjects').select('id').in('year_group_id', ygIds);
+                              if (subs) {
+                                const subIds = subs.map(s => s.id);
+                                const { data: tops } = await supabase.from('topics').select('id').in('subject_id', subIds);
+                                if (tops) await supabase.from('lessons').delete().in('topic_id', tops.map(t => t.id));
+                                await supabase.from('topics').delete().in('subject_id', subIds);
+                              }
+                              await supabase.from('subjects').delete().in('year_group_id', ygIds);
+                            }
+                            await supabase.from('year_groups').delete().eq('child_id', childId);
+                          }
+                          await supabase.from('children').delete().in('id', duplicates);
+                          
+                          showStatus(`Deleted ${duplicates.length} duplicates! Reloading...`, 'success');
+                          setTimeout(() => window.location.reload(), 1500);
+                        } catch (e) {
+                          showStatus('Error: ' + e, 'error');
+                        }
+                      }}
+                      className="text-amber-600 hover:text-amber-800 text-sm px-2 py-1"
+                      title="Delete duplicate children"
+                    >
+                      🔄 Deduplicate
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!confirm('DELETE ALL DATA FROM SUPABASE? This cannot be undone!')) return;
+                        if (!confirm('Are you absolutely sure?')) return;
+                        
+                        showStatus('Deleting all Supabase data...', 'info');
+                        try {
+                          await supabase.from('lessons').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                          await supabase.from('topics').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                          await supabase.from('subjects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                          await supabase.from('year_groups').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                          await supabase.from('children').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                          showStatus('Supabase wiped! Refresh page.', 'success');
+                          setTimeout(() => window.location.reload(), 1500);
+                        } catch (e) {
+                          showStatus('Error: ' + e, 'error');
+                        }
+                      }}
+                      className="text-red-600 hover:text-red-800 text-sm px-2 py-1"
+                      title="Delete all Supabase data"
+                    >
+                      💥 Nuke Supabase
+                    </button>
+                    <button
+                      onClick={() => {
+                        let removed = 0;
+                        setData(prev => {
+                          const newData = prev.map(child => ({
+                            ...child,
+                            yearGroups: child.yearGroups.map(yg => ({
+                              ...yg,
+                              subjects: yg.subjects.map(sub => ({
+                                ...sub,
+                                topics: sub.topics.map(topic => {
+                                  const urlCount: Record<string, string[]> = {};
+                                  topic.lessons.forEach(l => {
+                                    if (l.videoUrl && !l.deleted) {
+                                      if (!urlCount[l.videoUrl]) urlCount[l.videoUrl] = [];
+                                      urlCount[l.videoUrl].push(l.id);
+                                    }
+                                  });
+                                  
+                                  Object.values(urlCount).forEach(ids => {
+                                    if (ids.length > 1) {
+                                      removed += ids.length - 1;
+                                    }
+                                  });
+                                  
+                                  return {
+                                    ...topic,
+                                    lessons: topic.lessons.filter(l => {
+                                      if (l.deleted) return false;
+                                      const url = l.videoUrl;
+                                      if (!url) return true;
+                                      const ids = urlCount[url];
+                                      if (!ids || ids.length === 1) return true;
+                                      const keep = ids[0] === l.id;
+                                      if (!keep) removed++;
+                                      return keep;
+                                    })
+                                  };
+                                })
+                              }))
+                            }))
+                          }));
+                          if (user) {
+                            saveFullCurriculum(newData, user.id).catch(console.error);
+                          } else {
+                            saveLocalData(newData);
+                          }
+                          return newData;
+                        });
+                        alert(`Removed ${removed} duplicate lessons!`);
+                      }}
+                      className="text-amber-600 hover:text-amber-800 text-sm px-2 py-1"
+                      title="Remove duplicate lessons by video URL"
+                    >
+                      🎬 Dedupe Lessons
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!user) {
+                          alert('Sign in first');
+                          return;
+                        }
+                        if (!confirm('Clean up ALL duplicate rows in Supabase? This cannot be undone.')) return;
+                        
+                        showStatus('Cleaning duplicates...', 'info');
+                        try {
+                          // Clean lessons
+                          const { data: lessons } = await supabase.from('lessons').select('id, topic_id, video_url, title');
+                          if (lessons) {
+                            const urlCount: Record<string, string[]> = {};
+                            lessons.forEach(l => {
+                              if (l.video_url) {
+                                if (!urlCount[l.video_url]) urlCount[l.video_url] = [];
+                                urlCount[l.video_url].push(l.id);
+                              }
+                            });
+                            const toDelete: string[] = [];
+                            Object.values(urlCount).forEach(ids => {
+                              if (ids.length > 1) toDelete.push(...ids.slice(1));
+                            });
+                            if (toDelete.length > 0) {
+                              await supabase.from('lessons').delete().in('id', toDelete);
+                              console.log('Deleted', toDelete.length, 'duplicate lessons');
+                            }
+                          }
+                          
+                          // Clean topics
+                          const { data: topics } = await supabase.from('topics').select('id, subject_id, name');
+                          if (topics) {
+                            const nameCount: Record<string, string[]> = {};
+                            topics.forEach(t => {
+                              const key = `${t.subject_id}::${t.name}`;
+                              if (!nameCount[key]) nameCount[key] = [];
+                              nameCount[key].push(t.id);
+                            });
+                            const toDelete: string[] = [];
+                            Object.values(nameCount).forEach(ids => {
+                              if (ids.length > 1) toDelete.push(...ids.slice(1));
+                            });
+                            if (toDelete.length > 0) {
+                              await supabase.from('topics').delete().in('id', toDelete);
+                              console.log('Deleted', toDelete.length, 'duplicate topics');
+                            }
+                          }
+                          
+                          // Clean subjects
+                          const { data: subjects } = await supabase.from('subjects').select('id, year_group_id, name, category');
+                          if (subjects) {
+                            const nameCount: Record<string, string[]> = {};
+                            subjects.forEach(s => {
+                              const key = `${s.year_group_id}::${s.name}::${s.category}`;
+                              if (!nameCount[key]) nameCount[key] = [];
+                              nameCount[key].push(s.id);
+                            });
+                            const toDelete: string[] = [];
+                            Object.values(nameCount).forEach(ids => {
+                              if (ids.length > 1) toDelete.push(...ids.slice(1));
+                            });
+                            if (toDelete.length > 0) {
+                              await supabase.from('subjects').delete().in('id', toDelete);
+                              console.log('Deleted', toDelete.length, 'duplicate subjects');
+                            }
+                          }
+                          
+                          // Clean year_groups
+                          const { data: ygs } = await supabase.from('year_groups').select('id, child_id, name');
+                          if (ygs) {
+                            const nameCount: Record<string, string[]> = {};
+                            ygs.forEach(y => {
+                              const key = `${y.child_id}::${y.name}`;
+                              if (!nameCount[key]) nameCount[key] = [];
+                              nameCount[key].push(y.id);
+                            });
+                            const toDelete: string[] = [];
+                            Object.values(nameCount).forEach(ids => {
+                              if (ids.length > 1) toDelete.push(...ids.slice(1));
+                            });
+                            if (toDelete.length > 0) {
+                              await supabase.from('year_groups').delete().in('id', toDelete);
+                              console.log('Deleted', toDelete.length, 'duplicate year_groups');
+                            }
+                          }
+                          
+                          showStatus('Duplicates cleaned! Reloading...', 'success');
+                          setTimeout(() => window.location.reload(), 1500);
+                        } catch (e) {
+                          showStatus('Error: ' + e, 'error');
+                        }
+                      }}
+                      className="text-red-600 hover:text-red-800 text-sm px-2 py-1"
+                      title="Clean up duplicate rows in Supabase"
+                    >
+                      🧹 Clean DB
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
 
         <div className="max-w-6xl mx-auto p-6 space-y-12">
             {/* Daily Schedule Section */}
@@ -1841,10 +2149,10 @@ const App: React.FC = () => {
                             Reset Day
                          </button>
                     </div>
-                    <Timeline 
-                        schedule={schedule} 
-                        onBlockClick={(childId, subjectId, lessonId) => {
-                            handleNavigate({ type: 'LESSON_PLAYER', childId, subjectId, lessonId, origin: 'HOME' });
+                     <Timeline 
+                        schedule={schedule}
+                        onBlockClick={(childId, subjectId, topicId, lessonId) => {
+                            handleNavigate({ type: 'LESSON_PLAYER', childId, subjectId, topicId, lessonId, origin: 'HOME' });
                         }}
                     />
                 </div>
@@ -2038,7 +2346,7 @@ const App: React.FC = () => {
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     if(window.confirm(`Delete "${topic.name}" and all its lessons?`)) {
-                                                                        handleDeleteTopic(topic.id);
+                                                                        handleDeleteTopicAtPath(child.id, subject.id, topic.id);
                                                                     }
                                                                 }}
                                                                 className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors z-20"
@@ -2149,16 +2457,16 @@ const App: React.FC = () => {
                   <div className="p-4 bg-gray-50 border-b border-gray-200 font-bold text-gray-700 flex items-center gap-2">
                       <Calendar size={18} /> Today's Plan
                   </div>
-                  <Timeline 
-                    schedule={schedule} 
-                    focusedChildId={childId}
-                    onBlockClick={(cId, sId, lId) => {
-                        // Only allow navigating to their own lessons or if needed
-                         if(cId === childId) {
-                            setView({ type: 'LESSON_PLAYER', childId: cId, subjectId: sId, lessonId: lId, origin: 'CHILD_DASHBOARD' });
-                         }
-                    }}
-                  />
+                    <Timeline 
+                        schedule={schedule}
+                        focusedChildId={childId}
+                        onBlockClick={(cId, sId, tId, lId) => {
+                            // Only allow navigating to their own lessons or if needed
+                             if(cId === childId) {
+                                setView({ type: 'LESSON_PLAYER', childId: cId, subjectId: sId, topicId: tId, lessonId: lId, origin: 'CHILD_DASHBOARD' });
+                             }
+                        }}
+                    />
               </div>
           ) : (
              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 flex flex-col items-center justify-center text-center gap-6 mb-8">
@@ -2334,7 +2642,7 @@ const App: React.FC = () => {
       if (!editName.trim()) return;
       
       const newChild: ChildProfile = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: crypto.randomUUID(),
         name: editName.trim(),
         dob: editDob,
         avatar: editAvatar,

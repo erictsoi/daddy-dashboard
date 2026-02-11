@@ -13,9 +13,11 @@ function generateUuid(): string {
 }
 
 function ensureUuid(id: string): string {
+  // If already a valid UUID, keep it
   if (id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
     return id
   }
+  // Generate a proper UUID for non-UUID IDs
   return generateUuid()
 }
 
@@ -62,20 +64,28 @@ export { migrateChildToTopicStructure };
 
 export const getLocalData = (): ChildProfile[] => {
   const stored = localStorage.getItem(STORAGE_KEY)
+  console.log('getLocalData: key=', STORAGE_KEY, 'has data=', !!stored);
   if (stored) {
-    const parsed = JSON.parse(stored)
-    if (parsed.length === 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DATA))
-      return INITIAL_DATA
+    try {
+      const parsed = JSON.parse(stored)
+      console.log('getLocalData: parsed type=', typeof parsed, 'isArray=', Array.isArray(parsed), 'length=', parsed?.length);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Log first child's subjects to debug
+        console.log('First child:', parsed[0]?.name, 'yearGroups:', parsed[0]?.yearGroups?.length);
+        if (parsed[0]?.yearGroups?.[0]?.subjects) {
+          console.log('Subjects:', parsed[0].yearGroups[0].subjects.map(s => ({ id: s.id, name: s.name, topics: s.topics?.length })));
+        }
+        return migrateToTopicStructure(parsed)
+      }
+    } catch (e) {
+      console.error('Failed to parse localStorage:', e)
     }
-    // Migrate old data format to new topic structure
-    return migrateToTopicStructure(parsed)
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DATA))
-  return INITIAL_DATA
+  return []
 }
 
 export const saveLocalData = (data: ChildProfile[]) => {
+  console.log('saveLocalData: saving', data.length, 'children:', data.map(c => c.name));
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
 }
 
@@ -88,7 +98,7 @@ export const updateChildGoogleEmail = async (childId: string, email: string): Pr
 }
 
 // Save functions for Topic structure
-export const saveYearGroup = async (yearGroup: YearGroup, childId: string): Promise<void> => {
+export const saveYearGroup = async (yearGroup: YearGroup, childId: string, userId: string): Promise<void> => {
   console.log('Saving year group:', yearGroup.name, yearGroup.id);
   const ygId = ensureUuid(yearGroup.id)
   const { error } = await supabase
@@ -96,6 +106,7 @@ export const saveYearGroup = async (yearGroup: YearGroup, childId: string): Prom
     .upsert({
       id: ygId,
       child_id: childId,
+      user_id: userId,
       name: yearGroup.name,
       order_index: parseInt(yearGroup.name.replace(/[^0-9]/g, '')) || 0
     })
@@ -106,11 +117,11 @@ export const saveYearGroup = async (yearGroup: YearGroup, childId: string): Prom
   }
 
   for (const subject of yearGroup.subjects) {
-    await saveSubject(subject, ygId)
+    await saveSubject(subject, ygId, userId)
   }
 }
 
-export const saveSubject = async (subject: Subject, yearGroupId: string): Promise<void> => {
+export const saveSubject = async (subject: Subject, yearGroupId: string, userId: string): Promise<void> => {
   console.log('Saving subject:', subject.name, subject.id);
   const subId = ensureUuid(subject.id)
   const { error } = await supabase
@@ -118,6 +129,7 @@ export const saveSubject = async (subject: Subject, yearGroupId: string): Promis
     .upsert({
       id: subId,
       year_group_id: yearGroupId,
+      user_id: userId,
       name: subject.name,
       category: subject.category,
       color: subject.color,
@@ -130,11 +142,11 @@ export const saveSubject = async (subject: Subject, yearGroupId: string): Promis
   }
 
   for (const topic of subject.topics) {
-    await saveTopic(topic, subId)
+    await saveTopic(topic, subId, userId)
   }
 }
 
-export const saveTopic = async (topic: { id: string; name: string; lessons: Lesson[] }, subjectId: string): Promise<void> => {
+export const saveTopic = async (topic: { id: string; name: string; lessons: Lesson[] }, subjectId: string, userId: string): Promise<void> => {
   console.log('Saving topic:', topic.name, topic.id);
   const topicId = ensureUuid(topic.id)
   const { error } = await supabase
@@ -142,6 +154,7 @@ export const saveTopic = async (topic: { id: string; name: string; lessons: Less
     .upsert({
       id: topicId,
       subject_id: subjectId,
+      user_id: userId,
       name: topic.name,
       order_index: 0
     })
@@ -150,13 +163,10 @@ export const saveTopic = async (topic: { id: string; name: string; lessons: Less
     console.error('Error saving topic:', topic.name, error);
     throw error;
   }
-
-  for (const lesson of topic.lessons) {
-    await saveLesson(lesson, topicId)
-  }
+  // Lessons are saved in the second pass of saveFullCurriculum
 }
 
-export const saveLesson = async (lesson: Lesson, topicId: string): Promise<void> => {
+export const saveLesson = async (lesson: Lesson, topicId: string, userId: string): Promise<void> => {
   console.log('Saving lesson:', lesson.title, lesson.id);
   const lesId = ensureUuid(lesson.id)
   const { error } = await supabase
@@ -164,6 +174,7 @@ export const saveLesson = async (lesson: Lesson, topicId: string): Promise<void>
     .upsert({
       id: lesId,
       topic_id: topicId,
+      user_id: userId,
       title: lesson.title,
       video_url: lesson.videoUrl,
       duration_minutes: lesson.durationMinutes,
@@ -185,9 +196,21 @@ export const saveLesson = async (lesson: Lesson, topicId: string): Promise<void>
 
 export const saveFullCurriculum = async (children: ChildProfile[], userId: string): Promise<void> => {
   console.log('saveFullCurriculum: starting for', children.length, 'children, userId:', userId);
+  
+  // Pre-generate all UUIDs to ensure consistency between passes
+  const idMap = new Map<string, string>()
+  
+  function getOrCreateUuid(id: string): string {
+    if (!idMap.has(id)) {
+      idMap.set(id, ensureUuid(id))
+    }
+    return idMap.get(id)!
+  }
+  
+  // First pass: Save all parent records (children, year_groups, subjects, topics)
   for (const child of children) {
     console.log('Processing child:', child.name);
-    const childId = ensureUuid(child.id)
+    const childId = getOrCreateUuid(child.id)
     const { error: childError } = await supabase
       .from('children')
       .upsert({
@@ -206,9 +229,100 @@ export const saveFullCurriculum = async (children: ChildProfile[], userId: strin
     }
 
     for (const yg of child.yearGroups) {
-      await saveYearGroup(yg, childId)
+      const ygId = getOrCreateUuid(yg.id)
+      const { error: ygError } = await supabase
+        .from('year_groups')
+        .upsert({
+          id: ygId,
+          child_id: childId,
+          user_id: userId,
+          name: yg.name,
+          order_index: parseInt(yg.name.replace(/[^0-9]/g, '')) || 0
+        })
+      
+      if (ygError) {
+        console.error('Error saving year group:', yg.name, ygError);
+        throw ygError;
+      }
+
+      for (const subject of yg.subjects) {
+        const subId = getOrCreateUuid(subject.id)
+        const { error: subError } = await supabase
+          .from('subjects')
+          .upsert({
+            id: subId,
+            year_group_id: ygId,
+            user_id: userId,
+            name: subject.name,
+            category: subject.category,
+            color: subject.color,
+            order_index: 0
+          })
+        
+        if (subError) {
+          console.error('Error saving subject:', subject.name, subError);
+          throw subError;
+        }
+
+        for (const topic of subject.topics) {
+          const topicId = getOrCreateUuid(topic.id)
+          const { error: topicError } = await supabase
+            .from('topics')
+            .upsert({
+              id: topicId,
+              subject_id: subId,
+              user_id: userId,
+              name: topic.name,
+              order_index: 0
+            })
+          
+          if (topicError) {
+            console.error('Error saving topic:', topic.name, topicError);
+            throw topicError;
+          }
+        }
+      }
     }
   }
+  
+  // Second pass: Save all lessons using the same UUIDs
+  console.log('saveFullCurriculum: saving lessons...');
+  for (const child of children) {
+    for (const yg of child.yearGroups) {
+      for (const subject of yg.subjects) {
+        for (const topic of subject.topics) {
+          const topicId = getOrCreateUuid(topic.id)
+          for (const lesson of topic.lessons) {
+            const lessonId = getOrCreateUuid(lesson.id)
+            const { error: lessonError } = await supabase
+              .from('lessons')
+              .upsert({
+                id: lessonId,
+                topic_id: topicId,
+                user_id: userId,
+                title: lesson.title,
+                video_url: lesson.videoUrl,
+                duration_minutes: lesson.durationMinutes,
+                outcomes: lesson.outcomes,
+                completed: lesson.completed,
+                time_spent_seconds: lesson.timeSpentSeconds || 0,
+                deleted: lesson.deleted || false,
+                order_index: 0,
+                lesson_focus: lesson.lessonFocus || null,
+                lesson_notes: lesson.lessonNotes || null,
+                video_position: lesson.videoPosition || null
+              })
+            
+            if (lessonError) {
+              console.error('Error saving lesson:', lesson.title, lessonError);
+              throw lessonError;
+            }
+          }
+        }
+      }
+    }
+  }
+  
   console.log('saveFullCurriculum: complete');
 }
 
@@ -230,7 +344,11 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
   console.log('fetchChildren: found', children?.length || 0, 'children for userId', userId);
   if (!children || children.length === 0) return []
 
-  const childIds = children.map(c => c.id);
+  // Deduplicate children by ID
+  const uniqueChildren = Array.from(new Map(children.map(c => [c.id, c])).values());
+  console.log('fetchChildren: after dedup', uniqueChildren.length, 'children');
+
+  const childIds = uniqueChildren.map(c => c.id);
   
   const yearGroupsResult = await supabase
     .from('year_groups')
@@ -239,7 +357,8 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
     .order('order_index')
     
   if (yearGroupsResult.error) throw yearGroupsResult.error
-  const yearGroups = yearGroupsResult.data || [];
+  // Deduplicate year groups
+  const yearGroups = Array.from(new Map((yearGroupsResult.data || []).map(y => [y.id, y])).values());
 
   const yearGroupIds = yearGroups.map(yg => yg.id);
   
@@ -250,7 +369,8 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
     .order('order_index')
     
   if (subjectsResult.error) throw subjectsResult.error
-  const subjects = subjectsResult.data || [];
+  // Deduplicate subjects
+  const subjects = Array.from(new Map((subjectsResult.data || []).map(s => [s.id, s])).values());
 
   const subjectIds = subjects.map(s => s.id);
   
@@ -261,7 +381,8 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
     .order('order_index')
     
   if (topicsResult.error) throw topicsResult.error
-  const topics = topicsResult.data || [];
+  // Deduplicate topics
+  const topics = Array.from(new Map((topicsResult.data || []).map(t => [t.id, t])).values());
 
   const topicIds = topics.map(t => t.id);
   
@@ -272,7 +393,8 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
     .order('order_index')
     
   if (lessonsResult.error) throw lessonsResult.error
-  const lessons = lessonsResult.data || [];
+  // Deduplicate lessons
+  const lessons = Array.from(new Map((lessonsResult.data || []).map(l => [l.id, l])).values());
 
   const topicsBySubject = new Map<string, typeof topics>();
   const lessonsByTopic = new Map<string, typeof lessons>();
@@ -369,21 +491,36 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
 }
 
 // Manual upload
-export const uploadToSupabase = async (userId: string): Promise<{ success: boolean; message: string }> => {
+export const uploadToSupabase = async (userId: string, currentData?: ChildProfile[]): Promise<{ success: boolean; message: string }> => {
   if (!supabase) {
     return { success: false, message: 'Supabase not configured' };
   }
 
   try {
+    // Try localStorage first, fallback to current React state
     const localData = getLocalData();
-    if (localData.length === 0) {
-      return { success: false, message: 'No local data to upload' };
+    const dataToUpload = localData.length > 0 ? localData : (currentData || []);
+    
+    console.log('uploadToSupabase: localData:', localData.length, 'children, currentData:', currentData?.length || 0, 'children');
+    
+    if (!dataToUpload || dataToUpload.length === 0) {
+      return { success: false, message: 'No data found. Import curriculum first via Build Curriculum.' };
     }
 
-    console.log('Manual upload: Starting upload to Supabase for user:', userId);
+    console.log('Manual upload: Starting upload to Supabase for user:', userId, '- children:', dataToUpload.length);
 
-    for (const child of localData) {
-      const childId = ensureUuid(child.id);
+    // Pre-generate all UUIDs for consistency
+    const idMap = new Map<string, string>()
+    
+    function getOrCreateUuid(id: string): string {
+      if (!idMap.has(id)) {
+        idMap.set(id, ensureUuid(id))
+      }
+      return idMap.get(id)!
+    }
+
+    for (const child of dataToUpload) {
+      const childId = getOrCreateUuid(child.id);
       
       const { error: childError } = await supabase
         .from('children')
@@ -403,12 +540,13 @@ export const uploadToSupabase = async (userId: string): Promise<{ success: boole
       }
 
       for (const yg of child.yearGroups) {
-        const ygId = ensureUuid(yg.id);
+        const ygId = getOrCreateUuid(yg.id);
         const { error: ygError } = await supabase
           .from('year_groups')
           .upsert({
             id: ygId,
             child_id: childId,
+            user_id: userId,
             name: yg.name,
             order_index: parseInt(yg.name.replace(/[^0-9]/g, '')) || 0
           });
@@ -419,12 +557,13 @@ export const uploadToSupabase = async (userId: string): Promise<{ success: boole
         }
 
         for (const sub of yg.subjects) {
-          const subId = ensureUuid(sub.id);
+          const subId = getOrCreateUuid(sub.id);
           const { error: subError } = await supabase
             .from('subjects')
             .upsert({
               id: subId,
               year_group_id: ygId,
+              user_id: userId,
               name: sub.name,
               category: sub.category,
               color: sub.color,
@@ -437,12 +576,13 @@ export const uploadToSupabase = async (userId: string): Promise<{ success: boole
           }
 
           for (const topic of sub.topics) {
-            const topicId = ensureUuid(topic.id);
+            const topicId = getOrCreateUuid(topic.id);
             const { error: topicError } = await supabase
               .from('topics')
               .upsert({
                 id: topicId,
                 subject_id: subId,
+                user_id: userId,
                 name: topic.name,
                 order_index: 0
               });
@@ -453,12 +593,13 @@ export const uploadToSupabase = async (userId: string): Promise<{ success: boole
             }
 
             for (const lesson of topic.lessons) {
-              const lesId = ensureUuid(lesson.id);
+              const lesId = getOrCreateUuid(lesson.id);
               const { error: lesError } = await supabase
                 .from('lessons')
                 .upsert({
                   id: lesId,
                   topic_id: topicId,
+                  user_id: userId,
                   title: lesson.title,
                   video_url: lesson.videoUrl,
                   duration_minutes: lesson.durationMinutes,
@@ -482,7 +623,8 @@ export const uploadToSupabase = async (userId: string): Promise<{ success: boole
     }
 
     console.log('Manual upload: Complete');
-    return { success: true, message: `Uploaded ${localData.length} children to Supabase` };
+    console.log('Uploaded children IDs:', dataToUpload.map(c => c.id));
+    return { success: true, message: `Uploaded ${dataToUpload.length} children to Supabase` };
   } catch (error) {
     console.error('Upload error:', error);
     return { success: false, message: error instanceof Error ? error.message : 'Upload failed' };

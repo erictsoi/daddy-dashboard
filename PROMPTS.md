@@ -4,8 +4,62 @@
      1. Update CHANGELOG.md with changes
      2. Update PROMPTS.md with context
      3. Update IMPLEMENTATION.md with technical details
-     4. Bump version in package.json
--->
+     4. Update CURRICULUM_REWRITE_LOG.md with curriculum changes
+     5. Bump version in package.json
+   -->
+
+## 2026-02-10 - Supabase Deduplication & Data Cleanup
+
+**User Request:**
+> i need a nuke all data on local storage as well
+> these buttons dont work
+> i need a way to override the data in supabase, not just add to it. it keeps dulpicating my kids
+> Got childrenData: 135 children. i only have 2 kids
+> i need a delete duplicate button
+> No local data found. Add kids first via Manage Profiles
+> Year info is there, but the lessons, subject and topic cards are all gone
+
+**Problems Identified:**
+1. Upload created duplicate kids (showed "3 children" when user had 2)
+2. Empty localStorage reloaded INITIAL_DATA (3 test kids) causing confusion
+3. Child IDs used Math.random() instead of UUIDs
+4. Topic IDs generated duplicates when topicName was empty
+5. Lesson import added duplicates on re-import
+6. Supabase had duplicate rows from multiple uploads with different ID generation
+7. fetchChildByEmail returned wrong type (single object vs array)
+
+**Requirements:**
+1. Fix upload to preserve IDs and prevent duplicates
+2. Add buttons to clear/clean/nuke data
+3. Fix ID generation to use proper UUIDs
+4. Add lesson deduplication by video URL
+5. Add cleanup buttons for Supabase
+
+**Output:**
+- Fixed `ensureUuid()` to preserve original IDs for upsert
+- Changed `handleAddChildLocal` to use `crypto.randomUUID()`
+- Changed `getLocalData()` to return empty array instead of INITIAL_DATA
+- Added lesson deduplication in `handleBulkImport` by video URL
+- Fixed Topic ID generation with fallback to "General" and sanitization
+- Added debug logging to `getLocalData()`, `saveLocalData()`, `uploadToSupabase()`
+
+**Added Header Buttons:**
+- 🗑️ Clear Data - Clears localStorage
+- 🔄 Deduplicate - Removes duplicate children by name
+- 💥 Nuke Supabase - Wipes all Supabase data
+- 🧹 Clean DB - Removes duplicate rows from all tables
+- 🎬 Dedupe Lessons - Removes duplicate lessons locally
+
+**Fixed Files:**
+- `lib/dataService.ts`:
+  - `ensureUuid()` - Preserve IDs for upsert
+  - `getLocalData()` - Return empty array
+  - `saveLocalData()` - Added debug logging
+  - `fetchChildren()` - Added deduplication with Map
+- `App.tsx`:
+  - `handleAddChildLocal` - Use crypto.randomUUID()
+  - `handleBulkImport` - Skip existing lessons by video URL
+  - Header buttons for data management
 
 ## 2026-02-09 - Supabase Authentication Integration
 

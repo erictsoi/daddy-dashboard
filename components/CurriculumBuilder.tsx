@@ -50,7 +50,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
         subjectCategory: defaultSubject,
         subjectName: defaultSubcategory,
         lessonTitle: `Playlist (${videos.length} videos)`,
-        notes: `YouTube Playlist`,
+        lessonNotes: `YouTube Playlist`,
         videoUrl: cleanUrl,
         isValid: true,
         isYouTubeUrl: true,

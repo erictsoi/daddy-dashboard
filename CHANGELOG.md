@@ -4,8 +4,31 @@
      1. Update CHANGELOG.md with changes
      2. Update PROMPTS.md with context
      3. Update IMPLEMENTATION.md with technical details
-     4. Bump version in package.json
-  -->
+     4. Update CURRICULUM_REWRITE_LOG.md with curriculum changes
+     5. Bump version in package.json
+   -->
+
+## 2026-02-10
+
+### Fixed
+- **Upload duplicate issue** - Changed `ensureUuid()` to preserve original IDs (`kid1`, `kid2`) instead of generating new UUIDs each upload. Prevents duplicates when uploading multiple times.
+- **Child ID generation** - Changed from `Math.random()` to `crypto.randomUUID()` for valid UUIDs.
+- **Topic ID generation** - Fixed duplicate IDs when `topicName` was empty by adding fallback to "General" and sanitizing IDs.
+- **Lesson deduplication** - Import now skips lessons that already exist by video URL.
+- **getLocalData fallback** - Changed from returning `INITIAL_DATA` (3 test kids) to returning empty array to prevent accidental test data uploads.
+
+### Added
+- **🔄 Deduplicate button** - Finds duplicate children by name in Supabase and removes extras.
+- **💥 Nuke Supabase button** - Wipes all data from Supabase.
+- **🗑️ Clear Data button** - Clears localStorage.
+- **🧹 Clean DB button** - Removes duplicate rows from Supabase (lessons by videoUrl, topics/subjects/yearGroups by name).
+- **🎬 Dedupe Lessons button** - Removes duplicate lessons locally by video URL.
+- **Debug logging** - Added console.log to `getLocalData()`, `saveLocalData()`, and `uploadToSupabase()` for debugging.
+- **Deduplication in fetchChildren** - Added deduplication when loading from Supabase using Map.
+
+### Changed
+- **Schedule generator** - Now works with any number of children (not hardcoded adrian/sophia).
+- **Timeline onBlockClick** - Now passes `topicId` for proper lesson tracking.
 
 ## 2026-02-09
 

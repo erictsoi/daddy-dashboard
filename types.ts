@@ -50,7 +50,7 @@ export type ViewState =
   | { type: 'CURRICULUM_BUILDER' }
   | { type: 'CHILD_DASHBOARD'; childId: string }
   | { type: 'SUBJECT_DETAIL'; childId: string; subjectId: string; origin: ViewOrigin }
-  | { type: 'LESSON_PLAYER'; childId: string; subjectId: string; lessonId: string; origin: ViewOrigin }
+  | { type: 'LESSON_PLAYER'; childId: string; subjectId: string; topicId: string; lessonId: string; origin: ViewOrigin }
   | { type: 'MANAGE_PROFILES' };
 
 export interface ScheduleBlock {
@@ -59,20 +59,16 @@ export interface ScheduleBlock {
   startTime: Date;
   endTime: Date;
   label?: string;
-  adrian?: {
-    subjectId: string;
-    subjectName: string;
-    lessonTitle: string;
-    hasDevice: boolean;
-    lessonId: string;
-  } | null;
-  sophia?: {
-    subjectId: string;
-    subjectName: string;
-    lessonTitle: string;
-    hasDevice: boolean;
-    lessonId: string;
-  } | null;
+  children: {
+    [childId: string]: {
+      subjectId: string;
+      topicId: string;
+      subjectName: string;
+      lessonId: string;
+      lessonTitle: string;
+      hasDevice: boolean;
+    } | null;
+  };
 }
 
 export interface ExpandedLesson {
