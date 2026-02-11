@@ -45,26 +45,26 @@ function cloneWithPath(obj: any, path: string[], value: any): any {
   return result;
 }
 
-const findChildById = useCallback((data: ChildProfile[], childId: string): ChildProfile | undefined => {
+const findChildById = (data: ChildProfile[], childId: string): ChildProfile | undefined => {
   return data.find(c => c.id === childId);
-}, []);
+};
 
-const findYearGroup = useCallback((child: ChildProfile | undefined, subjectId: string) => {
+const findYearGroup = (child: ChildProfile | undefined, subjectId: string) => {
   if (!child) return undefined;
   return child.yearGroups.find(y => y.subjects.some(s => s.id === subjectId));
-}, []);
+};
 
-const findSubject = useCallback((yearGroup: YearGroup | undefined, subjectId: string) => {
+const findSubject = (yearGroup: YearGroup | undefined, subjectId: string) => {
   return yearGroup?.subjects.find(s => s.id === subjectId);
-}, []);
+};
 
-const findTopic = useCallback((subject: Subject | undefined, topicId: string) => {
+const findTopic = (subject: Subject | undefined, topicId: string) => {
   return subject?.topics.find(t => t.id === topicId);
-}, []);
+};
 
-const findLesson = useCallback((topic: Topic | undefined, lessonId: string) => {
+const findLesson = (topic: Topic | undefined, lessonId: string) => {
   return topic?.lessons.find(l => l.id === lessonId);
-}, []);
+};
 
 // Import data from JSON file
 const importDataFromFile = (file: File): Promise<ChildProfile[]> => {
@@ -332,120 +332,120 @@ const App: React.FC = () => {
  
    // --- Schedule Generator Logic ---
     
-   const shuffle = <T,>(array: T[]): T[] => {
-     const shuffled = [...array];
-     for (let i = shuffled.length - 1; i > 0; i--) {
-       const j = Math.floor(Math.random() * (i + 1));
-       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-     }
-     return shuffled;
-   };
- 
-   const generateSchedule = (hours: number) => {
-     const blocks: ScheduleBlock[] = [];
-     const now = new Date();
-     now.setMinutes(Math.ceil(now.getMinutes() / 5) * 5, 0, 0);
-     
-     let currentTime = new Date(now);
-     
-     const childrenWithLessons = data.filter(child => {
-       const subjects = child.yearGroups.flatMap(yg => yg.subjects);
-       const lessons = subjects.flatMap(s => s.topics.flatMap(t => t.lessons));
-       return lessons.some(l => !l.completed && !l.deleted);
-     });
-     
-     if (childrenWithLessons.length === 0) {
-       alert("Please add more subjects/lessons first!");
-       return;
-     }
- 
-     // Pre-shuffle subjects for each child
-     const childSubjects: Record<string, { subjects: any[], currentIndex: number }> = {};
-     childrenWithLessons.forEach(child => {
-       const subjects = shuffle(child.yearGroups.flatMap(yg => yg.subjects));
-       childSubjects[child.id] = { subjects, currentIndex: 0 };
-     });
- 
-     for (let i = 0; i < hours; i++) {
-         const startTime = new Date(currentTime);
-         const endTime = new Date(currentTime.getTime() + 50 * 60000);
-         
-         const blockChildren: ScheduleBlock['children'] = {};
-         
-         childrenWithLessons.forEach((child, idx) => {
-           const childData = childSubjects[child.id];
-           if (!childData) return;
-           
-           // Rotate through shuffled subjects
-           const subject = childData.subjects[childData.currentIndex % childData.subjects.length];
-           if (!subject) return;
-           
-           // Get uncompleted lesson from subject
-           const topic = subject.topics.find(t => t.lessons.some(l => !l.completed && !l.deleted)) 
-             || subject.topics.find(t => t.lessons.some(l => !l.deleted))
-             || subject.topics[0];
-           if (!topic) return;
-           
-           const lesson = topic.lessons.find(l => !l.completed && !l.deleted)
-             || topic.lessons.find(l => !l.deleted)
-             || topic.lessons[0];
-           if (!lesson) return;
-           
-           const hasDevice = i % childrenWithLessons.length === idx;
-           
-           blockChildren[child.id] = {
-             subjectId: subject.id,
-             topicId: topic.id,
-             subjectName: subject.name,
-             lessonId: lesson.id,
-             lessonTitle: lesson.title,
-             hasDevice
-           };
-           
-           // Move to next subject for next block
-           childData.currentIndex++;
-         });
-         
-         blocks.push({
-             id: `block-${i}`,
-             type: 'academic',
-             startTime,
-             endTime,
-             children: blockChildren
-         });
- 
-         currentTime = endTime;
- 
-         if (i < hours - 1) {
-             if (i === 1) {
-                 const lunchEnd = new Date(currentTime.getTime() + 40 * 60000);
-                 blocks.push({
-                     id: `lunch-${i}`,
-                     type: 'lunch',
-                     startTime: currentTime,
-                     endTime: lunchEnd,
-                     label: "Lunch & Free Time",
-                     children: {}
-                 });
-                 currentTime = lunchEnd;
-             } else {
-                 const breakEnd = new Date(currentTime.getTime() + 10 * 60000);
-                 blocks.push({
-                     id: `break-${i}`,
-                     type: 'break',
-                     startTime: currentTime,
-                     endTime: breakEnd,
-                     label: "Refresh Break",
-                     children: {}
-                 });
-                 currentTime = breakEnd;
-             }
-         }
-     }
- 
-     setSchedule(blocks);
-     setIsDayActive(true);
-   };
+    const shuffle = useCallback(<T,>(array: T[]): T[] => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }, []);
+  
+    const generateSchedule = useCallback((hours: number) => {
+      const blocks: ScheduleBlock[] = [];
+      const now = new Date();
+      now.setMinutes(Math.ceil(now.getMinutes() / 5) * 5, 0, 0);
+      
+      let currentTime = new Date(now);
+      
+      const childrenWithLessons = data.filter(child => {
+        const subjects = child.yearGroups.flatMap(yg => yg.subjects);
+        const lessons = subjects.flatMap(s => s.topics.flatMap(t => t.lessons));
+        return lessons.some(l => !l.completed && !l.deleted);
+      });
+      
+      if (childrenWithLessons.length === 0) {
+        alert("Please add more subjects/lessons first!");
+        return;
+      }
+  
+      // Pre-shuffle subjects for each child
+      const childSubjects: Record<string, { subjects: any[], currentIndex: number }> = {};
+      childrenWithLessons.forEach(child => {
+        const subjects = shuffle(child.yearGroups.flatMap(yg => yg.subjects));
+        childSubjects[child.id] = { subjects, currentIndex: 0 };
+      });
+  
+      for (let i = 0; i < hours; i++) {
+          const startTime = new Date(currentTime);
+          const endTime = new Date(currentTime.getTime() + 50 * 60000);
+          
+          const blockChildren: ScheduleBlock['children'] = {};
+          
+          childrenWithLessons.forEach((child, idx) => {
+            const childData = childSubjects[child.id];
+            if (!childData) return;
+            
+            // Rotate through shuffled subjects
+            const subject = childData.subjects[childData.currentIndex % childData.subjects.length];
+            if (!subject) return;
+            
+            // Get uncompleted lesson from subject
+            const topic = subject.topics.find(t => t.lessons.some(l => !l.completed && !l.deleted)) 
+              || subject.topics.find(t => t.lessons.some(l => !l.deleted))
+              || subject.topics[0];
+            if (!topic) return;
+            
+            const lesson = topic.lessons.find(l => !l.completed && !l.deleted)
+              || topic.lessons.find(l => !l.deleted)
+              || topic.lessons[0];
+            if (!lesson) return;
+            
+            const hasDevice = i % childrenWithLessons.length === idx;
+            
+            blockChildren[child.id] = {
+              subjectId: subject.id,
+              topicId: topic.id,
+              subjectName: subject.name,
+              lessonId: lesson.id,
+              lessonTitle: lesson.title,
+              hasDevice
+            };
+            
+            // Move to next subject for next block
+            childData.currentIndex++;
+          });
+          
+          blocks.push({
+              id: `block-${i}`,
+              type: 'academic',
+              startTime,
+              endTime,
+              children: blockChildren
+          });
+  
+          currentTime = endTime;
+  
+          if (i < hours - 1) {
+              if (i === 1) {
+                  const lunchEnd = new Date(currentTime.getTime() + 40 * 60000);
+                  blocks.push({
+                      id: `lunch-${i}`,
+                      type: 'lunch',
+                      startTime: currentTime,
+                      endTime: lunchEnd,
+                      label: "Lunch & Free Time",
+                      children: {}
+                  });
+                  currentTime = lunchEnd;
+              } else {
+                  const breakEnd = new Date(currentTime.getTime() + 10 * 60000);
+                  blocks.push({
+                      id: `break-${i}`,
+                      type: 'break',
+                      startTime: currentTime,
+                      endTime: breakEnd,
+                      label: "Refresh Break",
+                      children: {}
+                  });
+                  currentTime = breakEnd;
+              }
+          }
+      }
+  
+      setSchedule(blocks);
+      setIsDayActive(true);
+    }, [data, shuffle]);
  
  
   // --- Curriculum Actions ---
@@ -1056,15 +1056,17 @@ const App: React.FC = () => {
     // Admin Mode Check
     const isReadOnly = origin === 'CHILD_DASHBOARD';
 
-    const toggleTopic = (topicId: string) => {
-      const newExpanded = new Set(expandedTopics);
-      if (newExpanded.has(topicId)) {
-        newExpanded.delete(topicId);
-      } else {
-        newExpanded.add(topicId);
-      }
-      setExpandedTopics(newExpanded);
-    };
+    const toggleTopic = useCallback((topicId: string) => {
+      setExpandedTopics(prev => {
+        const newExpanded = new Set(prev);
+        if (newExpanded.has(topicId)) {
+          newExpanded.delete(topicId);
+        } else {
+          newExpanded.add(topicId);
+        }
+        return newExpanded;
+      });
+    }, []);
 
     // Expand all topics by default
     useEffect(() => {
@@ -1074,11 +1076,21 @@ const App: React.FC = () => {
       }
     }, [subject?.topics]);
 
-    // Aggregate stats across all topics
-    const allActiveLessons = subject?.topics.flatMap(t => t.lessons.filter(l => !l.deleted)) || [];
-    const allDeletedLessons = subject?.topics.flatMap(t => t.lessons.filter(l => l.deleted)) || [];
+    // Aggregate stats across all topics - memoized
+    const allActiveLessons = useMemo(() => 
+      subject?.topics.flatMap(t => t.lessons.filter(l => !l.deleted)) || [], 
+      [subject]
+    );
+    const allDeletedLessons = useMemo(() => 
+      subject?.topics.flatMap(t => t.lessons.filter(l => l.deleted)) || [], 
+      [subject]
+    );
+    const completedCount = useMemo(() => 
+      allActiveLessons.filter(l => l.completed).length, 
+      [allActiveLessons]
+    );
 
-    const handleToggleComplete = (lessonId: string) => {
+    const handleToggleComplete = useCallback((lessonId: string) => {
       setData(prev => {
         const newData = prev.map(ch => {
             if (ch.id !== childId) return ch;
@@ -1109,7 +1121,7 @@ const App: React.FC = () => {
         }
         return newData;
       });
-    };
+    }, [childId, subjectId, user]);
 
     const handleDeleteTopic = (topicId: string) => {
       if (!confirm('Delete this topic and all its lessons?')) return;
@@ -1278,23 +1290,23 @@ const App: React.FC = () => {
             </header>
             
             <div className="max-w-4xl mx-auto p-6 space-y-8">
-                 {/* Stats */}
-                 <div className="flex gap-4">
-                     <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex-1">
-                         <div className="text-sm text-gray-500">Active Lessons</div>
-                         <div className="text-2xl font-bold text-gray-800">{allActiveLessons.length}</div>
-                     </div>
-                     <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex-1">
-                         <div className="text-sm text-gray-500">Completed</div>
-                         <div className={`text-2xl font-bold text-${child.themeColor}-600`}>
-                             {allActiveLessons.filter(l => l.completed).length}
-                         </div>
-                     </div>
-                     <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex-1">
-                         <div className="text-sm text-gray-500">Topics</div>
-                         <div className="text-2xl font-bold text-gray-800">{subject.topics.length}</div>
-                     </div>
-                 </div>
+                  {/* Stats */}
+                  <div className="flex gap-4">
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex-1">
+                          <div className="text-sm text-gray-500">Active Lessons</div>
+                          <div className="text-2xl font-bold text-gray-800">{allActiveLessons.length}</div>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex-1">
+                          <div className="text-sm text-gray-500">Completed</div>
+                          <div className={`text-2xl font-bold text-${child.themeColor}-600`}>
+                              {completedCount}
+                          </div>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex-1">
+                          <div className="text-sm text-gray-500">Topics</div>
+                          <div className="text-2xl font-bold text-gray-800">{subject.topics.length}</div>
+                      </div>
+                  </div>
 
                  {/* Topics List */}
                  <div className="space-y-4">
@@ -2198,24 +2210,25 @@ const App: React.FC = () => {
                 </div>
             ) : (
                 <div className="space-y-4 mb-8">
-                    <div className="flex items-center justify-between">
-                         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                             <Calendar className="text-gray-500" /> Today's Timetable
-                         </h2>
-                         <button 
-                           onClick={() => { setIsDayActive(false); setSchedule([]); }}
-                           className="text-sm text-red-500 hover:text-red-700"
-                         >
-                            Reset Day
-                         </button>
-                    </div>
-                     <Timeline 
-                        schedule={schedule}
-                        onBlockClick={(childId, subjectId, topicId, lessonId) => {
-                            handleNavigate({ type: 'LESSON_PLAYER', childId, subjectId, topicId, lessonId, origin: 'HOME' });
-                        }}
-                    />
-                </div>
+                     <div className="flex items-center justify-between">
+                          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                              <Calendar className="text-gray-500" /> Today's Timetable
+                          </h2>
+                          <button 
+                            onClick={() => { setIsDayActive(false); setSchedule([]); }}
+                            className="text-sm text-red-500 hover:text-red-700"
+                          >
+                             Reset Day
+                          </button>
+                     </div>
+                      <Timeline 
+                         schedule={schedule}
+                         children={data}
+                         onBlockClick={(childId, subjectId, topicId, lessonId) => {
+                             handleNavigate({ type: 'LESSON_PLAYER', childId, subjectId, topicId, lessonId, origin: 'HOME' });
+                         }}
+                      />
+                 </div>
             )}
 
             {/* Main Curriculum Hierarchy */}

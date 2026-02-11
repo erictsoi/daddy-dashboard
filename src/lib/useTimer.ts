@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface UseTimerOptions {
   subjectId: string;
@@ -95,7 +95,7 @@ export const usePersistentTimer = ({
   return { isRunning, elapsed, start, stop, reset };
 };
 
-export const formatTime = useCallback((seconds: number): string => {
+export const formatTime = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
@@ -104,9 +104,9 @@ export const formatTime = useCallback((seconds: number): string => {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
-}, []);
+};
 
-export const formatTimeReadable = useCallback((seconds: number): string => {
+export const formatTimeReadable = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   
@@ -120,4 +120,4 @@ export const formatTimeReadable = useCallback((seconds: number): string => {
     return `${minutes}m`;
   }
   return '<1m';
-}, []);
+};

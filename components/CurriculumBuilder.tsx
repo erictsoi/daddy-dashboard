@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { ArrowLeft, Save, AlertCircle, FileText, CheckCircle, Link, Copy, Youtube, Loader2, ChevronRight } from 'lucide-react';
-import { fetchPlaylistVideos } from '../src/lib/supabase';
+import { fetchPlaylistVideos } from '../lib/supabase';
 import { ParsedRow } from '../types';
 import { processYouTubeUrl } from '../utils/youtube';
+
+const YOUTUBE_REGEX = /(?:youtube\.com|youtu\.be)/i;
+const PLAYLIST_ID_REGEX = /[?&]list=([a-zA-Z0-9_-]+)/;
 
 interface Props {
   onBack: () => void;
@@ -86,7 +89,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
       const lessonNotes = cols[6]?.trim() || '';
       const videoUrl = cols[7]?.trim() || cols[6]?.trim() || '';
 
-      const isYouTubeUrl = /(?:youtube\.com|youtu\.be)/i.test(videoUrl);
+      const isYouTubeUrl = YOUTUBE_REGEX.test(videoUrl);
       const isValid = !!(childName && yearGroup && subjectCategory && topicName);
 
       return {
@@ -114,7 +117,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
   }, [inputText, parseInput]);
 
   const cleanPlaylistUrl = useCallback((url: string): string => {
-    const playlistIdMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+    const playlistIdMatch = url.match(PLAYLIST_ID_REGEX);
     return playlistIdMatch ? `https://www.youtube.com/playlist?list=${playlistIdMatch[1]}` : url;
   }, []);
 
@@ -452,7 +455,7 @@ interface PreviewTableProps {
   rows: ParsedRow[];
 }
 
-function PreviewTable({ rows }: PreviewTableProps) {
+const PreviewTable = memo(function PreviewTable({ rows }: PreviewTableProps) {
   if (rows.length === 0) {
     return (
       <div className="flex-1 overflow-auto max-h-[600px]">
@@ -461,12 +464,14 @@ function PreviewTable({ rows }: PreviewTableProps) {
     );
   }
 
-  const groups = rows.reduce<Record<string, ParsedRow[]>>((acc, row) => {
-    const key = `${row.yearGroup}|${row.subjectCategory}|${row.subjectName}`;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(row);
-    return acc;
-  }, {});
+  const groups = useMemo(() => {
+    return rows.reduce<Record<string, ParsedRow[]>>((acc, row) => {
+      const key = `${row.yearGroup}|${row.subjectCategory}|${row.subjectName}`;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(row);
+      return acc;
+    }, {});
+  }, [rows]);
 
   return (
     <div className="flex-1 overflow-auto max-h-[600px]">
@@ -487,7 +492,7 @@ function PreviewTable({ rows }: PreviewTableProps) {
       </div>
     </div>
   );
-}
+});
 
 interface PreviewGroupRowProps {
   year: string;
@@ -496,7 +501,7 @@ interface PreviewGroupRowProps {
   videos: { title: string; position: number; videoUrl: string }[];
 }
 
-function PreviewGroupRow({ year, category, topic, videos }: PreviewGroupRowProps) {
+const PreviewGroupRow = memo(function PreviewGroupRow({ year, category, topic, videos }: PreviewGroupRowProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
@@ -522,4 +527,4 @@ function PreviewGroupRow({ year, category, topic, videos }: PreviewGroupRowProps
       )}
     </div>
   );
-}
+});

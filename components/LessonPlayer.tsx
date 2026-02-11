@@ -12,10 +12,11 @@ interface Props {
   onComplete: (lessonId: string, timeSpentSeconds: number) => void;
 }
 
+const YOUTUBE_ID_REGEX = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+
 const getYouTubeID = memo(function getYouTubeID(url: string | undefined): string {
   if (!url) return '';
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
+  const match = url.match(YOUTUBE_ID_REGEX);
   return (match && match[2].length === 11) ? match[2] : '';
 });
 

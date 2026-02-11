@@ -564,71 +564,67 @@ export const fetchChildByEmail = async (email: string): Promise<ChildProfile[]> 
   
   const childIds = children.map(c => c.id);
   
-  // Fetch related data for these children
-  const yearGroupsResult = await supabase
-    .from('year_groups')
-    .select('*')
-    .in('child_id', childIds)
-    .order('order_index');
-    
-  if (yearGroupsResult.error) return [];
+  // Fetch all related data in parallel
+  const [yearGroupsResult, subjectsResult, topicsResult, lessonsResult] = await Promise.all([
+    supabase.from('year_groups').select('*').in('child_id', childIds).order('order_index'),
+    supabase.from('subjects').select('*').order('order_index'),
+    supabase.from('topics').select('*').order('order_index'),
+    supabase.from('lessons').select('*').order('order_index')
+  ]);
+
+  if (yearGroupsResult.error || subjectsResult.error || topicsResult.error || lessonsResult.error) return [];
+  
   const yearGroups = yearGroupsResult.data || [];
-  const yearGroupIds = yearGroups.map(yg => yg.id);
-  
-  const subjectsResult = await supabase
-    .from('subjects')
-    .select('*')
-    .in('year_group_id', yearGroupIds)
-    .order('order_index');
-    
-  if (subjectsResult.error) return [];
   const subjects = subjectsResult.data || [];
-  const subjectIds = subjects.map(s => s.id);
-  
-  const topicsResult = await supabase
-    .from('topics')
-    .select('*')
-    .in('subject_id', subjectIds)
-    .order('order_index');
-    
-  if (topicsResult.error) return [];
   const topics = topicsResult.data || [];
-  const topicIds = topics.map(t => t.id);
-  
-  const lessonsResult = await supabase
-    .from('lessons')
-    .select('*')
-    .in('topic_id', topicIds)
-    .order('order_index');
-    
-  if (lessonsResult.error) return [];
   const lessons = lessonsResult.data || [];
 
-  // Build hierarchy
+  // Build lookup maps for O(1) access
+  const subjectsByYgId = new Map<string, any[]>();
+  const topicsBySubId = new Map<string, any[]>();
+  const lessonsByTopicId = new Map<string, any[]>();
+
+  for (const sub of subjects) {
+    const ygId = sub.year_group_id;
+    if (!subjectsByYgId.has(ygId)) subjectsByYgId.set(ygId, []);
+    subjectsByYgId.get(ygId)!.push(sub);
+  }
+
+  for (const topic of topics) {
+    const subId = topic.subject_id;
+    if (!topicsBySubId.has(subId)) topicsBySubId.set(subId, []);
+    topicsBySubId.get(subId)!.push(topic);
+  }
+
+  for (const lesson of lessons) {
+    const topicId = lesson.topic_id;
+    if (!lessonsByTopicId.has(topicId)) lessonsByTopicId.set(topicId, []);
+    lessonsByTopicId.get(topicId)!.push(lesson);
+  }
+
+  // Build hierarchy using lookup maps
   const childrenWithData: ChildProfile[] = children.map((child: any) => {
     const childYearGroups = yearGroups.filter((yg: any) => yg.child_id === child.id);
     const yearGroupsWithSubjects = childYearGroups.map((yg: any) => {
-      const ygSubjects = subjects.filter((s: any) => s.year_group_id === yg.id);
+      const ygSubjects = subjectsByYgId.get(yg.id) || [];
       const subjectsWithTopics = ygSubjects.map((s: any) => {
-        const sTopics = topics.filter((t: any) => t.subject_id === s.id);
+        const sTopics = topicsBySubId.get(s.id) || [];
         const topicsWithLessons = sTopics.map((t: any) => ({
           id: t.id,
           name: t.name,
-          lessons: lessons
-            .filter((l: any) => l.topic_id === t.id)
-            .map((l: any) => ({
-              id: l.id,
-              title: l.title,
-              durationMinutes: l.duration_minutes,
-              completed: l.completed,
-              videoUrl: l.video_url || undefined,
-              outcomes: l.outcomes || [],
-              deleted: l.deleted,
-              timeSpentSeconds: l.time_spent_seconds || undefined,
-              lessonFocus: l.lesson_focus || undefined,
-              lessonNotes: l.lesson_notes || undefined,
-              videoPosition: l.video_position || undefined
-            }))
+          lessons: (lessonsByTopicId.get(t.id) || []).map((l: any) => ({
+            id: l.id,
+            title: l.title,
+            durationMinutes: l.duration_minutes,
+            completed: l.completed,
+            videoUrl: l.video_url || undefined,
+            outcomes: l.outcomes || [],
+            deleted: l.deleted,
+            timeSpentSeconds: l.time_spent_seconds || undefined,
+            lessonFocus: l.lesson_focus || undefined,
+            lessonNotes: l.lesson_notes || undefined,
+            videoPosition: l.video_position || undefined
+          }))
         }));
         return {
           id: s.id,

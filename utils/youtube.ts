@@ -25,14 +25,20 @@ export interface ProcessedYouTubeResult {
   requiresApiKey?: boolean;
 }
 
+const PLAYLIST_ID_REGEX = /[?&]list=([a-zA-Z0-9_-]+)/;
+const VIDEO_ID_REGEX = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+const MARKDOWN_LINK_REGEX = /\[([^\]]+)\]\(https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/g;
+const YT_INITIAL_DATA_REGEX = /var ytInitialData = ({.+?});<\/script>/;
+const TITLE_RUNS_REGEX = /"title":\{"runs":\[\{"text":"([^"]+)"/g;
+const VIDEO_ID_JSON_REGEX = /"videoId":"([a-zA-Z0-9_-]{11})"/g;
+
 export function extractPlaylistId(url: string): string | null {
-  const match = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+  const match = url.match(PLAYLIST_ID_REGEX);
   return match ? match[1] : null;
 }
 
 export function extractVideoId(url: string): string | null {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
+  const match = url.match(VIDEO_ID_REGEX);
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
@@ -96,7 +102,7 @@ const KNOWN_PLAYLISTS: Record<string, YouTubeVideo[]> = {
 };
 
 export async function fetchPlaylistVideos(playlistUrl: string, apiKey?: string): Promise<YouTubeVideo[]> {
-  const playlistIdMatch = playlistUrl.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+  const playlistIdMatch = playlistUrl.match(PLAYLIST_ID_REGEX);
   if (!playlistIdMatch) {
     throw new Error('Invalid playlist URL');
   }
@@ -216,7 +222,7 @@ export async function scrapePlaylistFromBrowser(playlistId: string): Promise<You
           
           // Strategy 2: Look for markdown links with video titles
           if (videos.length === 0) {
-            const mdLinkRegex = /\[([^\]]+)\]\(https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/g;
+            const mdLinkRegex = new RegExp(MARKDOWN_LINK_REGEX.source, MARKDOWN_LINK_REGEX.flags);
             let match;
             const seen = new Set<string>();
             while ((match = mdLinkRegex.exec(text)) !== null) {
@@ -236,7 +242,7 @@ export async function scrapePlaylistFromBrowser(playlistId: string): Promise<You
           
           // Strategy 3: Extract from initial data in page
           if (videos.length === 0) {
-            const ytInitialDataMatch = text.match(/var ytInitialData = ({.+?});<\/script>/);
+            const ytInitialDataMatch = text.match(YT_INITIAL_DATA_REGEX);
             if (ytInitialDataMatch) {
               try {
                 const data = JSON.parse(ytInitialDataMatch[1]);
@@ -285,7 +291,7 @@ export async function scrapePlaylistFromBrowser(playlistId: string): Promise<You
       }
 
       const titleMatches: string[] = [];
-      const titleRegex = /"title":\{"runs":\[\{"text":"([^"]+)"/g;
+      const titleRegex = new RegExp(TITLE_RUNS_REGEX.source, TITLE_RUNS_REGEX.flags);
       let match;
       while ((match = titleRegex.exec(html)) !== null) {
         const title = match[1];
@@ -298,7 +304,7 @@ export async function scrapePlaylistFromBrowser(playlistId: string): Promise<You
 
       const videoIds: string[] = [];
       const seen = new Set<string>();
-      const idRegex = /"videoId":"([a-zA-Z0-9_-]{11})"/g;
+      const idRegex = new RegExp(VIDEO_ID_JSON_REGEX.source, VIDEO_ID_JSON_REGEX.flags);
       while ((match = idRegex.exec(html)) !== null) {
         const id = match[1];
         if (!seen.has(id)) {
