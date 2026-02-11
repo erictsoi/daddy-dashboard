@@ -330,9 +330,22 @@ export const saveFullCurriculum = async (children: ChildProfile[], userId: strin
 export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => {
   console.log('fetchChildren: loading for userId', userId);
   
+  // Use nested select to fetch all data in one query
   const { data: children, error } = await supabase
     .from('children')
-    .select('*')
+    .select(`
+      *,
+      year_groups (
+        *,
+        subjects (
+          *,
+          topics (
+            *,
+            lessons (*)
+          )
+        )
+      )
+    `)
     .eq('user_id', userId)
     .order('order_index')
 
@@ -344,147 +357,41 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
   console.log('fetchChildren: found', children?.length || 0, 'children for userId', userId);
   if (!children || children.length === 0) return []
 
-  // Deduplicate children by ID
-  const uniqueChildren = Array.from(new Map(children.map(c => [c.id, c])).values());
-  console.log('fetchChildren: after dedup', uniqueChildren.length, 'children');
-
-  const childIds = uniqueChildren.map(c => c.id);
-  
-  const yearGroupsResult = await supabase
-    .from('year_groups')
-    .select('*')
-    .in('child_id', childIds)
-    .order('order_index')
-    
-  if (yearGroupsResult.error) throw yearGroupsResult.error
-  // Deduplicate year groups
-  const yearGroups = Array.from(new Map((yearGroupsResult.data || []).map(y => [y.id, y])).values());
-
-  const yearGroupIds = yearGroups.map(yg => yg.id);
-  
-  const subjectsResult = await supabase
-    .from('subjects')
-    .select('*')
-    .in('year_group_id', yearGroupIds)
-    .order('order_index')
-    
-  if (subjectsResult.error) throw subjectsResult.error
-  // Deduplicate subjects
-  const subjects = Array.from(new Map((subjectsResult.data || []).map(s => [s.id, s])).values());
-
-  const subjectIds = subjects.map(s => s.id);
-  
-  const topicsResult = await supabase
-    .from('topics')
-    .select('*')
-    .in('subject_id', subjectIds)
-    .order('order_index')
-    
-  if (topicsResult.error) throw topicsResult.error
-  // Deduplicate topics
-  const topics = Array.from(new Map((topicsResult.data || []).map(t => [t.id, t])).values());
-
-  const topicIds = topics.map(t => t.id);
-  
-  const lessonsResult = await supabase
-    .from('lessons')
-    .select('*')
-    .in('topic_id', topicIds)
-    .order('order_index')
-    
-  if (lessonsResult.error) throw lessonsResult.error
-  // Deduplicate lessons
-  const lessons = Array.from(new Map((lessonsResult.data || []).map(l => [l.id, l])).values());
-
-  const topicsBySubject = new Map<string, typeof topics>();
-  const lessonsByTopic = new Map<string, typeof lessons>();
-
-  for (const topic of topics) {
-    const list = topicsBySubject.get(topic.subject_id) || [];
-    list.push(topic);
-    topicsBySubject.set(topic.subject_id, list);
-  }
-
-  for (const lesson of lessons) {
-    const list = lessonsByTopic.get(lesson.topic_id) || [];
-    list.push(lesson);
-    lessonsByTopic.set(lesson.topic_id, list);
-  }
-
-  const subjectsByYG = new Map<string, typeof subjects>();
-  for (const sub of subjects) {
-    const list = subjectsByYG.get(sub.year_group_id) || [];
-    list.push(sub);
-    subjectsByYG.set(sub.year_group_id, list);
-  }
-
-  const yearGroupsByChild = new Map<string, typeof yearGroups>();
-  for (const yg of yearGroups) {
-    const list = yearGroupsByChild.get(yg.child_id) || [];
-    list.push(yg);
-    yearGroupsByChild.set(yg.child_id, list);
-  }
-
-  const childrenWithData: ChildProfile[] = []
-
-  for (const child of children) {
-    const childYearGroups = yearGroupsByChild.get(child.id) || [];
-    const yearGroupsWithSubjects: any[] = []
-
-    for (const yg of childYearGroups) {
-      const ygSubjects = subjectsByYG.get(yg.id) || [];
-      const subjectsWithTopics: any[] = []
-
-      for (const sub of ygSubjects) {
-        const subTopics = topicsBySubject.get(sub.id) || [];
-        const topicsWithLessons: any[] = []
-
-        for (const topic of subTopics) {
-          const topicLessons = lessonsByTopic.get(topic.id) || [];
-          topicsWithLessons.push({
-            id: topic.id,
-            name: topic.name,
-            lessons: topicLessons.map((l: any) => ({
-              id: l.id,
-              title: l.title,
-              durationMinutes: l.duration_minutes,
-              completed: l.completed,
-              videoUrl: l.video_url || undefined,
-              outcomes: l.outcomes || [],
-              deleted: l.deleted,
-              timeSpentSeconds: l.time_spent_seconds || undefined,
-              lessonFocus: l.lesson_focus || undefined,
-              lessonNotes: l.lesson_notes || undefined,
-              videoPosition: l.video_position || undefined
-            }))
-          })
-        }
-
-        subjectsWithTopics.push({
-          id: sub.id,
-          name: sub.name,
-          category: sub.category as any,
-          color: sub.color,
-          topics: topicsWithLessons
-        })
-      }
-
-      yearGroupsWithSubjects.push({
-        id: yg.id,
-        name: yg.name,
-        subjects: subjectsWithTopics
-      })
-    }
-
-    childrenWithData.push({
-      id: child.id,
-      name: child.name,
-      dob: child.dob || '',
-      avatar: child.avatar,
-      themeColor: child.theme_color,
-      yearGroups: yearGroupsWithSubjects
-    })
-  }
+  // Transform nested data to ChildProfile format
+  const childrenWithData: ChildProfile[] = children.map((child: any) => ({
+    id: child.id,
+    name: child.name,
+    dob: child.dob || '',
+    avatar: child.avatar,
+    themeColor: child.theme_color,
+    yearGroups: (child.year_groups || []).map((yg: any) => ({
+      id: yg.id,
+      name: yg.name,
+      subjects: (yg.subjects || []).map((sub: any) => ({
+        id: sub.id,
+        name: sub.name,
+        category: sub.category,
+        color: sub.color,
+        topics: (sub.topics || []).map((topic: any) => ({
+          id: topic.id,
+          name: topic.name,
+          lessons: (topic.lessons || []).map((l: any) => ({
+            id: l.id,
+            title: l.title,
+            durationMinutes: l.duration_minutes,
+            completed: l.completed,
+            videoUrl: l.video_url || undefined,
+            outcomes: l.outcomes || [],
+            deleted: l.deleted,
+            timeSpentSeconds: l.time_spent_seconds || undefined,
+            lessonFocus: l.lesson_focus || undefined,
+            lessonNotes: l.lesson_notes || undefined,
+            videoPosition: l.video_position || undefined
+          }))
+        }))
+      }))
+    }))
+  }));
 
   console.log('fetchChildren: returning', childrenWithData.length, 'children with full data');
   return childrenWithData

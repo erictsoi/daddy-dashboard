@@ -9,6 +9,47 @@ import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
 import { Timeline } from './components/Timeline';
 import { CurriculumBuilder } from './components/CurriculumBuilder';
+
+// Export data to JSON file
+const exportDataToFile = (data: ChildProfile[], filename: string = 'daddy-dashboard-export.json') => {
+  const exportObj = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    children: data
+  };
+  const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+// Import data from JSON file
+const importDataFromFile = (file: File): Promise<ChildProfile[]> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const parsed = JSON.parse(content);
+        if (parsed.children && Array.isArray(parsed.children)) {
+          resolve(parsed.children);
+        } else {
+          reject(new Error('Invalid file format'));
+        }
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsText(file);
+  });
+};
+
+// Hidden file input ref for import
+let importFileInputRef: HTMLInputElement | null = null;
 import { ChildManagement } from './components/ChildManagement';
 import { EditProfile } from './components/EditProfile';
 import { 
@@ -390,115 +431,133 @@ const App: React.FC = () => {
   };
 
   const handleBulkImport = (rows: ParsedRow[]) => {
-    setData(prevData => {
-      const newData = [...prevData];
-      const touchedTopicIds = new Set<string>();
+    // Guard against multiple calls in quick succession
+    if ((window as any).__handleBulkImportRunning) {
+      console.log('handleBulkImport: Already running, skipping');
+      return;
+    }
+    (window as any).__handleBulkImportRunning = true;
+    
+    // Process data with proper deduplication
+    // Duplicate = same child + same year + same subject + same topic + same lesson title
+    // NOT duplicate = same child + different year (repeating)
+    
+    const newData = [...data];
+    
+    rows.forEach(row => {
+      if (!row.isValid) return;
 
-      rows.forEach(row => {
-        if (!row.isValid) return;
-
-        // Find or create child
-        let child = newData.find(c => c.name.toLowerCase() === row.childName.toLowerCase());
-        if (!child) {
-          child = {
-            id: `child-${row.childName.toLowerCase().replace(/\s+/g, '-')}`,
-            name: row.childName,
-            dob: '',
-            avatar: '👶',
-            themeColor: 'blue',
-            yearGroups: []
-          };
-          newData.push(child);
-        }
-
-        // Find or create year group
-        let yearGroup = child.yearGroups.find(yg => yg.name.toLowerCase() === row.yearGroup.toLowerCase());
-        if (!yearGroup) {
-          yearGroup = {
-            id: `${child.id}-${row.yearGroup.replace(/\s+/g, '').toLowerCase()}`,
-            name: row.yearGroup,
-            subjects: []
-          };
-          child.yearGroups.push(yearGroup);
-        }
-
-        // Find or create subject (English, Maths, Science)
-        let subject = yearGroup.subjects.find(s => s.name.toLowerCase() === row.subjectCategory.toLowerCase());
-        if (!subject) {
-          let color = 'bg-gray-100 text-gray-800';
-          const cat = row.subjectCategory.toLowerCase();
-          if (cat.includes('math')) color = 'bg-blue-100 text-blue-800';
-          else if (cat.includes('english')) color = 'bg-amber-100 text-amber-800';
-          else if (cat.includes('science')) color = 'bg-green-100 text-green-800';
-          else if (cat.includes('humanities')) color = 'bg-orange-100 text-orange-800';
-          else if (cat.includes('creative')) color = 'bg-purple-100 text-purple-800';
-
-          subject = {
-            id: `${child.id}-${row.yearGroup.replace(/\s+/g, '')}-${row.subjectCategory}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
-            name: row.subjectCategory,
-            category: row.subjectCategory as any,
-            color,
-            topics: []
-          };
-          yearGroup.subjects.push(subject);
-        }
-
-        // Find or create topic (Reading Comprehension, Algebra, etc.)
-        const topicName = row.subjectName || 'General';
-        let topic = subject.topics.find(t => t.name.toLowerCase() === topicName.toLowerCase());
-        if (!topic) {
-          const sanitizedTopicName = topicName.replace(/[^a-z0-9]/gi, '-').toLowerCase().replace(/-+/g, '-');
-          topic = {
-            id: `${subject.id}-topic-${sanitizedTopicName}-${Date.now()}`.slice(0, 50),
-            name: topicName,
-            lessons: []
-          };
-          subject.topics.push(topic);
-        }
-
-        // Check if lesson already exists (by videoUrl or by position)
-        const videoId = row.videoUrl?.includes('youtu') ? row.videoUrl.split('/').pop()?.split('?')[0] : null;
-        const lessonExists = topic.lessons.some(l => {
-          if (videoId && l.videoUrl?.includes(videoId)) return true;
-          return false;
-        });
-        if (lessonExists) {
-          console.log('Lesson already exists, skipping:', row.videoUrl);
-          return;
-        }
-
-        // Generate title from notes or video URL
-        const lessonTitle = row.lessonTitle || 
-          row.lessonNotes || 
-          (row.videoUrl ? `Lesson ${topic.lessons.length + 1}` : `Lesson ${topic.lessons.length + 1}`);
-
-        // Add lesson to topic
-        const newLesson: Lesson = {
-          id: `${topic.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
-          title: lessonTitle,
-          durationMinutes: 45,
-          completed: false,
-          deleted: false,
-          videoUrl: row.videoUrl || '',
-          outcomes: row.lessonFocus ? row.lessonFocus.split(',').map((s: string) => s.trim()) : [],
-          lessonFocus: row.lessonFocus || '',
-          lessonNotes: row.lessonNotes || '',
-          videoPosition: row.videoPosition || topic.lessons.length + 1
+      // Find or create child
+      let child = newData.find(c => c.name.toLowerCase() === row.childName.toLowerCase());
+      if (!child) {
+        child = {
+          id: `child-${row.childName.toLowerCase().replace(/\s+/g, '-')}`,
+          name: row.childName,
+          dob: '',
+          avatar: '👶',
+          themeColor: 'blue',
+          yearGroups: []
         };
-        topic.lessons.push(newLesson);
-      });
-
-      console.log('Bulk import: saving', newData.length, 'children');
-      if (user) {
-        saveFullCurriculum(newData, user.id)
-          .then(() => console.log('Bulk import: saved to Supabase'))
-          .catch(err => console.error('Bulk import error:', err));
-      } else {
-        saveLocalData(newData);
-        console.log('Bulk import: saved to localStorage');
+        newData.push(child);
       }
-      return newData;
+
+      // Find or create year group
+      let yearGroup = child.yearGroups.find(yg => yg.name.toLowerCase() === row.yearGroup.toLowerCase());
+      if (!yearGroup) {
+        yearGroup = {
+          id: `${child.id}-${row.yearGroup.replace(/\s+/g, '').toLowerCase()}`,
+          name: row.yearGroup,
+          subjects: []
+        };
+        child.yearGroups.push(yearGroup);
+      }
+
+      // Find or create subject
+      let subject = yearGroup.subjects.find(s => s.name.toLowerCase() === row.subjectCategory.toLowerCase());
+      if (!subject) {
+        let color = 'bg-gray-100 text-gray-800';
+        const cat = row.subjectCategory.toLowerCase();
+        if (cat.includes('math')) color = 'bg-blue-100 text-blue-800';
+        else if (cat.includes('english')) color = 'bg-amber-100 text-amber-800';
+        else if (cat.includes('science')) color = 'bg-green-100 text-green-800';
+        else if (cat.includes('humanities')) color = 'bg-orange-100 text-orange-800';
+        else if (cat.includes('creative')) color = 'bg-purple-100 text-purple-800';
+
+        subject = {
+          id: `${child.id}-${row.yearGroup.replace(/\s+/g, '')}-${row.subjectCategory}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
+          name: row.subjectCategory,
+          category: row.subjectCategory as any,
+          color,
+          topics: []
+        };
+        yearGroup.subjects.push(subject);
+      }
+
+      // Find or create topic
+      const topicName = row.subjectName || 'General';
+      let topic = subject.topics.find(t => t.name.toLowerCase() === topicName.toLowerCase());
+      if (!topic) {
+        const sanitizedTopicName = topicName.replace(/[^a-z0-9]/gi, '-').toLowerCase().replace(/-+/g, '-');
+        topic = {
+          id: `${subject.id}-topic-${sanitizedTopicName}-${Date.now()}`.slice(0, 50),
+          name: topicName,
+          lessons: []
+        };
+        subject.topics.push(topic);
+      }
+
+      // Generate lesson title
+      const lessonTitle = row.lessonTitle || 
+        row.lessonNotes || 
+        (row.videoUrl ? `Lesson ${topic.lessons.length + 1}` : `Lesson ${topic.lessons.length + 1}`);
+
+      // Check for duplicate: same child + year + subject + topic + lesson title
+      const duplicateLesson = topic.lessons.find(l => 
+        l.title.toLowerCase() === lessonTitle.toLowerCase()
+      );
+      
+      if (duplicateLesson) {
+        console.log('Duplicate found, skipping:', lessonTitle);
+        return; // Skip this row
+      }
+
+      // Add new lesson
+      const newLesson: Lesson = {
+        id: `${topic.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
+        title: lessonTitle,
+        durationMinutes: 45,
+        completed: false,
+        deleted: false,
+        videoUrl: row.videoUrl || '',
+        outcomes: row.lessonFocus ? row.lessonFocus.split(',').map((s: string) => s.trim()) : [],
+        lessonFocus: row.lessonFocus || '',
+        lessonNotes: row.lessonNotes || '',
+        videoPosition: row.videoPosition || topic.lessons.length + 1
+      };
+      topic.lessons.push(newLesson);
     });
+
+    console.log('handleBulkImport: Processed', newData.length, 'children');
+    
+    // Update state and save
+    setData(newData);
+    
+    if (user) {
+      saveFullCurriculum(newData, user.id)
+        .then(() => {
+          console.log('handleBulkImport: Saved to Supabase');
+          (window as any).__handleBulkImportRunning = false;
+        })
+        .catch(err => {
+          console.error('handleBulkImport: Error saving to Supabase:', err);
+          (window as any).__handleBulkImportRunning = false;
+        });
+    } else {
+      saveLocalData(newData);
+      console.log('handleBulkImport: Saved to localStorage');
+      (window as any).__handleBulkImportRunning = false;
+    }
+    
     setView({ type: 'HOME' });
   };
 
@@ -847,176 +906,74 @@ const App: React.FC = () => {
              </div>
            )}
 
-           {/* Admin Utilities - Debug Tools */}
-           {user && (
-             <div className="mt-12 pt-8 border-t border-gray-200 max-w-5xl mx-auto w-full">
-               <h3 className="text-lg font-bold text-gray-800 mb-4">Admin Debug Tools</h3>
-               <div className="flex flex-wrap gap-4">
-                 <button
+            {/* Admin Utilities - Data Management */}
+            {user && data.length > 0 && (
+              <div className="mt-12 pt-8 border-t border-gray-200 max-w-5xl mx-auto w-full">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Data Management</h3>
+                <div className="flex flex-wrap gap-4">
+                  <button
+                    onClick={() => exportDataToFile(data)}
+                    className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-medium hover:bg-green-200 transition flex items-center gap-2"
+                  >
+                    <DownloadCloud size={16} />
+                    Export Curriculum
+                  </button>
+                  <button
+                    onClick={() => importFileInputRef?.click()}
+                    className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium hover:bg-blue-200 transition flex items-center gap-2"
+                  >
+                    <UploadCloud size={16} />
+                    Import Curriculum
+                  </button>
+                  <button
                     onClick={async () => {
                       const { data: subjects, error } = await supabase?.from('subjects').select('id, name').order('name');
                       if (error) {
                         showStatus('Error: ' + error.message, 'error');
                         return;
                       }
-
                       const nameCounts: Record<string, number> = {};
                       subjects?.forEach(s => {
                         nameCounts[s.name] = (nameCounts[s.name] || 0) + 1;
                       });
-
                       const duplicates = Object.entries(nameCounts).filter(([_, count]) => count > 1);
-
                       if (duplicates.length > 0) {
                         showStatus(`${subjects?.length || 0} subjects, ${duplicates.length} duplicates found`, 'error');
                       } else {
                         showStatus(`${subjects?.length || 0} subjects, no duplicates`, 'success');
                       }
                     }}
-                    className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium hover:bg-blue-200 transition flex items-center gap-2"
+                    className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg font-medium hover:bg-gray-200 transition flex items-center gap-2"
                   >
                     <Book size={16} />
                     Check Subjects
                   </button>
-                  
-                  <button
-                    onClick={async () => {
-                      if (!confirm('This will DELETE ALL data from Supabase. Continue?')) return;
-                      
-                      showStatus('Deleting lessons...', 'info');
-                      
-                      // Delete lessons first (due to foreign key constraints)
-                      const { error: lesError } = await supabase?.from('lessons').delete() || { error: null };
-                      if (lesError) {
-                        showStatus('Error deleting lessons: ' + lesError.message, 'error');
-                        return;
-                      }
-                      
-                      showStatus('Deleting subjects...', 'info');
-                      // Delete subjects
-                      const { error: subError } = await supabase?.from('subjects').delete() || { error: null };
-                      if (subError) {
-                        showStatus('Error deleting subjects: ' + subError.message, 'error');
-                        return;
-                      }
-                      
-                      showStatus('Deleting year groups...', 'info');
-                      // Delete year groups
-                      const { error: ygError } = await supabase?.from('year_groups').delete() || { error: null };
-                      if (ygError) {
-                        showStatus('Error deleting year groups: ' + ygError.message, 'error');
-                        return;
-                      }
-                      
-                      showStatus('All data deleted! Reloading...', 'success');
-                      setTimeout(() => window.location.reload(), 1500);
-                    }}
-                    className="px-4 py-2 bg-red-100 text-red-800 rounded-lg font-medium hover:bg-red-200 transition flex items-center gap-2"
-                  >
-                    <Trash2 size={16} />
-                    Nuke All Data
-                  </button>
-
-                  <button
-                    onClick={async () => {
-                      // Get all subjects with their year_group info
-                      const { data: subjects, error: fetchError } = await supabase
-                        ?.from('subjects')
-                        .select('id, name, category, year_group_id')
-                        .order('name') || { data: null, error: null };
-
-                      if (fetchError) {
-                        showStatus('Error fetching subjects: ' + fetchError.message, 'error');
-                        return;
-                      }
-
-                      if (!subjects || subjects.length === 0) {
-                        showStatus('No subjects found!', 'info');
-                        return;
-                      }
-
-                      // Get year groups and children to map IDs to names
-                      const { data: yearGroups, error: ygError } = await supabase
-                        ?.from('year_groups')
-                        .select('id, child_id, name')
-                        || { data: null, error: null };
-
-                      const { data: children, error: childError } = await supabase
-                        ?.from('children')
-                        .select('id, name')
-                        || { data: null, error: null };
-
-                      if (ygError || childError) {
-                        showStatus('Error fetching year groups or children', 'error');
-                        return;
-                      }
-
-                      // Create maps for lookups
-                      const ygToInfo = new Map<string, { childId: string; childName: string; ygName: string }>();
-                      yearGroups?.forEach(yg => {
-                        const child = children?.find(c => c.id === yg.child_id);
-                        ygToInfo.set(yg.id, { 
-                          childId: yg.child_id, 
-                          childName: child?.name || 'Unknown',
-                          ygName: yg.name 
-                        });
-                      });
-
-                      // Build key: child_id + year_group_id + subject_name
-                      const keyCounts: Record<string, { ids: string[]; info: { childName: string; ygName: string; subjectName: string; category: string } }> = {};
-                      subjects.forEach(s => {
-                        const ygInfo = ygToInfo.get(s.year_group_id);
-                        if (!ygInfo) return;
-                        
-                        const key = `${ygInfo.childId}::${s.year_group_id}::${s.name}`;
-                        if (!keyCounts[key]) {
-                          keyCounts[key] = { ids: [], info: { childName: ygInfo.childName, ygName: ygInfo.ygName, subjectName: s.name, category: s.category } };
-                        }
-                        keyCounts[key].ids.push(s.id);
-                      });
-
-                      // Find true duplicates
-                      const duplicates = Object.entries(keyCounts).filter(([_, data]) => data.ids.length > 1);
-                      
-                      if (duplicates.length === 0) {
-                        showStatus('No duplicate subjects found!', 'success');
-                        return;
-                      }
-
-                      // Collect IDs to delete
-                      const toDelete: string[] = [];
-                      duplicates.forEach(([_, data]) => {
-                        toDelete.push(...data.ids.slice(1));
-                      });
-
-                      // Show detailed confirmation with child/year/subject/category
-                      const dupList = duplicates.map(([_, data]) => 
-                        `• ${data.info.subjectName} (${data.info.category})\n  ${data.info.childName} • ${data.info.ygName} • ${data.ids.length}x`
-                      ).join('\n\n');
-
-                      if (!confirm(`Found ${duplicates.length} duplicate groups:\n\n${dupList}\n\nOnly 1 copy of each will be kept.\n\nContinue?`)) return;
-
-                      // Delete duplicates
-                      showStatus(`Deleting ${toDelete.length} duplicate subjects...`, 'info');
-                      const { error: delError } = await supabase
-                        ?.from('subjects')
-                        .delete()
-                        .in('id', toDelete) || { error: null };
-
-                      if (delError) {
-                        showStatus('Error deleting duplicates: ' + delError.message, 'error');
-                        return;
-                      }
-
-                      showStatus(`Deleted ${toDelete.length} duplicate subjects! Reloading...`, 'success');
-                      setTimeout(() => window.location.reload(), 1500);
-                    }}
-                    className="px-4 py-2 bg-amber-100 text-amber-800 rounded-lg font-medium hover:bg-amber-200 transition flex items-center gap-2"
-                  >
-                    <XCircle size={16} />
-                    Delete Duplicates
-                  </button>
                 </div>
+                <input
+                  type="file"
+                  accept=".json"
+                  ref={(el) => { importFileInputRef = el; }}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const importedData = await importDataFromFile(file);
+                      if (user) {
+                        await saveFullCurriculum(importedData, user.id);
+                        showStatus('Imported and saved to Supabase!', 'success');
+                        setTimeout(() => window.location.reload(), 1500);
+                      } else {
+                        saveLocalData(importedData);
+                        showStatus('Imported to localStorage!', 'success');
+                        setTimeout(() => window.location.reload(), 1500);
+                      }
+                    } catch (err) {
+                      showStatus('Import failed: ' + (err instanceof Error ? err.message : 'Unknown error'), 'error');
+                    }
+                    e.target.value = '';
+                  }}
+                  className="hidden"
+                />
               </div>
             )}
        </div>
@@ -2047,6 +2004,48 @@ const App: React.FC = () => {
                     >
                       🧹 Clean DB
                     </button>
+                    
+                    {/* Export/Import Section */}
+                    <button
+                      onClick={() => exportDataToFile(data, `daddy-dashboard-${new Date().toISOString().split('T')[0]}.json`)}
+                      className="text-green-600 hover:text-green-800 text-sm px-2 py-1"
+                      title="Export curriculum to JSON file"
+                    >
+                      📤 Export
+                    </button>
+                    
+                    <input
+                      type="file"
+                      accept=".json"
+                      id="import-file"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const importedData = await importDataFromFile(file);
+                          setData(importedData);
+                          if (user) {
+                            saveFullCurriculum(importedData, user.id)
+                              .then(() => showStatus('Import successful!', 'success'))
+                              .catch(err => console.error(err));
+                          } else {
+                            saveLocalData(importedData);
+                            showStatus('Import successful!', 'success');
+                          }
+                        } catch (err) {
+                          showStatus('Import failed: ' + err, 'error');
+                        }
+                        e.target.value = ''; // Reset
+                      }}
+                    />
+                    <label
+                      htmlFor="import-file"
+                      className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 cursor-pointer"
+                      title="Import curriculum from JSON file"
+                    >
+                      📥 Import
+                    </label>
                   </>
                 )}
               </div>
@@ -3134,7 +3133,7 @@ const App: React.FC = () => {
   return (
     <>
       {view.type === 'LANDING' && <LandingView />}
-      {view.type === 'CURRICULUM_BUILDER' && <CurriculumBuilder onBack={() => setView({ type: 'HOME' })} onImport={handleBulkImport} />}
+      {view.type === 'CURRICULUM_BUILDER' && <CurriculumBuilder onBack={() => setView({ type: 'HOME' })} onImport={handleBulkImport} onImportComplete={() => {}} />}
       {view.type === 'SUBJECT_DETAIL' && <SubjectDetail childId={view.childId} subjectId={view.subjectId} origin={view.origin} />}
       {view.type === 'LESSON_PLAYER' && (() => {
         const child = data.find(c => c.id === view.childId);

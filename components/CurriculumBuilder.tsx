@@ -6,9 +6,10 @@ import { ParsedRow } from '../types';
 interface Props {
   onBack: () => void;
   onImport: (rows: ParsedRow[]) => void;
+  onImportComplete?: () => void;
 }
 
-export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
+export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportComplete }) => {
   const [inputText, setInputText] = useState('');
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [inputMode, setInputMode] = useState<'paste' | 'playlist'>('paste');
@@ -22,6 +23,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
   const [defaultSubject, setDefaultSubject] = useState('English');
   const [defaultSubcategory, setDefaultSubcategory] = useState('Reading Comprehension');
   const [expandedCount, setExpandedCount] = useState(0);
+  const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     if (import.meta.env.VITE_YOUTUBE_API_KEY) {
@@ -84,7 +86,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
       const videoUrl = cols[7]?.trim() || cols[6]?.trim() || '';
 
       const isYouTubeUrl = /(?:youtube\.com|youtu\.be)/i.test(videoUrl);
-      const isValid = !!(childName && yearGroup && subjectCategory && topicName && videoUrl);
+      const isValid = !!(childName && yearGroup && subjectCategory && topicName);
 
       return {
         childName,
@@ -196,12 +198,30 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
   }, [parsedRows]);
 
   const handleImport = () => {
+    if (isImporting) {
+      console.log('[CurriculumBuilder] Import already in progress');
+      return;
+    }
+    
     const finalRows = parsedRows.filter(r => r.isValid).map(row => ({
       ...row,
       expandedLessons: undefined,
     }));
-    if (finalRows.length === 0) return;
+    
+    if (finalRows.length === 0) {
+      console.log('[CurriculumBuilder] No valid rows to import');
+      return;
+    }
+    
+    console.log('[CurriculumBuilder] Calling onImport with', finalRows.length, 'rows');
+    setIsImporting(true);
     onImport(finalRows);
+    
+    // Reset after delay (onImport handles the actual save)
+    setTimeout(() => {
+      setIsImporting(false);
+      if (onImportComplete) onImportComplete();
+    }, 2000);
   };
 
   return (
@@ -251,16 +271,16 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport }) => {
             </button>
             <button
               onClick={handleImport}
-              disabled={totalLessons === 0 || isProcessing}
+              disabled={totalLessons === 0 || isProcessing || isImporting}
               className={`px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition ${
-                totalLessons > 0 && !isProcessing
+                totalLessons > 0 && !isProcessing && !isImporting
                   ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
               title="Save all lessons to curriculum"
             >
               <Save size={18} />
-              Import {totalLessons} Lessons
+              {isImporting ? 'Importing...' : `Import ${totalLessons} Lessons`}
             </button>
           </div>
         </div>
