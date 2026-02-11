@@ -147,6 +147,7 @@ const App: React.FC = () => {
   
   // Supabase status indicator
   const [supabaseStatus, setSupabaseStatus] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
+  const [authDebug, setAuthDebug] = useState<string>('');
   
   const showStatus = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
     setSupabaseStatus({ message, type });
@@ -188,9 +189,10 @@ const App: React.FC = () => {
     isFetchingRef.current = true;
 
     const loadData = async () => {
-
+      setAuthDebug('loadData starting...');
       console.log('loadData: user =', user?.id || 'null');
       console.log('loadData: user email =', user?.email || 'null');
+      setAuthDebug('User: ' + (user?.id || 'null') + ', Email: ' + (user?.email || 'null'));
 
       setLoading(true);
       try {
@@ -211,9 +213,11 @@ const App: React.FC = () => {
           }
           
           console.log('Fetching children for userId:', user.id);
+          setAuthDebug('Fetching children for: ' + user.id);
           setChildProfile(null);
           const childrenData = await fetchChildren(user.id);
           console.log('Got childrenData:', childrenData.length, 'children');
+          setAuthDebug('Found ' + childrenData.length + ' children');
           if (childrenData.length > 0) {
             setData(childrenData);
           } else {
@@ -1765,6 +1769,13 @@ const App: React.FC = () => {
                 {supabaseStatus.type === 'error' && <XCircle size={16} />}
                 {supabaseStatus.type === 'info' && <Clock size={16} />}
                 {supabaseStatus.message}
+              </div>
+            )}
+            
+            {/* Auth Debug */}
+            {authDebug && (
+              <div className="text-xs text-gray-400 font-mono bg-gray-100 px-2 py-1 rounded">
+                {authDebug}
               </div>
             )}
             

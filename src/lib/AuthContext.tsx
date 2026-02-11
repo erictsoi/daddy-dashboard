@@ -28,20 +28,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    const initAuth = async () => {
+      const hash = window.location.hash;
+      
+      // Parse OAuth callback
+      if (hash.includes('access_token')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        
+        if (accessToken) {
+          // Manually set the session from OAuth callback
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
+          });
+          
+          // Clear URL
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('AuthContext: Session:', session?.user?.email || 'none');
+      
+      if (session) {
+        setSession(session);
+        setUser(session.user);
+      }
 
-    return () => subscription.unsubscribe()
-  }, [])
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        console.log('AuthContext: onAuthStateChange:', event, session?.user?.email);
+        setSession(session);
+        setUser(session?.user ?? null);
+      });
+
+      setTimeout(() => {
+        setLoading(false);
+      }, 1000);
+
+      return () => subscription.unsubscribe();
+    };
+
+    initAuth();
+  }, []);
 
   const signInWithGoogle = async () => {
     if (!supabase) {
