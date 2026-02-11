@@ -13,54 +13,69 @@ export const usePersistentTimer = ({
   onSave,
   autoSaveInterval = 30,
 }: UseTimerOptions) => {
-  const [isRunning, setIsRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
   const savedTimeRef = useRef<number>(0);
   const lastSavedRef = useRef<number>(0);
+  const subjectIdRef = useRef(subjectId);
 
   useEffect(() => {
-    const storageKey = `timer_${subjectId}`;
+    subjectIdRef.current = subjectId;
+  }, [subjectId]);
+
+  useEffect(() => {
+    const storageKey = `timer_${subjectIdRef.current}`;
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       const parsed = parseInt(saved, 10);
       savedTimeRef.current = parsed;
       setElapsed(parsed);
     }
-  }, [subjectId]);
+  }, []);
 
   const saveTime = useCallback((seconds: number) => {
-    const storageKey = `timer_${subjectId}`;
+    const storageKey = `timer_${subjectIdRef.current}`;
     localStorage.setItem(storageKey, seconds.toString());
     onSave?.(seconds);
-  }, [subjectId, onSave]);
+  }, [onSave]);
 
-  const tick = useCallback(() => {
-    const now = Date.now();
-    const sessionElapsed = Math.floor((now - startTimeRef.current) / 1000);
-    const total = savedTimeRef.current + sessionElapsed;
-    
-    setElapsed(total);
-    onTick?.(total);
-    
-    if (total - lastSavedRef.current >= autoSaveInterval) {
-      saveTime(total);
-      lastSavedRef.current = total;
-    }
-  }, [autoSaveInterval, onTick, saveTime]);
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const tick = () => {
+      const now = Date.now();
+      const sessionElapsed = Math.floor((now - startTimeRef.current) / 1000);
+      const total = savedTimeRef.current + sessionElapsed;
+      
+      setElapsed(total);
+      onTick?.(total);
+      
+      if (total - lastSavedRef.current >= autoSaveInterval) {
+        saveTime(total);
+        lastSavedRef.current = total;
+      }
+    };
+
+    startTimeRef.current = Date.now();
+    intervalRef.current = setInterval(tick, 1000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isRunning, autoSaveInterval, onTick, saveTime]);
 
   const start = useCallback(() => {
-    if (isRunning) return;
-    
-    startTimeRef.current = Date.now();
     setIsRunning(true);
-    
-    intervalRef.current = setInterval(tick, 1000);
-  }, [isRunning, tick]);
+  }, []);
 
   const stop = useCallback(() => {
-    if (!isRunning) return;
+    setIsRunning(false);
     
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -72,25 +87,16 @@ export const usePersistentTimer = ({
     const total = savedTimeRef.current + sessionElapsed;
     
     saveTime(total);
-    setIsRunning(false);
     setElapsed(total);
     savedTimeRef.current = total;
-  }, [isRunning, saveTime]);
+  }, [saveTime]);
 
   const reset = useCallback(() => {
     stop();
     savedTimeRef.current = 0;
     setElapsed(0);
-    localStorage.removeItem(`timer_${subjectId}`);
-  }, [stop, subjectId]);
-
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
+    localStorage.removeItem(`timer_${subjectIdRef.current}`);
+  }, [stop]);
 
   return { isRunning, elapsed, start, stop, reset };
 };

@@ -12,13 +12,14 @@ interface Props {
   onComplete: (lessonId: string, timeSpentSeconds: number) => void;
 }
 
-const YOUTUBE_ID_REGEX = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+const YOUTUBE_ID_REGEX = /(?:youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/;
 
-const getYouTubeID = memo(function getYouTubeID(url: string | undefined): string {
+function getYouTubeID(url: string | undefined): string {
   if (!url) return '';
   const match = url.match(YOUTUBE_ID_REGEX);
-  return (match && match[2].length === 11) ? match[2] : '';
-});
+  console.log('[getYouTubeID] URL:', url, 'match:', match);
+  return match ? match[1] : '';
+}
 
 const tc = (color: string, suffix: string = '') => `bg-${color}${suffix ? '-' + suffix : ''}`;
 const tcText = (color: string, suffix: string = '') => `text-${color}${suffix ? '-' + suffix : ''}`;
@@ -38,9 +39,8 @@ export const LessonPlayer: React.FC<Props> = memo(({ child, subject, topicId, le
 
   useEffect(() => {
     start();
-    setKey(k => k + 1);
     return () => stop();
-  }, [topicId, start, stop]);
+  }, []);
 
   const themeColors = useMemo(() => ({
     bg: tc(child.themeColor),

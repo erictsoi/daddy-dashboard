@@ -364,7 +364,7 @@ const App: React.FC = () => {
       allChildren.forEach(child => {
         const subjects = shuffle(child.yearGroups.flatMap(yg => yg.subjects));
         // Flatten all topics from all subjects into a single list
-        const allTopics = subjects.flatMap((s: any) => s.topics.map((t: any) => ({ ...t, subjectName: s.name, subjectColor: s.color })));
+        const allTopics = subjects.flatMap((s: any) => s.topics.map((t: any) => ({ ...t, subjectId: s.id, subjectName: s.name, subjectColor: s.color })));
         childSubjects[child.id] = { subjects, topics: allTopics, subjectIndex: 0, topicIndex: 0 };
       });
   
@@ -390,7 +390,7 @@ const App: React.FC = () => {
             if (!lesson) return;
             
             blockChildren[child.id] = {
-              subjectId: topicData.id,
+              subjectId: topicData.subjectId,
               topicId: topicData.id,
               subjectName: topicData.subjectName,
               lessonId: lesson.id,
@@ -3208,10 +3208,12 @@ const App: React.FC = () => {
       {view.type === 'SUBJECT_DETAIL' && <SubjectDetail childId={view.childId} subjectId={view.subjectId} origin={view.origin} />}
       {view.type === 'LESSON_PLAYER' && (() => {
         const child = data.find(c => c.id === view.childId);
-        const yearGroup = child?.yearGroups.find(yg => yg.subjects.some(s => s.topics.some(t => t.id === view.subjectId)));
-        const subject = yearGroup?.subjects.find(s => s.topics.some(t => t.id === view.subjectId));
-        const topic = subject?.topics.find(t => t.id === view.subjectId);
+        const yearGroup = child?.yearGroups.find(yg => yg.subjects.some(s => s.topics.some(t => t.id === view.topicId)));
+        const subject = yearGroup?.subjects.find(s => s.topics.some(t => t.id === view.topicId));
+        const topic = subject?.topics.find(t => t.id === view.topicId);
         const lesson = topic?.lessons.find(l => l.id === view.lessonId);
+
+        console.log('[LessonPlayer] Loading:', { childId: view.childId, topicId: view.topicId, lessonId: view.lessonId, lesson });
 
         if (child && subject && topic && lesson) {
           return (
@@ -3225,7 +3227,8 @@ const App: React.FC = () => {
             />
           );
         }
-        return <div>Error loading lesson</div>;
+        console.error('LessonPlayer: Could not find data', { childId: view.childId, subjectId: view.subjectId, topicId: view.topicId, lessonId: view.lessonId });
+        return <div>Error loading lesson - data not found</div>;
       })()}
       {view.type === 'HOME' && <DaddyDashboardView />}
       {view.type === 'CHILD_DASHBOARD' && <ChildDashboard childId={view.childId} />}
