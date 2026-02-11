@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
-import { ChildProfile, YearGroup, Subject, Lesson } from '../types'
-import { INITIAL_DATA } from '../constants'
+import { ChildProfile, YearGroup, Subject, Lesson } from '../../types'
+import { INITIAL_DATA } from '../../constants'
 
 const STORAGE_KEY = 'daddy_dashboard_data'
 

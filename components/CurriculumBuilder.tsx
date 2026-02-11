@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { ArrowLeft, Save, AlertCircle, FileText, CheckCircle, Link, Copy, Youtube, Loader2, ChevronRight } from 'lucide-react';
-import { fetchPlaylistVideos } from '../lib/supabase';
+import { fetchPlaylistVideos } from '../src/lib/supabase';
 import { ParsedRow } from '../types';
 import { processYouTubeUrl } from '../utils/youtube';
 

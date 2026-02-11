@@ -6,7 +6,7 @@ interface Props {
   schedule: ScheduleBlock[];
   onBlockClick: (childId: string, subjectId: string, topicId: string, lessonId: string, blockIndex: number) => void;
   focusedChildId?: string;
-  children?: ChildProfile[];
+  childProfiles?: ChildProfile[];
 }
 
 const formatTime = (date: Date) => {
@@ -22,7 +22,7 @@ const getChildDisplay = (childId: string, children: ChildProfile[]) => {
   };
 };
 
-export const Timeline: React.FC<Props> = ({ schedule, onBlockClick, focusedChildId, children = [] }) => {
+export const Timeline: React.FC<Props> = ({ schedule, onBlockClick, focusedChildId, childProfiles = [] }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -32,9 +32,9 @@ export const Timeline: React.FC<Props> = ({ schedule, onBlockClick, focusedChild
 
   const allChildren = useMemo(() => {
     return focusedChildId 
-      ? children.filter(c => c.id === focusedChildId)
-      : children;
-  }, [focusedChildId, children]);
+      ? childProfiles.filter(c => c.id === focusedChildId)
+      : childProfiles;
+  }, [focusedChildId, childProfiles]);
 
   if (allChildren.length === 0) {
     return (

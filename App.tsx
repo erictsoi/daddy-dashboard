@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ViewState, ChildProfile, YearGroup, Subject, Topic, Lesson, ScheduleBlock, ViewOrigin, ParsedRow } from './types';
 import { INITIAL_DATA } from './constants';
-import { AuthProvider, useAuth } from './lib/AuthContext';
-import { supabase } from './lib/supabase'
-import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, updateChildGoogleEmail, saveFullCurriculum, uploadToSupabase, loadFromSupabase, restoreLessonInSupabase, hardDeleteLessonFromSupabase, softDeleteLessonInSupabase, hardDeleteSubjectFromSupabase, migrateChildToTopicStructure } from './lib/dataService';
+import { AuthProvider, useAuth } from './src/lib/AuthContext';
+import { supabase } from './src/lib/supabase'
+import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, updateChildGoogleEmail, saveFullCurriculum, uploadToSupabase, loadFromSupabase, restoreLessonInSupabase, hardDeleteLessonFromSupabase, softDeleteLessonInSupabase, hardDeleteSubjectFromSupabase, migrateChildToTopicStructure } from './src/lib/dataService';
 import { usePersistentTimer, formatTime, formatTimeReadable } from './src/lib/useTimer';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
@@ -348,22 +348,24 @@ const App: React.FC = () => {
       
       let currentTime = new Date(now);
       
-      const childrenWithLessons = data.filter(child => {
+      // Include ALL children - not filter out
+      const allChildren = data.filter(child => {
         const subjects = child.yearGroups.flatMap(yg => yg.subjects);
-        const lessons = subjects.flatMap(s => s.topics.flatMap(t => t.lessons));
-        return lessons.some(l => !l.completed && !l.deleted);
+        return subjects.length > 0;
       });
       
-      if (childrenWithLessons.length === 0) {
+      if (allChildren.length === 0) {
         alert("Please add more subjects/lessons first!");
         return;
       }
   
       // Pre-shuffle subjects for each child
-      const childSubjects: Record<string, { subjects: any[], currentIndex: number }> = {};
-      childrenWithLessons.forEach(child => {
+      const childSubjects: Record<string, { subjects: any[], topics: any[], subjectIndex: number, topicIndex: number }> = {};
+      allChildren.forEach(child => {
         const subjects = shuffle(child.yearGroups.flatMap(yg => yg.subjects));
-        childSubjects[child.id] = { subjects, currentIndex: 0 };
+        // Flatten all topics from all subjects into a single list
+        const allTopics = subjects.flatMap((s: any) => s.topics.map((t: any) => ({ ...t, subjectName: s.name, subjectColor: s.color })));
+        childSubjects[child.id] = { subjects, topics: allTopics, subjectIndex: 0, topicIndex: 0 };
       });
   
       for (let i = 0; i < hours; i++) {
@@ -371,39 +373,33 @@ const App: React.FC = () => {
           const endTime = new Date(currentTime.getTime() + 50 * 60000);
           
           const blockChildren: ScheduleBlock['children'] = {};
+          const hasDevice = i % allChildren.length;
           
-          childrenWithLessons.forEach((child, idx) => {
+          allChildren.forEach((child, idx) => {
             const childData = childSubjects[child.id];
             if (!childData) return;
             
-            // Rotate through shuffled subjects
-            const subject = childData.subjects[childData.currentIndex % childData.subjects.length];
-            if (!subject) return;
+            // Get next topic - cycle through all topics
+            const topicData = childData.topics[childData.topicIndex % childData.topics.length];
+            if (!topicData) return;
             
-            // Get uncompleted lesson from subject
-            const topic = subject.topics.find(t => t.lessons.some(l => !l.completed && !l.deleted)) 
-              || subject.topics.find(t => t.lessons.some(l => !l.deleted))
-              || subject.topics[0];
-            if (!topic) return;
-            
-            const lesson = topic.lessons.find(l => !l.completed && !l.deleted)
-              || topic.lessons.find(l => !l.deleted)
-              || topic.lessons[0];
+            // Get lesson from topic
+            const lesson = topicData.lessons.find((l: any) => !l.completed && !l.deleted)
+              || topicData.lessons.find((l: any) => !l.deleted)
+              || topicData.lessons[0];
             if (!lesson) return;
             
-            const hasDevice = i % childrenWithLessons.length === idx;
-            
             blockChildren[child.id] = {
-              subjectId: subject.id,
-              topicId: topic.id,
-              subjectName: subject.name,
+              subjectId: topicData.id,
+              topicId: topicData.id,
+              subjectName: topicData.subjectName,
               lessonId: lesson.id,
               lessonTitle: lesson.title,
-              hasDevice
+              hasDevice: idx === hasDevice
             };
             
-            // Move to next subject for next block
-            childData.currentIndex++;
+            // Advance to next topic
+            childData.topicIndex++;
           });
           
           blocks.push({
@@ -2222,11 +2218,11 @@ const App: React.FC = () => {
                           </button>
                      </div>
                       <Timeline 
-                         schedule={schedule}
-                         children={data}
-                         onBlockClick={(childId, subjectId, topicId, lessonId) => {
-                             handleNavigate({ type: 'LESSON_PLAYER', childId, subjectId, topicId, lessonId, origin: 'HOME' });
-                         }}
+                          schedule={schedule}
+                          childProfiles={data}
+                          onBlockClick={(childId, subjectId, topicId, lessonId) => {
+                              handleNavigate({ type: 'LESSON_PLAYER', childId, subjectId, topicId, lessonId, origin: 'HOME' });
+                          }}
                       />
                  </div>
             )}
@@ -2530,8 +2526,9 @@ const App: React.FC = () => {
                   <div className="p-4 bg-gray-50 border-b border-gray-200 font-bold text-gray-700 flex items-center gap-2">
                       <Calendar size={18} /> Today's Plan
                   </div>
-                    <Timeline 
+                     <Timeline 
                         schedule={schedule}
+                        childProfiles={data}
                         focusedChildId={childId}
                         onBlockClick={(cId, sId, tId, lId) => {
                             // Only allow navigating to their own lessons or if needed

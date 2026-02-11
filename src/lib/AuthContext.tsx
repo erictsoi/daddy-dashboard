@@ -1,11 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { INITIAL_DATA } from '../../constants'
+
+export type UserRole = 'daddy' | 'child' | 'guest'
 
 interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
+  userRole: UserRole
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
 }
@@ -16,6 +20,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [userRole, setUserRole] = useState<UserRole>('guest')
 
   useEffect(() => {
     if (!supabase) {
@@ -55,11 +60,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (supabase) {
       await supabase.auth.signOut()
     }
+    setUserRole('guest')
+    setUserRole('guest')
+    // Reset localStorage to default data for next user
+    localStorage.setItem('daddy_dashboard_data', JSON.stringify(INITIAL_DATA))
+    // Reload page to reset all React state
     window.location.reload()
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, userRole, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   )
