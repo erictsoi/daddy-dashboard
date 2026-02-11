@@ -1,26 +1,25 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 interface UseTimerOptions {
   subjectId: string;
   onTick?: (seconds: number) => void;
   onSave?: (seconds: number) => void;
-  autoSaveInterval?: number; // Save every N seconds
+  autoSaveInterval?: number;
 }
 
 export const usePersistentTimer = ({
   subjectId,
   onTick,
   onSave,
-  autoSaveInterval = 30, // Save every 30 seconds by default
+  autoSaveInterval = 30,
 }: UseTimerOptions) => {
   const [isRunning, setIsRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [lastSaved, setLastSaved] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
   const savedTimeRef = useRef<number>(0);
+  const lastSavedRef = useRef<number>(0);
 
-  // Load saved time from localStorage on mount
   useEffect(() => {
     const storageKey = `timer_${subjectId}`;
     const saved = localStorage.getItem(storageKey);
@@ -31,29 +30,34 @@ export const usePersistentTimer = ({
     }
   }, [subjectId]);
 
+  const saveTime = useCallback((seconds: number) => {
+    const storageKey = `timer_${subjectId}`;
+    localStorage.setItem(storageKey, seconds.toString());
+    onSave?.(seconds);
+  }, [subjectId, onSave]);
+
+  const tick = useCallback(() => {
+    const now = Date.now();
+    const sessionElapsed = Math.floor((now - startTimeRef.current) / 1000);
+    const total = savedTimeRef.current + sessionElapsed;
+    
+    setElapsed(total);
+    onTick?.(total);
+    
+    if (total - lastSavedRef.current >= autoSaveInterval) {
+      saveTime(total);
+      lastSavedRef.current = total;
+    }
+  }, [autoSaveInterval, onTick, saveTime]);
+
   const start = useCallback(() => {
     if (isRunning) return;
     
     startTimeRef.current = Date.now();
     setIsRunning(true);
     
-    intervalRef.current = setInterval(() => {
-      const now = Date.now();
-      const sessionElapsed = Math.floor((now - startTimeRef.current) / 1000);
-      const total = savedTimeRef.current + sessionElapsed;
-      
-      setElapsed(total);
-      onTick?.(total);
-      
-      // Auto-save check
-      if (total - lastSaved >= autoSaveInterval) {
-        const storageKey = `timer_${subjectId}`;
-        localStorage.setItem(storageKey, total.toString());
-        onSave?.(total);
-        setLastSaved(total);
-      }
-    }, 1000);
-  }, [isRunning, subjectId, onTick, onSave, autoSaveInterval, lastSaved]);
+    intervalRef.current = setInterval(tick, 1000);
+  }, [isRunning, tick]);
 
   const stop = useCallback(() => {
     if (!isRunning) return;
@@ -67,15 +71,11 @@ export const usePersistentTimer = ({
     const sessionElapsed = Math.floor((now - startTimeRef.current) / 1000);
     const total = savedTimeRef.current + sessionElapsed;
     
-    // Save final time
-    const storageKey = `timer_${subjectId}`;
-    localStorage.setItem(storageKey, total.toString());
-    onSave?.(total);
-    
+    saveTime(total);
     setIsRunning(false);
     setElapsed(total);
     savedTimeRef.current = total;
-  }, [isRunning, subjectId, onSave]);
+  }, [isRunning, saveTime]);
 
   const reset = useCallback(() => {
     stop();
@@ -84,7 +84,6 @@ export const usePersistentTimer = ({
     localStorage.removeItem(`timer_${subjectId}`);
   }, [stop, subjectId]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (intervalRef.current) {
@@ -93,17 +92,10 @@ export const usePersistentTimer = ({
     };
   }, []);
 
-  return {
-    isRunning,
-    elapsed,
-    start,
-    stop,
-    reset,
-  };
+  return { isRunning, elapsed, start, stop, reset };
 };
 
-// Format seconds to HH:MM:SS
-export const formatTime = (seconds: number): string => {
+export const formatTime = useCallback((seconds: number): string => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
@@ -112,10 +104,9 @@ export const formatTime = (seconds: number): string => {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
-};
+}, []);
 
-// Format seconds to human readable (e.g., "2h 30m")
-export const formatTimeReadable = (seconds: number): string => {
+export const formatTimeReadable = useCallback((seconds: number): string => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   
@@ -129,4 +120,4 @@ export const formatTimeReadable = (seconds: number): string => {
     return `${minutes}m`;
   }
   return '<1m';
-};
+}, []);

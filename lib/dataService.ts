@@ -197,7 +197,6 @@ export const saveLesson = async (lesson: Lesson, topicId: string, userId: string
 export const saveFullCurriculum = async (children: ChildProfile[], userId: string): Promise<void> => {
   console.log('saveFullCurriculum: starting for', children.length, 'children, userId:', userId);
   
-  // Pre-generate all UUIDs to ensure consistency between passes
   const idMap = new Map<string, string>()
   
   function getOrCreateUuid(id: string): string {
@@ -207,7 +206,8 @@ export const saveFullCurriculum = async (children: ChildProfile[], userId: strin
     return idMap.get(id)!
   }
   
-  // First pass: Save all parent records (children, year_groups, subjects, topics)
+  const lessonsToUpsert: any[] = [];
+  
   for (const child of children) {
     console.log('Processing child:', child.name);
     const childId = getOrCreateUuid(child.id)
@@ -280,46 +280,40 @@ export const saveFullCurriculum = async (children: ChildProfile[], userId: strin
             console.error('Error saving topic:', topic.name, topicError);
             throw topicError;
           }
+          
+          for (const lesson of topic.lessons) {
+            const lessonId = getOrCreateUuid(lesson.id)
+            lessonsToUpsert.push({
+              id: lessonId,
+              topic_id: topicId,
+              user_id: userId,
+              title: lesson.title,
+              video_url: lesson.videoUrl,
+              duration_minutes: lesson.durationMinutes,
+              outcomes: lesson.outcomes,
+              completed: lesson.completed,
+              time_spent_seconds: lesson.timeSpentSeconds || 0,
+              deleted: lesson.deleted || false,
+              order_index: 0,
+              lesson_focus: lesson.lessonFocus || null,
+              lesson_notes: lesson.lessonNotes || null,
+              video_position: lesson.videoPosition || null
+            });
+          }
         }
       }
     }
   }
   
-  // Second pass: Save all lessons using the same UUIDs
-  console.log('saveFullCurriculum: saving lessons...');
-  for (const child of children) {
-    for (const yg of child.yearGroups) {
-      for (const subject of yg.subjects) {
-        for (const topic of subject.topics) {
-          const topicId = getOrCreateUuid(topic.id)
-          for (const lesson of topic.lessons) {
-            const lessonId = getOrCreateUuid(lesson.id)
-            const { error: lessonError } = await supabase
-              .from('lessons')
-              .upsert({
-                id: lessonId,
-                topic_id: topicId,
-                user_id: userId,
-                title: lesson.title,
-                video_url: lesson.videoUrl,
-                duration_minutes: lesson.durationMinutes,
-                outcomes: lesson.outcomes,
-                completed: lesson.completed,
-                time_spent_seconds: lesson.timeSpentSeconds || 0,
-                deleted: lesson.deleted || false,
-                order_index: 0,
-                lesson_focus: lesson.lessonFocus || null,
-                lesson_notes: lesson.lessonNotes || null,
-                video_position: lesson.videoPosition || null
-              })
-            
-            if (lessonError) {
-              console.error('Error saving lesson:', lesson.title, lessonError);
-              throw lessonError;
-            }
-          }
-        }
-      }
+  if (lessonsToUpsert.length > 0) {
+    console.log('saveFullCurriculum: batching upsert of', lessonsToUpsert.length, 'lessons');
+    const { error: lessonError } = await supabase
+      .from('lessons')
+      .upsert(lessonsToUpsert);
+    
+    if (lessonError) {
+      console.error('Error batch upserting lessons:', lessonError);
+      throw lessonError;
     }
   }
   

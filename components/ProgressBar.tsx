@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 
 interface Props {
   current: number;
@@ -7,8 +7,10 @@ interface Props {
   heightClass?: string;
 }
 
-export const ProgressBar: React.FC<Props> = ({ current, total, colorClass = "bg-green-500", heightClass = "h-2" }) => {
-  const percentage = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+export const ProgressBar: React.FC<Props> = memo(({ current, total, colorClass = "bg-green-500", heightClass = "h-2" }) => {
+  const percentage = useMemo(() => {
+    return total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+  }, [current, total]);
   
   return (
     <div className={`w-full bg-gray-200 rounded-full ${heightClass} overflow-hidden`}>
@@ -18,4 +20,4 @@ export const ProgressBar: React.FC<Props> = ({ current, total, colorClass = "bg-
       />
     </div>
   );
-};
+});

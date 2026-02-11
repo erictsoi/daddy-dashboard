@@ -1,15 +1,16 @@
 export interface Lesson {
   id: string;
   title: string;
-  durationMinutes: number;
+  durationMinutes?: number;
   completed: boolean;
   videoUrl?: string;
-  outcomes: string[];
+  outcomes?: string[];
   lessonFocus?: string;
   lessonNotes?: string;
   deleted?: boolean;
   timeSpentSeconds?: number;
   videoPosition?: number;
+  orderIndex?: number;
 }
 
 export interface Topic {
@@ -23,7 +24,7 @@ export interface Subject {
   id: string;
   name: string; // Subject (e.g., "English", "Maths", "Science")
   topics: Topic[];
-  category: 'Maths' | 'English' | 'Science' | 'Humanities' | 'Languages' | 'Creative' | 'Other';
+  category: string;
   color: string;
 }
 

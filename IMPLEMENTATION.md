@@ -5,7 +5,23 @@
      2. Update PROMPTS.md with context
      3. Update IMPLEMENTATION.md with technical details
      4. Bump version in package.json
--->
+     -->
+
+## 2026-02-11 Rework Status
+
+### Completed
+- ✅ Removed debug buttons (Nuke, Deduplicate, Clean DB, Dedupe Lessons)
+- ✅ Removed localStorage data persistence (Supabase-only)
+- ✅ Simplified admin profile (hardcoded avatar/color, removed DOB)
+- ✅ Fixed TypeScript errors
+
+### In Progress
+- Simplify AuthContext (remove localStorage fallback)
+
+### Pending
+- Create Edge Function for YouTube playlist fetching
+
+---
 
 ## Profile Management System
 
@@ -633,7 +649,7 @@ Prevents importing same lesson twice:
 
 ```typescript
 // Check if lesson exists by video URL
-const videoId = row.videoUrl?.includes('youtu') ? 
+const videoId = row.videoUrl?.includes('youtu') ?
   row.videoUrl.split('/').pop()?.split('?')[0] : null;
 
 const lessonExists = topic.lessons.some(l => {
@@ -646,3 +662,101 @@ if (lessonExists) {
   return;  // Skip this lesson
 }
 ```
+
+## JSON Export/Import System
+
+### Overview
+
+Added JSON file export/import for curriculum backup and transfer.
+
+### Features
+
+- **Export Curriculum** - Downloads all children, year groups, subjects, topics, and lessons as JSON
+- **Import Curriculum** - Uploads JSON file and syncs to Supabase/localStorage
+- **Version metadata** - Export includes version number and timestamp
+- **Auto-save on import** - Import automatically persists to Supabase for authenticated users
+
+### Architecture
+
+```
+App.tsx
+├── exportDataToFile(data, filename)
+│   ├── Creates Blob with versioned JSON
+│   ├── Triggers browser download
+│   └── Default: daddy-dashboard-export-[date].json
+│
+├── importDataFromFile(file)
+│   ├── FileReader to parse JSON
+│   ├── Validates children array
+│   └── Returns Promise<ChildProfile[]>
+│
+└── Data Management Section (Admin UI)
+    ├── [Export Curriculum] → exportDataToFile(data)
+    ├── [Import Curriculum] → hidden file input
+    └── [Check Subjects] → Read-only diagnostic
+```
+
+### Export Format
+
+```json
+{
+  "version": 1,
+  "exportedAt": "2026-02-11T10:30:00.000Z",
+  "children": [
+    {
+      "id": "uuid",
+      "name": "Sophia",
+      "avatar": "👧",
+      "themeColor": "rose",
+      "dob": "2015-03-15",
+      "yearGroups": [...]
+    }
+  ]
+}
+```
+
+### Import Flow
+
+1. User clicks "Import Curriculum"
+2. Hidden file input opens file picker
+3. User selects JSON file
+4. `importDataFromFile()` parses and validates
+5. If logged in: `saveFullCurriculum()` → Supabase
+6. If guest: `saveLocalData()` → localStorage
+7. Page reloads to reflect imported data
+
+### File Location
+
+| File | Purpose |
+|------|---------|
+| `App.tsx:13-49` | exportDataToFile, importDataFromFile functions |
+| `App.tsx:1198-1260` | Data Management UI section |
+| `CURRICULUM_BUILDER.md` | User documentation |
+
+### Usage Scenarios
+
+#### Backup Before Major Changes
+1. Click [Export Curriculum]
+2. Save JSON file to computer
+3. Make changes
+4. If issues: Import from backup
+
+#### Transfer Between Accounts
+1. Export from Account A
+2. Sign out, sign in to Account B
+3. Import JSON
+4. Data transferred
+
+#### Cross-Device Sync
+1. Export on laptop
+2. Import on desktop
+3. Both have same curriculum
+
+### Error Handling
+
+| Error | Handling |
+|-------|----------|
+| Invalid JSON | Reject with "Invalid file format" |
+| Missing children array | Reject with error |
+| Supabase error | Show toast notification |
+| Network timeout | Fallback to localStorage for guest |

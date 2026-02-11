@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ArrowLeft, Save, AlertCircle, FileText, CheckCircle, Link, Copy, Youtube, Loader2, ChevronRight } from 'lucide-react';
-import { fetchPlaylistVideos, processYouTubeUrl } from '../utils/youtube';
+import { fetchPlaylistVideos } from '../src/lib/supabase';
 import { ParsedRow } from '../types';
+import { processYouTubeUrl } from '../utils/youtube';
 
 interface Props {
   onBack: () => void;
@@ -31,7 +32,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
     }
   }, []);
 
-  const loadPlaylist = async () => {
+  const loadPlaylist = useCallback(async () => {
     if (!playlistUrl.trim()) return;
 
     setIsLoadingPlaylist(true);
@@ -42,7 +43,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
       const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
       console.log('[CurriculumBuilder] API Key available:', !!apiKey);
       
-      const videos = await fetchPlaylistVideos(playlistUrl, apiKey);
+      const videos = await fetchPlaylistVideos(playlistUrl);
       console.log('[CurriculumBuilder] Loaded', videos.length, 'videos');
 
       const cleanUrl = cleanPlaylistUrl(playlistUrl);
@@ -59,8 +60,8 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
         youTubeType: 'playlist',
         expandedLessons: videos.map((v, idx) => ({
           title: v.title,
-          videoUrl: `https://www.youtube.com/embed/${v.id}`,
-          videoId: v.id,
+          videoUrl: `https://www.youtube.com/embed/${v.videoId}`,
+          videoId: v.videoId,
           position: idx,
         })),
       };
@@ -71,9 +72,9 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
     } finally {
       setIsLoadingPlaylist(false);
     }
-  };
+  }, [playlistUrl, defaultChild, defaultYear, defaultSubject, defaultSubcategory]);
 
-  const parseInput = (text: string): ParsedRow[] => {
+  const parseInput = useCallback((text: string): ParsedRow[] => {
     return text.split(/\r?\n/).filter(line => line.trim() !== '').map(line => {
       const cols = line.split('\t');
       const childName = cols[0]?.trim() || '';
@@ -102,7 +103,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
         youTubeType: undefined as 'video' | 'playlist' | undefined,
       };
     });
-  };
+  }, []);
 
   useEffect(() => {
     if (!inputText.trim()) {
@@ -110,14 +111,14 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
       return;
     }
     setParsedRows(parseInput(inputText));
-  }, [inputText]);
+  }, [inputText, parseInput]);
 
-  const cleanPlaylistUrl = (url: string): string => {
+  const cleanPlaylistUrl = useCallback((url: string): string => {
     const playlistIdMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
     return playlistIdMatch ? `https://www.youtube.com/playlist?list=${playlistIdMatch[1]}` : url;
-  };
+  }, []);
 
-  const processYouTube = async () => {
+  const processYouTube = useCallback(async () => {
     const unprocessed = parsedRows.filter(r => r.isYouTubeUrl && !r.expandedLessons);
     if (unprocessed.length === 0) return;
 
@@ -155,9 +156,9 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
     setParsedRows(updated);
     setIsProcessing(false);
     setProcessingProgress('');
-  };
+  }, [parsedRows, cleanPlaylistUrl]);
 
-  const expandPlaylists = () => {
+  const expandPlaylists = useCallback(() => {
     const expanded: ParsedRow[] = [];
     let playlistCount = 0;
 
@@ -183,7 +184,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
 
     setParsedRows(expanded);
     setExpandedCount(expanded.length - parsedRows.length + playlistCount);
-  };
+  }, [parsedRows]);
 
   const validRows = useMemo(() => parsedRows.filter(r => r.isValid), [parsedRows]);
   const playlistRows = useMemo(() => parsedRows.filter(r => r.youTubeType === 'playlist'), [parsedRows]);
@@ -197,7 +198,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
     }, 0);
   }, [parsedRows]);
 
-  const handleImport = () => {
+  const handleImport = useCallback(() => {
     if (isImporting) {
       console.log('[CurriculumBuilder] Import already in progress');
       return;
@@ -217,12 +218,11 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
     setIsImporting(true);
     onImport(finalRows);
     
-    // Reset after delay (onImport handles the actual save)
     setTimeout(() => {
       setIsImporting(false);
       if (onImportComplete) onImportComplete();
     }, 2000);
-  };
+  }, [isImporting, parsedRows, onImport, onImportComplete]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

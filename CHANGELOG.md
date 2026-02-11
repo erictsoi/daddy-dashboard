@@ -6,7 +6,99 @@
      3. Update IMPLEMENTATION.md with technical details
      4. Update CURRICULUM_REWRITE_LOG.md with curriculum changes
      5. Bump version in package.json
-   -->
+     -->
+
+## 2026-02-11 - Version 2.7.0 (Rework Complete)
+
+### Removed
+- **Debug Buttons** - Nuke Supabase, Deduplicate, Clean DB, Dedupe Lessons
+- **localStorage Data Persistence** - All saves now go to Supabase only
+- **Guest Mode** - Authentication required for all features
+- **Admin DOB Field** - Only children need DOB (for year calculation)
+- **UserRole Type** - Simplified AuthContext
+
+### Changed
+- **Supabase-only Persistence** - Single source of truth, no localStorage fallback
+- **Admin Profile** - Simplified to avatar + color only (defaults: 👨‍🏫, blue)
+- **Import Flow** - Requires auth, saves directly to Supabase
+- **Data Functions** - All `saveLocalData()` replaced with `saveFullCurriculum(user.id, data)`
+- **YouTube Integration** - Uses Edge Function (no CORS issues)
+
+### Fixed
+- **TypeScript Errors** - Fixed 5 `saveFullCurriculum()` argument order issues
+- **Broken Functions** - Removed undefined `migrateChildToTopicStructure()`
+- **Sync Button** - Removed broken "Sync to Supabase" button
+
+### Added
+- **Supabase Helper Functions** - `saveFullCurriculum()`, `hardDeleteSubjectFromSupabase()`, etc.
+
+## 2026-02-11 - Version 3.0.0 (MAJOR REWORK)
+
+### Breaking Changes
+- **Simplified Data Storage** - Removed dual-mode (localStorage + Supabase), now Supabase-only
+- **New Data Structure** - Added Topics table between Subjects and Lessons
+- **Deterministic IDs** - Year groups, subjects, and topics now use deterministic IDs to prevent duplicates
+- **Removed localStorage fallback** - Auth required for all features
+
+### Removed
+- **Debug Buttons** - Nuke Supabase, Deduplicate, Clean DB (no longer needed)
+- **Guest Mode** - Requires authentication
+- **Client-side YouTube API** - Replaced with Edge Functions
+- **dataService.ts** - Removed dual-mode complexity
+
+### Added
+- **Topics Table** - Child → YearGroup → Subject → Topic → Lessons hierarchy
+- **Edge Function** - Server-side YouTube playlist fetching (no CORS)
+- **Deterministic ID Generation** - `childId-yearName`, `yearGroupId-subjectName`, etc.
+
+### Changed
+- **Supabase-only persistence** - Single source of truth
+- **Clean schema** - Proper RLS policies, unique constraints
+- **Simplified data flow** - Load from Supabase, save to Supabase
+
+### Import Format Update
+| Column | Field |
+|--------|-------|
+| 1 | childName |
+| 2 | yearGroup |
+| 3 | subjectCategory |
+| 4 | subjectName |
+| 5 | topicName | (NEW)
+| 6 | lessonTitle |
+| 7 | videoUrl |
+
+## 2026-02-11
+
+### Added
+- **Sync to Supabase button** - Manual sync button for sharing data with testers
+- **Export Curriculum button** - Downloads current curriculum as JSON file with timestamp
+- **Import Curriculum button** - Uploads JSON file and saves to localStorage
+
+### Changed
+- **LocalStorage-first storage** - All saves now go to localStorage only (reliable)
+- **Removed auto-sync** - No more automatic Supabase syncing on every action
+- **Simplified data loading** - Always loads from localStorage first, optional Supabase merge
+- **Removed Check Subjects button** - Supabase diagnostic no longer needed
+
+### Data Workflow
+```
+User works in app → data saves to localStorage (automatic)
+User clicks Export → downloads JSON backup
+User clicks Import → restores from JSON backup
+User clicks Sync → uploads to Supabase (optional, for testers)
+```
+
+## 2026-02-11
+
+### Added
+- **Export Curriculum button** - Downloads current curriculum as JSON file with timestamp
+- **Import Curriculum button** - Uploads JSON file and saves to Supabase/localStorage
+- **CURRICULUM_BUILDER.md** - Complete documentation for bulk import tool
+
+### Changed
+- **Data Management section** - Replaced "Debug Tools" with clean "Data Management" section
+- **Debug buttons removed** - Deleted "Nuke All Data" and "Delete Duplicates" buttons (dangerous operations)
+- **Kept Check Subjects** - As read-only diagnostic tool
 
 ## 2026-02-10
 

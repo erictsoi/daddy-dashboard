@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { Lesson, ChildProfile, Subject } from '../types';
 import { ArrowLeft, Clock, CheckCircle, Play, Pause, BookOpen, AlertCircle, Award, Timer } from 'lucide-react';
 import { usePersistentTimer, formatTime, formatTimeReadable } from '../src/lib/useTimer';
@@ -12,66 +12,70 @@ interface Props {
   onComplete: (lessonId: string, timeSpentSeconds: number) => void;
 }
 
-const getYouTubeID = (url: string | undefined): string => {
+const getYouTubeID = memo(function getYouTubeID(url: string | undefined): string {
   if (!url) return '';
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
   const match = url.match(regExp);
   return (match && match[2].length === 11) ? match[2] : '';
-};
+});
 
 const tc = (color: string, suffix: string = '') => `bg-${color}${suffix ? '-' + suffix : ''}`;
 const tcText = (color: string, suffix: string = '') => `text-${color}${suffix ? '-' + suffix : ''}`;
 
-export const LessonPlayer: React.FC<Props> = ({ child, subject, topicId, lesson, onBack, onComplete }) => {
+export const LessonPlayer: React.FC<Props> = memo(({ child, subject, topicId, lesson, onBack, onComplete }) => {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [key, setKey] = useState(0);
-  const videoId = getYouTubeID(lesson.videoUrl);
   
-  const { isRunning, elapsed, start, stop, reset } = usePersistentTimer({
+  const videoId = useMemo(() => getYouTubeID(lesson.videoUrl), [lesson.videoUrl]);
+  
+  const { isRunning, elapsed, start, stop } = usePersistentTimer({
     subjectId: topicId,
     onTick: () => {},
     onSave: () => {},
     autoSaveInterval: 30,
   });
 
-  // Start timer when entering lesson
   useEffect(() => {
     start();
     setKey(k => k + 1);
     return () => stop();
-  }, [topicId]);
+  }, [topicId, start, stop]);
 
-  const themeBg = tc(child.themeColor);
-  const themeBg600 = tc(child.themeColor, '600');
-  const themeBg700 = tc(child.themeColor, '700');
-  const themeBg500 = tc(child.themeColor, '500');
-  const themeBg100 = tc(child.themeColor, '100');
-  const themeText600 = tcText(child.themeColor, '600');
+  const themeColors = useMemo(() => ({
+    bg: tc(child.themeColor),
+    bg600: tc(child.themeColor, '600'),
+    bg700: tc(child.themeColor, '700'),
+    bg500: tc(child.themeColor, '500'),
+    bg100: tc(child.themeColor, '100'),
+    text600: tcText(child.themeColor, '600'),
+  }), [child.themeColor]);
 
-  const handleFinish = () => {
+  const handleFinish = useCallback(() => {
     stop();
     onComplete(lesson.id, elapsed);
-  };
+  }, [stop, onComplete, lesson.id, elapsed]);
 
-  const handleExit = () => {
+  const handleExit = useCallback(() => {
     stop();
     onBack();
-  };
+  }, [stop, onBack]);
+
+  const elapsedTime = useMemo(() => formatTimeReadable(elapsed), [elapsed]);
 
   return (
     <div className="flex flex-col h-screen bg-white relative">
       {showCompleteModal && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
-                <div className={'w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ' + themeBg100}>
-                    <Award size={40} className={themeText600} />
+                <div className={'w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ' + themeColors.bg100}>
+                    <Award size={40} className={themeColors.text600} />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-800 mb-2">Great Job, {child.name}!</h2>
                 <p className="text-gray-500 mb-8">
-                    You have spent <span className="font-bold text-gray-800">{formatTimeReadable(elapsed)}</span> on this subject.
+                    You have spent <span className="font-bold text-gray-800">{elapsedTime}</span> on this subject.
                 </p>
                 <div className="space-y-3">
-                    <button onClick={handleFinish} className={'w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition ' + themeBg600 + ' text-white hover:' + themeBg700}>
+                    <button onClick={handleFinish} className={'w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition ' + themeColors.bg600 + ' text-white hover:' + themeColors.bg700}>
                         <CheckCircle size={24} /> Finish & Save
                     </button>
                     <button onClick={() => setShowCompleteModal(false)} className="w-full py-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition">
@@ -82,7 +86,7 @@ export const LessonPlayer: React.FC<Props> = ({ child, subject, topicId, lesson,
         </div>
       )}
 
-      <div className={themeBg600 + ' text-white p-4 shadow-md flex items-center justify-between'}>
+      <div className={themeColors.bg600 + ' text-white p-4 shadow-md flex items-center justify-between'}>
         <button onClick={handleExit} className="flex items-center space-x-2 hover:bg-white/20 p-2 rounded-lg transition">
           <ArrowLeft size={20} />
           <span>Exit Lesson</span>
@@ -99,19 +103,19 @@ export const LessonPlayer: React.FC<Props> = ({ child, subject, topicId, lesson,
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 bg-gray-900 flex flex-col justify-center items-center relative p-8">
            <div key={key} className="w-full max-w-4xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl ring-4 ring-gray-800 relative">
-              {videoId ? (
-                <iframe
-                  className="w-full h-full"
-                  src={'https://www.youtube.com/embed/' + videoId + '?autoplay=1&playsinline=1'}
-                  title={lesson.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-white/50">
-                    Video Unavailable
-                </div>
-              )}
+               {videoId ? (
+                 <iframe
+                   className="w-full h-full"
+                   src={'https://www.youtube.com/embed/' + videoId + '?autoplay=1&playsinline=1'}
+                   title={lesson.title}
+                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                   allowFullScreen
+                 />
+               ) : (
+                 <div className="absolute inset-0 flex items-center justify-center text-white/50">
+                     Video Unavailable
+                 </div>
+               )}
            </div>
            <div className="mt-6 text-white/50 text-sm flex items-center gap-2">
                <Timer size={16} /> Time is being tracked for this subject
@@ -135,50 +139,50 @@ export const LessonPlayer: React.FC<Props> = ({ child, subject, topicId, lesson,
              <button 
                onClick={isRunning ? stop : start}
                className={'w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ' + 
-                 (isRunning ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : themeBg600 + ' text-white hover:' + themeBg700 + ' shadow-lg')}
+                 (isRunning ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : themeColors.bg600 + ' text-white hover:' + themeColors.bg700 + ' shadow-lg')}
              >
                {isRunning ? <><Pause size={20} /> Pause</> : <><Play size={20} /> Resume</>}
              </button>
            </div>
 
-            <div className="p-6 flex-1 overflow-y-auto">
-              {lesson.lessonFocus && (
-                <div className="mb-6">
-                  <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                    <BookOpen size={18} className={themeText600} />
-                    Lesson Aims
-                  </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    {lesson.lessonFocus}
-                  </p>
-                </div>
-              )}
-              
-              <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <BookOpen size={18} className={themeText600} />
-                Learning Outcomes
-              </h3>
-              <ul className="space-y-3">
-                {lesson.outcomes.map((outcome, idx) => (
-                  <li key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 shadow-sm">
-                    <div className={'mt-1 min-w-[6px] h-[6px] rounded-full ' + themeText600.replace('text-', 'bg-')} />
-                    <span className="text-gray-600 text-sm leading-relaxed">{outcome}</span>
-                  </li>
-                ))}
-              </ul>
+           <div className="p-6 flex-1 overflow-y-auto">
+             {lesson.lessonFocus && (
+               <div className="mb-6">
+                 <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                   <BookOpen size={18} className={themeColors.text600} />
+                   Lesson Aims
+                 </h3>
+                 <p className="text-gray-600 text-sm leading-relaxed p-3 bg-blue-50 rounded-lg border border-blue-100">
+                   {lesson.lessonFocus}
+                 </p>
+               </div>
+             )}
+             
+             <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+               <BookOpen size={18} className={themeColors.text600} />
+               Learning Outcomes
+             </h3>
+             <ul className="space-y-3">
+               {(lesson.outcomes || []).map((outcome, idx) => (
+                 <li key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 shadow-sm">
+                   <div className={'mt-1 min-w-[6px] h-[6px] rounded-full ' + themeColors.text600.replace('text-', 'bg-')} />
+                   <span className="text-gray-600 text-sm leading-relaxed">{outcome}</span>
+                 </li>
+               ))}
+             </ul>
 
-              {lesson.lessonNotes && (
-                <div className="mt-6">
-                  <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                    <BookOpen size={18} className={themeText600} />
-                    Notes
-                  </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed p-3 bg-amber-50 rounded-lg border border-amber-100">
-                    {lesson.lessonNotes}
-                  </p>
-                </div>
-              )}
-            </div>
+             {lesson.lessonNotes && (
+               <div className="mt-6">
+                 <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                   <BookOpen size={18} className={themeColors.text600} />
+                   Notes
+                 </h3>
+                 <p className="text-gray-600 text-sm leading-relaxed p-3 bg-amber-50 rounded-lg border border-amber-100">
+                   {lesson.lessonNotes}
+                 </p>
+               </div>
+             )}
+           </div>
 
            <div className="p-6 bg-white border-t border-gray-200">
              {lesson.completed ? (
@@ -186,13 +190,13 @@ export const LessonPlayer: React.FC<Props> = ({ child, subject, topicId, lesson,
                   <CheckCircle size={24} /> Lesson Completed!
                 </div>
              ) : (
-               <button onClick={() => setShowCompleteModal(true)} className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-lg">
-                 <CheckCircle size={20} /> Mark Complete
-               </button>
+                <button onClick={() => setShowCompleteModal(true)} className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-lg">
+                  <CheckCircle size={20} /> Mark Complete
+                </button>
              )}
            </div>
         </div>
       </div>
     </div>
   );
-};
+});

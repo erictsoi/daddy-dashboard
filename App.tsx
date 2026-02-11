@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ViewState, ChildProfile, YearGroup, Subject, Topic, Lesson, ScheduleBlock, ViewOrigin, ParsedRow } from './types';
 import { INITIAL_DATA } from './constants';
 import { AuthProvider, useAuth } from './lib/AuthContext';
@@ -25,6 +25,46 @@ const exportDataToFile = (data: ChildProfile[], filename: string = 'daddy-dashbo
   a.click();
   URL.revokeObjectURL(url);
 };
+
+function shallowClone(obj: any): any {
+  return Array.isArray(obj) ? obj.slice() : { ...obj };
+}
+
+function cloneWithPath(obj: any, path: string[], value: any): any {
+  if (path.length === 0) return value;
+  
+  const result = shallowClone(obj);
+  let current: any = result;
+  
+  for (let i = 0; i < path.length - 1; i++) {
+    current[path[i]] = shallowClone(current[path[i]]);
+    current = current[path[i]];
+  }
+  
+  current[path[path.length - 1]] = value;
+  return result;
+}
+
+const findChildById = useCallback((data: ChildProfile[], childId: string): ChildProfile | undefined => {
+  return data.find(c => c.id === childId);
+}, []);
+
+const findYearGroup = useCallback((child: ChildProfile | undefined, subjectId: string) => {
+  if (!child) return undefined;
+  return child.yearGroups.find(y => y.subjects.some(s => s.id === subjectId));
+}, []);
+
+const findSubject = useCallback((yearGroup: YearGroup | undefined, subjectId: string) => {
+  return yearGroup?.subjects.find(s => s.id === subjectId);
+}, []);
+
+const findTopic = useCallback((subject: Subject | undefined, topicId: string) => {
+  return subject?.topics.find(t => t.id === topicId);
+}, []);
+
+const findLesson = useCallback((topic: Topic | undefined, lessonId: string) => {
+  return topic?.lessons.find(l => l.id === lessonId);
+}, []);
 
 // Import data from JSON file
 const importDataFromFile = (file: File): Promise<ChildProfile[]> => {
@@ -289,9 +329,18 @@ const App: React.FC = () => {
       return newData;
     });
   };
-
+ 
    // --- Schedule Generator Logic ---
-   
+    
+   const shuffle = <T,>(array: T[]): T[] => {
+     const shuffled = [...array];
+     for (let i = shuffled.length - 1; i > 0; i--) {
+       const j = Math.floor(Math.random() * (i + 1));
+       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+     }
+     return shuffled;
+   };
+ 
    const generateSchedule = (hours: number) => {
      const blocks: ScheduleBlock[] = [];
      const now = new Date();
@@ -309,9 +358,14 @@ const App: React.FC = () => {
        alert("Please add more subjects/lessons first!");
        return;
      }
-
-     let deviceIndex = 0;
-
+ 
+     // Pre-shuffle subjects for each child
+     const childSubjects: Record<string, { subjects: any[], currentIndex: number }> = {};
+     childrenWithLessons.forEach(child => {
+       const subjects = shuffle(child.yearGroups.flatMap(yg => yg.subjects));
+       childSubjects[child.id] = { subjects, currentIndex: 0 };
+     });
+ 
      for (let i = 0; i < hours; i++) {
          const startTime = new Date(currentTime);
          const endTime = new Date(currentTime.getTime() + 50 * 60000);
@@ -319,18 +373,25 @@ const App: React.FC = () => {
          const blockChildren: ScheduleBlock['children'] = {};
          
          childrenWithLessons.forEach((child, idx) => {
-           const subjects = child.yearGroups.flatMap(yg => yg.subjects);
-           const subject = subjects[idx % subjects.length];
+           const childData = childSubjects[child.id];
+           if (!childData) return;
+           
+           // Rotate through shuffled subjects
+           const subject = childData.subjects[childData.currentIndex % childData.subjects.length];
            if (!subject) return;
            
-           const topic = subject.topics.find(t => t.lessons.some(l => !l.completed && !l.deleted)) || subject.topics.find(t => t.lessons.some(l => !l.deleted)) || subject.topics[0];
+           // Get uncompleted lesson from subject
+           const topic = subject.topics.find(t => t.lessons.some(l => !l.completed && !l.deleted)) 
+             || subject.topics.find(t => t.lessons.some(l => !l.deleted))
+             || subject.topics[0];
            if (!topic) return;
            
-           const lessons = topic.lessons;
-           const lesson = lessons.find(l => !l.completed && !l.deleted) || lessons.find(l => !l.deleted) || lessons[0];
+           const lesson = topic.lessons.find(l => !l.completed && !l.deleted)
+             || topic.lessons.find(l => !l.deleted)
+             || topic.lessons[0];
            if (!lesson) return;
            
-           const hasDevice = deviceIndex % childrenWithLessons.length === idx;
+           const hasDevice = i % childrenWithLessons.length === idx;
            
            blockChildren[child.id] = {
              subjectId: subject.id,
@@ -340,6 +401,9 @@ const App: React.FC = () => {
              lessonTitle: lesson.title,
              hasDevice
            };
+           
+           // Move to next subject for next block
+           childData.currentIndex++;
          });
          
          blocks.push({
@@ -349,9 +413,9 @@ const App: React.FC = () => {
              endTime,
              children: blockChildren
          });
-
+ 
          currentTime = endTime;
-
+ 
          if (i < hours - 1) {
              if (i === 1) {
                  const lunchEnd = new Date(currentTime.getTime() + 40 * 60000);
@@ -377,17 +441,14 @@ const App: React.FC = () => {
                  currentTime = breakEnd;
              }
          }
-         
-         deviceIndex++;
      }
-
+ 
      setSchedule(blocks);
      setIsDayActive(true);
    };
-
-
+ 
+ 
   // --- Curriculum Actions ---
-
   const handleCompleteLesson = (childId: string, subjectId: string, topicId: string, lessonId: string, timeSpentSeconds: number) => {
     setData(prev => {
       const newData = prev.map(child => {

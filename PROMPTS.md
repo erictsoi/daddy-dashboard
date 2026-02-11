@@ -6,7 +6,81 @@
      3. Update IMPLEMENTATION.md with technical details
      4. Update CURRICULUM_REWRITE_LOG.md with curriculum changes
      5. Bump version in package.json
-   -->
+     -->
+
+## 2026-02-11 - Rework Session Complete
+
+**User Request:**
+> we just rewrote the data structure, we just finised putting the api keys into supabase
+> i want to test the run dev to see if it works
+> what is the best order to finish the rework?
+> ok, once we have done each step, update the rework log
+> update logs
+> 1 (continue with rework)
+> continue
+
+**Requirements:**
+1. Follow rework plan from IMPLEMENTATION_REWORK.md
+2. Remove debug buttons
+3. Remove localStorage persistence
+4. Simplify AuthContext
+5. Integrate Edge Function
+6. Update logs after completion
+
+**Rework Completed (All Steps):**
+- ✅ Step 1: Removed debug buttons (Nuke, Deduplicate, Clean DB, Dedupe Lessons)
+- ✅ Step 2: Removed localStorage data persistence (19 `saveLocalData()` calls replaced)
+- ✅ Step 3: Simplified admin profile (removed DOB, hardcoded avatar/color)
+- ✅ Step 4: Fixed TypeScript errors (5 argument order fixes, undefined functions)
+- ✅ Step 5: Simplified AuthContext (removed unused UserRole type)
+- ✅ Step 6: Integrated Edge Function (YouTube playlists now server-side)
+
+**Files Modified:**
+- `src/lib/supabase.ts`:
+  - Added `saveFullCurriculum()`, `hardDeleteSubjectFromSupabase()`, `uploadToSupabase()`, `loadFromSupabase()`
+- `src/lib/AuthContext.tsx`:
+  - Removed `UserRole` type, `userRole` state
+- `App.tsx`:
+  - Removed 7 debug buttons
+  - Replaced all `saveLocalData()` with `saveFullCurriculum(user.id, data)`
+  - Simplified admin state (removed localStorage, DOB field)
+- `components/CurriculumBuilder.tsx`:
+  - Updated to use Edge Function `fetchPlaylistVideos()`
+- `IMPLEMENTATION_REWORK.md`:
+  - Documented all completed steps
+- `CHANGELOG.md`:
+  - Added v2.7.0 release notes
+
+## 2026-02-11 - Export/Import UI & Documentation
+
+**User Request:**
+> update logs
+
+**Requirements:**
+1. Add Export/Import buttons to Admin section UI
+2. Remove dangerous debug buttons
+3. Create CURRICULUM_BUILDER.md documentation
+4. Update all log files and bump version
+
+**Output:**
+- Added `exportDataToFile()` and `importDataFromFile()` functions to App.tsx
+- Created hidden file input for JSON import
+- Replaced "Admin Debug Tools" section with "Data Management" section
+- Removed "Nuke All Data" and "Delete Duplicates" buttons
+- Created `CURRICULUM_BUILDER.md` with complete usage guide
+
+**Files Modified:**
+- `App.tsx`:
+  - Added `exportDataToFile()` - Downloads curriculum as JSON
+  - Added `importDataFromFile()` - Parses JSON file
+  - Added `importFileInputRef` - Hidden file input for import
+  - Replaced debug buttons section with Export/Import buttons
+- Created `CURRICULUM_BUILDER.md` - 200+ line documentation covering:
+  - Two import modes (Paste Spreadsheet, Playlist URL)
+  - Column format documentation
+  - Workflow steps
+  - YouTube integration details
+  - Troubleshooting guide
 
 ## 2026-02-10 - Supabase Deduplication & Data Cleanup
 
