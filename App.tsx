@@ -118,6 +118,7 @@ import {
   Archive,
   Lock,
   LogOut,
+  User,
   UserCircle,
   UserPlus,
   Timer,
@@ -1362,9 +1363,24 @@ const App: React.FC = () => {
                                         <>
                                             <div className="border-t border-gray-100 mt-2 pt-2">
                                                 <button
+                                                    onClick={() => { setView({ type: 'MANAGE_PROFILES' }); setShowProfileDropdown(false); }}
+                                                    className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
+                                                >
+                                                    <Edit2 size={16} />
+                                                    Manage Profiles
+                                                </button>
+                                                <button
+                                                    onClick={() => { /* TODO: Account page */ }}
+                                                    className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
+                                                >
+                                                    <User size={16} />
+                                                    Account
+                                                </button>
+                                                <button
                                                     onClick={() => { signOut?.(); setShowProfileDropdown(false); }}
                                                     className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 transition text-left text-sm"
                                                 >
+                                                    <LogOut size={16} />
                                                     Sign Out
                                                 </button>
                                             </div>
@@ -1999,15 +2015,24 @@ const App: React.FC = () => {
                               ))}
                               <div className="border-t border-gray-100 mt-2 pt-2">
                                   <button
+                                      onClick={() => { /* TODO: Account page */ }}
+                                      className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
+                                  >
+                                      <User size={16} />
+                                      Account
+                                  </button>
+                                  <button
                                       onClick={() => { setView({ type: 'MANAGE_PROFILES' }); setShowProfileDropdown(false); }}
                                       className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
                                   >
+                                      <Edit2 size={16} />
                                       Manage Profiles
                                   </button>
                                   <button
                                       onClick={() => { signOut?.(); setShowProfileDropdown(false); }}
                                       className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 transition text-left text-sm"
                                   >
+                                      <LogOut size={16} />
                                       Sign Out
                                   </button>
                               </div>
@@ -2775,9 +2800,24 @@ const App: React.FC = () => {
                                 <>
                                     <div className="border-t border-gray-100 mt-2 pt-2">
                                         <button
+                                            onClick={() => { setView({ type: 'MANAGE_PROFILES' }); setShowProfileDropdown(false); }}
+                                            className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
+                                        >
+                                            <Edit2 size={16} />
+                                            Manage Profiles
+                                        </button>
+                                        <button
+                                            onClick={() => { /* TODO: Account page */ }}
+                                            className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
+                                        >
+                                            <User size={16} />
+                                            Account
+                                        </button>
+                                        <button
                                             onClick={() => { signOut?.(); setShowProfileDropdown(false); }}
                                             className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 transition text-left text-sm"
                                         >
+                                            <LogOut size={16} />
                                             Sign Out
                                         </button>
                                     </div>
