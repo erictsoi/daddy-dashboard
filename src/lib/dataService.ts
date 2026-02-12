@@ -399,7 +399,7 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
   return childrenWithData
 }
 
-// Manual upload
+// Manual upload with TOTAL OVERWRITE
 export const uploadToSupabase = async (userId: string, currentData?: ChildProfile[]): Promise<{ success: boolean; message: string }> => {
   if (!supabase) {
     return { success: false, message: 'Supabase not configured' };
@@ -410,15 +410,56 @@ export const uploadToSupabase = async (userId: string, currentData?: ChildProfil
     const localData = getLocalData();
     const dataToUpload = localData.length > 0 ? localData : (currentData || []);
     
-    console.log('uploadToSupabase: localData:', localData.length, 'children, currentData:', currentData?.length || 0, 'children');
+    console.log('uploadToSupabase: localData:', localData.length, 'children');
     
     if (!dataToUpload || dataToUpload.length === 0) {
       return { success: false, message: 'No data found. Import curriculum first via Build Curriculum.' };
     }
 
-    console.log('Manual upload: Starting upload to Supabase for user:', userId, '- children:', dataToUpload.length);
+    console.log('Manual upload: Starting TOTAL OVERWRITE to Supabase for user:', userId);
 
-    // Pre-generate all UUIDs for consistency
+    // STEP 1: DELETE ALL EXISTING DATA for this user (total overwrite)
+    console.log('uploadToSupabase: Deleting existing data...');
+    
+    const { data: existingChildren } = await supabase
+      .from('children')
+      .select('id')
+      .eq('user_id', userId);
+    
+    if (existingChildren && existingChildren.length > 0) {
+      const childIds = existingChildren.map(c => c.id);
+      
+      const { data: yearGroups } = await supabase
+        .from('year_groups')
+        .select('id')
+        .in('child_id', childIds);
+      
+      const { data: subjects } = await supabase
+        .from('subjects')
+        .select('id')
+        .in('year_group_id', yearGroups?.map(yg => yg.id) || []);
+      
+      const { data: topics } = await supabase
+        .from('topics')
+        .select('id')
+        .in('subject_id', subjects?.map(s => s.id) || []);
+      
+      if (topics && topics.length > 0) {
+        await supabase.from('lessons').delete().in('topic_id', topics.map(t => t.id));
+        await supabase.from('topics').delete().in('id', topics.map(t => t.id));
+      }
+      if (subjects && subjects.length > 0) {
+        await supabase.from('subjects').delete().in('id', subjects.map(s => s.id));
+      }
+      if (yearGroups && yearGroups.length > 0) {
+        await supabase.from('year_groups').delete().in('id', yearGroups.map(y => y.id));
+      }
+      await supabase.from('children').delete().in('id', childIds);
+      
+      console.log('uploadToSupabase: Deleted', existingChildren.length, 'children and all related data');
+    }
+
+    // STEP 2: UPLOAD NEW DATA
     const idMap = new Map<string, string>()
     
     function getOrCreateUuid(id: string): string {
@@ -450,90 +491,62 @@ export const uploadToSupabase = async (userId: string, currentData?: ChildProfil
 
       for (const yg of child.yearGroups) {
         const ygId = getOrCreateUuid(yg.id);
-        const { error: ygError } = await supabase
-          .from('year_groups')
-          .upsert({
-            id: ygId,
-            child_id: childId,
-            user_id: userId,
-            name: yg.name,
-            order_index: parseInt(yg.name.replace(/[^0-9]/g, '')) || 0
-          });
-
-        if (ygError) {
-          console.error('Error uploading year group:', ygError);
-          continue;
-        }
+        await supabase.from('year_groups').upsert({
+          id: ygId,
+          child_id: childId,
+          user_id: userId,
+          name: yg.name,
+          order_index: parseInt(yg.name.replace(/[^0-9]/g, '')) || 0
+        });
 
         for (const sub of yg.subjects) {
           const subId = getOrCreateUuid(sub.id);
-          const { error: subError } = await supabase
-            .from('subjects')
-            .upsert({
-              id: subId,
-              year_group_id: ygId,
-              user_id: userId,
-              name: sub.name,
-              category: sub.category,
-              color: sub.color,
-              order_index: 0
-            });
-
-          if (subError) {
-            console.error('Error uploading subject:', subError);
-            continue;
-          }
+          await supabase.from('subjects').upsert({
+            id: subId,
+            year_group_id: ygId,
+            user_id: userId,
+            name: sub.name,
+            category: sub.category,
+            color: sub.color,
+            order_index: 0
+          });
 
           for (const topic of sub.topics) {
             const topicId = getOrCreateUuid(topic.id);
-            const { error: topicError } = await supabase
-              .from('topics')
-              .upsert({
-                id: topicId,
-                subject_id: subId,
-                user_id: userId,
-                name: topic.name,
-                order_index: 0
-              });
-
-            if (topicError) {
-              console.error('Error uploading topic:', topicError);
-              continue;
-            }
+            await supabase.from('topics').upsert({
+              id: topicId,
+              subject_id: subId,
+              user_id: userId,
+              name: topic.name,
+              order_index: 0
+            });
 
             for (const lesson of topic.lessons) {
               const lesId = getOrCreateUuid(lesson.id);
-              const { error: lesError } = await supabase
-                .from('lessons')
-                .upsert({
-                  id: lesId,
-                  topic_id: topicId,
-                  user_id: userId,
-                  title: lesson.title,
-                  video_url: lesson.videoUrl,
-                  duration_minutes: lesson.durationMinutes,
-                  outcomes: lesson.outcomes,
-                  completed: lesson.completed,
-                  time_spent_seconds: lesson.timeSpentSeconds || 0,
-                  deleted: lesson.deleted || false,
-                  order_index: 0,
-                  lesson_focus: lesson.lessonFocus || null,
-                  lesson_notes: lesson.lessonNotes || null,
-                  video_position: lesson.videoPosition || null
-                });
-
-              if (lesError) {
-                console.error('Error uploading lesson:', lesError);
-              }
+              await supabase.from('lessons').upsert({
+                id: lesId,
+                topic_id: topicId,
+                user_id: userId,
+                title: lesson.title,
+                video_url: lesson.videoUrl,
+                duration_minutes: lesson.durationMinutes,
+                outcomes: lesson.outcomes,
+                completed: lesson.completed,
+                time_spent_seconds: lesson.timeSpentSeconds || 0,
+                deleted: lesson.deleted || false,
+                order_index: 0,
+                lesson_focus: lesson.lessonFocus || null,
+                lesson_notes: lesson.lessonNotes || null,
+                video_position: lesson.videoPosition || null
+              });
             }
           }
         }
       }
     }
 
-    console.log('Manual upload: Complete');
-    console.log('Uploaded children IDs:', dataToUpload.map(c => c.id));
-    return { success: true, message: `Uploaded ${dataToUpload.length} children to Supabase` };
+    console.log('Manual upload: Complete - TOTAL OVERWRITE');
+    return { success: true, message: `Uploaded ${dataToUpload.length} children to Supabase (total overwrite)`};
   } catch (error) {
     console.error('Upload error:', error);
     return { success: false, message: error instanceof Error ? error.message : 'Upload failed' };
