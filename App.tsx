@@ -1662,11 +1662,23 @@ const App: React.FC = () => {
     };
 
     const { user, signOut } = useAuth() || {};
+    const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+    const profileDropdownRef = useRef<HTMLDivElement>(null);
 
     // Bulk selection state for subjects
     const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set());
     const [showBulkActions, setShowBulkActions] = useState(false);
     const [editingSubject, setEditingSubject] = useState<{ subjectId: string; category: string; topicName: string } | null>(null);
+
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+          setShowProfileDropdown(false);
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const toggleSubjectSelection = (cardId: string) => {
       const newSelected = new Set(selectedSubjects);
@@ -1881,18 +1893,110 @@ const App: React.FC = () => {
                     >
                         <DownloadCloud size={16} /> Load
                     </button>
-                    <ProfileSwitcher
-                      user={user}
-                      data={data}
-                      adminAvatar={adminAvatar}
-                      adminColor={adminColor}
-                      adminName={user?.user_metadata?.full_name || user?.email || 'Admin'}
-                      onSignOut={() => signOut?.()}
-                      onManageProfiles={() => setView({ type: 'MANAGE_PROFILES' })}
-                      onSwitchProfile={(childId) => setView({ type: 'CHILD_DASHBOARD', childId })}
-                      onGoToLanding={() => setView({ type: 'LANDING' })}
-                      onGoToAdmin={() => setView({ type: 'HOME' })}
-                    />
+                    <div className="relative" ref={profileDropdownRef}>
+                      <button 
+                          onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                          className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1 transition"
+                      >
+                          {user?.user_metadata?.avatar_url ? (
+                            <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full" />
+                          ) : (
+                            <div 
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-xl"
+                              style={{ 
+                                backgroundColor: adminColor === 'blue' ? '#dbeafe' : 
+                                                adminColor === 'indigo' ? '#e0e7ff' :
+                                                adminColor === 'purple' ? '#f3e8ff' :
+                                                adminColor === 'pink' ? '#fce7f3' :
+                                                adminColor === 'rose' ? '#ffe4e6' :
+                                                adminColor === 'red' ? '#fee2e2' :
+                                                adminColor === 'orange' ? '#ffedd5' :
+                                                adminColor === 'amber' ? '#fef3c7' :
+                                                adminColor === 'yellow' ? '#fef9c3' :
+                                                adminColor === 'green' ? '#dcfce7' :
+                                                adminColor === 'emerald' ? '#d1fae5' :
+                                                adminColor === 'teal' ? '#ccfbf1' :
+                                                adminColor === 'cyan' ? '#cffafe' :
+                                                adminColor === 'sky' ? '#e0f2fe' :
+                                                '#f1f5f9'
+                              }}
+                            >
+                              {adminAvatar}
+                            </div>
+                          )}
+                          <span className="font-medium text-gray-700 hidden sm:block">{user?.user_metadata?.full_name || user?.email}</span>
+                          <svg className={`w-4 h-4 text-gray-500 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                      </button>
+                      {showProfileDropdown && (
+                          <div className="absolute right-0 top-full mt-2 w-72 bg-white text-gray-800 rounded-lg shadow-2xl py-2 z-50 border border-gray-200">
+                              <div className="px-3 py-2 border-b border-gray-100">
+                                  <p className="font-medium text-sm text-gray-500">Switch Profile</p>
+                              </div>
+                              <button
+                                  onClick={() => { setView({ type: 'HOME' }); setShowProfileDropdown(false); }}
+                                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
+                              >
+                                  <div 
+                                    className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+                                    style={{ 
+                                      backgroundColor: adminColor === 'blue' ? '#1e40af' : 
+                                                      adminColor === 'indigo' ? '#3730a3' :
+                                                      adminColor === 'purple' ? '#6b21a8' :
+                                                      adminColor === 'pink' ? '#9d174d' :
+                                                      adminColor === 'rose' ? '#be123c' :
+                                                      adminColor === 'red' ? '#b91c1c' :
+                                                      adminColor === 'orange' ? '#c2410c' :
+                                                      adminColor === 'amber' ? '#b45309' :
+                                                      adminColor === 'yellow' ? '#a16207' :
+                                                      adminColor === 'green' ? '#15803d' :
+                                                      adminColor === 'emerald' ? '#047857' :
+                                                      adminColor === 'teal' ? '#0f766e' :
+                                                      adminColor === 'cyan' ? '#0e7490' :
+                                                      adminColor === 'sky' ? '#0369a1' :
+                                                      '#475569'
+                                    }}
+                                  >
+                                    {adminAvatar}
+                                  </div>
+                                  <div>
+                                      <span className="font-medium block">{user?.user_metadata?.full_name || user?.email || 'Daddy'}</span>
+                                      <span className="text-xs text-gray-500">Daddy Dashboard</span>
+                                  </div>
+                              </button>
+                              {data.map(c => (
+                                  <button
+                                      key={c.id}
+                                      onClick={() => { setView({ type: 'CHILD_DASHBOARD', childId: c.id }); setShowProfileDropdown(false); }}
+                                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
+                                  >
+                                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-${c.themeColor}-100`}>
+                                          {c.avatar}
+                                      </div>
+                                      <div>
+                                          <span className="font-medium block">{c.name}</span>
+                                          <span className="text-xs text-gray-500">Student Access</span>
+                                      </div>
+                                  </button>
+                              ))}
+                              <div className="border-t border-gray-100 mt-2 pt-2">
+                                  <button
+                                      onClick={() => { setView({ type: 'MANAGE_PROFILES' }); setShowProfileDropdown(false); }}
+                                      className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
+                                  >
+                                      Manage Profiles
+                                  </button>
+                                  <button
+                                      onClick={() => { signOut?.(); setShowProfileDropdown(false); }}
+                                      className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 transition text-left text-sm"
+                                  >
+                                      Sign Out
+                                  </button>
+                              </div>
+                          </div>
+                      )}
+                    </div>
                   </>
                 )}
                 <button
@@ -2561,38 +2665,100 @@ const App: React.FC = () => {
     if (!child) return null;
 
     const { user, signOut } = useAuth() || {};
+    const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+    const profileDropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         window.scrollTo(0, 0);
+    }, []);
+
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+          setShowProfileDropdown(false);
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     return (
       <div className="min-h-screen bg-gray-50">
         <div className={`bg-${child.themeColor}-600 text-white pb-24 pt-8 px-6`}>
            <div className="max-w-6xl mx-auto">
-              <div className="flex justify-end items-start mb-6">
-                  {user && (
-                    <ProfileSwitcher
-                      user={user}
-                      data={data}
-                      adminAvatar={adminAvatar}
-                      adminColor={adminColor}
-                      adminName={user?.user_metadata?.full_name || user?.email || 'Admin'}
-                      onSignOut={() => signOut?.()}
-                      onManageProfiles={() => setView({ type: 'MANAGE_PROFILES' })}
-                      onSwitchProfile={(newChildId) => setView({ type: 'CHILD_DASHBOARD', childId: newChildId })}
-                      onGoToLanding={() => setView({ type: 'LANDING' })}
-                      onGoToAdmin={() => setView({ type: 'HOME' })}
-                    />
-                  )}
+              <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center gap-4">
+                    <span className="text-6xl">{child.avatar}</span>
+                    <div>
+                       <h1 className="text-3xl font-bold">{child.name}'s Space</h1>
+                       <p className="text-white/80">Ready to learn today?</p>
+                    </div>
+                  </div>
+                  <div className="relative" ref={profileDropdownRef}>
+                    <button 
+                        onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                        className="text-4xl hover:scale-110 transition cursor-pointer"
+                    >
+                        {user ? (user.user_metadata?.avatar_url ? (
+                          <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-12 h-12 rounded-full" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl">
+                            {adminAvatar}
+                          </div>
+                        )) : (
+                          <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl">
+                            {adminAvatar}
+                          </div>
+                        )}
+                    </button>
+                    {showProfileDropdown && (
+                        <div className="absolute right-0 top-full mt-2 w-64 bg-white text-gray-800 rounded-lg shadow-xl py-2 z-50 border border-gray-200">
+                            <div className="px-3 py-2 border-b border-gray-100">
+                                <p className="font-medium text-sm text-gray-500">Switch Profile</p>
+                            </div>
+                            {user && (
+                                <button
+                                    onClick={() => { setView({ type: 'HOME' }); setShowProfileDropdown(false); }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
+                                >
+                                    <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-xl">👨‍💻</div>
+                                    <div>
+                                        <span className="font-medium block">{user.user_metadata?.full_name || user.email}</span>
+                                        <span className="text-xs text-gray-500">Daddy Dashboard</span>
+                                    </div>
+                                </button>
+                            )}
+                            {data.map(c => (
+                                <button
+                                    key={c.id}
+                                    onClick={() => { setView({ type: 'CHILD_DASHBOARD', childId: c.id }); setShowProfileDropdown(false); }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
+                                >
+                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-${c.themeColor}-100`}>
+                                        {c.avatar}
+                                    </div>
+                                    <div>
+                                        <span className="font-medium block">{c.name}</span>
+                                        <span className="text-xs text-gray-500">Student Access</span>
+                                    </div>
+                                </button>
+                            ))}
+                            {user && (
+                                <>
+                                    <div className="border-t border-gray-100 mt-2 pt-2">
+                                        <button
+                                            onClick={() => { signOut?.(); setShowProfileDropdown(false); }}
+                                            className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 transition text-left text-sm"
+                                        >
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+                  </div>
               </div>
-             <div className="flex items-center gap-4">
-                <span className="text-6xl">{child.avatar}</span>
-                <div>
-                   <h1 className="text-3xl font-bold">{child.name}'s Space</h1>
-                   <p className="text-white/80">Ready to learn today?</p>
-                </div>
-             </div>
            </div>
         </div>
 
