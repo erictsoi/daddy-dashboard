@@ -2727,7 +2727,7 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className={`bg-${child.themeColor}-600 text-white pb-24 pt-8 px-6`}>
-           <div className="max-w-6xl mx-auto">
+           <div className="max-w-6xl mx-auto px-6">
                <div className="flex justify-between items-center mb-6">
                   <div>
                      <h1 className="text-3xl font-bold">{child.name}'s Space</h1>
