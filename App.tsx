@@ -75,7 +75,27 @@ const importDataFromFile = (file: File): Promise<ChildProfile[]> => {
         const content = e.target?.result as string;
         const parsed = JSON.parse(content);
         if (parsed.children && Array.isArray(parsed.children)) {
-          resolve(parsed.children);
+          // Deduplicate at year group level: each topic only once per subject per year group
+          const dedupedChildren = parsed.children.map((child: ChildProfile) => ({
+            ...child,
+            yearGroups: child.yearGroups.map((yg) => ({
+              ...yg,
+              subjects: yg.subjects.map((subject) => ({
+                ...subject,
+                topics: subject.topics
+                  .filter((topic, index, self) =>
+                    index === self.findIndex((t) => t.id === topic.id)
+                  )
+                  .map((topic) => ({
+                    ...topic,
+                    lessons: topic.lessons.filter((lesson, index, self) =>
+                      index === self.findIndex((l) => l.id === lesson.id)
+                    )
+                  }))
+              }))
+            }))
+          }));
+          resolve(dedupedChildren);
         } else {
           reject(new Error('Invalid file format'));
         }

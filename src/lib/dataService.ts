@@ -47,11 +47,13 @@ function migrateChildToTopicStructure(child: ChildProfile): ChildProfile {
         }
         // Migrate old format to new - extract lessons from old structure
         const existingLessons = Array.isArray((sub as any).lessons) ? (sub as any).lessons : [];
+        const topicName = sub.name && sub.name.includes(':') ? sub.name.split(':')[1].trim() : (sub.name || 'General');
+        const sanitizedName = topicName.replace(/[^a-z0-9]/gi, '-').toLowerCase().replace(/-+/g, '-');
         return {
           ...sub,
           topics: [{
-            id: `${sub.id}-topic`,
-            name: sub.name && sub.name.includes(':') ? sub.name.split(':')[1].trim() : (sub.name || 'General'),
+            id: `${sub.id}-topic-${sanitizedName}-${Date.now()}`.slice(0, 50),
+            name: topicName,
             lessons: existingLessons
           }]
         };
@@ -146,7 +148,7 @@ export const saveSubject = async (subject: Subject, yearGroupId: string, userId:
   }
 }
 
-export const saveTopic = async (topic: { id: string; name: string; lessons: Lesson[] }, subjectId: string, userId: string): Promise<void> => {
+export const saveTopic = async (topic: { id: string; name: string; lessons: Lesson[]; frequency?: number }, subjectId: string, userId: string): Promise<void> => {
   console.log('Saving topic:', topic.name, topic.id);
   const topicId = ensureUuid(topic.id)
   const { error } = await supabase
@@ -156,6 +158,7 @@ export const saveTopic = async (topic: { id: string; name: string; lessons: Less
       subject_id: subjectId,
       user_id: userId,
       name: topic.name,
+      frequency: topic.frequency || 3,
       order_index: 0
     })
 
@@ -273,6 +276,7 @@ export const saveFullCurriculum = async (children: ChildProfile[], userId: strin
               subject_id: subId,
               user_id: userId,
               name: topic.name,
+              frequency: topic.frequency || 3,
               order_index: 0
             })
           
@@ -518,6 +522,7 @@ export const uploadToSupabase = async (userId: string, currentData?: ChildProfil
               subject_id: subId,
               user_id: userId,
               name: topic.name,
+              frequency: topic.frequency || 3,
               order_index: 0
             });
 

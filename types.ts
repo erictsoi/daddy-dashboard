@@ -15,9 +15,10 @@ export interface Lesson {
 
 export interface Topic {
   id: string;
-  name: string; // Topic name (e.g., "Reading Comprehension", "Algebra")
+  name: string;
   lessons: Lesson[];
   timeSpentSeconds?: number;
+  frequency?: number;
 }
 
 export interface Subject {

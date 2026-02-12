@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS topics (
   id TEXT PRIMARY KEY,
   subject_id TEXT REFERENCES subjects(id) ON DELETE CASCADE NOT NULL,
   name TEXT NOT NULL,  -- e.g., "Writing Narratives"
+  frequency INTEGER DEFAULT 3,  -- 1-5, frequency multiplier for scheduling
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
