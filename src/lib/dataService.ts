@@ -306,11 +306,19 @@ export const saveFullCurriculum = async (children: ChildProfile[], userId: strin
   }
   
   if (lessonsToUpsert.length > 0) {
-    console.log('saveFullCurriculum: batching upsert of', lessonsToUpsert.length, 'lessons');
+    const uniqueLessons = lessonsToUpsert.filter((lesson, index, self) =>
+      index === self.findIndex((l) => l.id === lesson.id)
+    );
+
+    if (uniqueLessons.length !== lessonsToUpsert.length) {
+      console.log('saveFullCurriculum: deduplicated from', lessonsToUpsert.length, 'to', uniqueLessons.length, 'lessons');
+    }
+
+    console.log('saveFullCurriculum: batching upsert of', uniqueLessons.length, 'lessons');
     const { error: lessonError } = await supabase
       .from('lessons')
-      .upsert(lessonsToUpsert);
-    
+      .upsert(uniqueLessons);
+
     if (lessonError) {
       console.error('Error batch upserting lessons:', lessonError);
       throw lessonError;

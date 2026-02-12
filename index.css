@@ -1,2 +1,5 @@
-/* Daddy Dashboard Styles */
-/* Tailwind CSS is loaded via CDN in index.html */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Daddy Dashboard Custom Styles */
