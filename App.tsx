@@ -1315,7 +1315,28 @@ const App: React.FC = () => {
                                             onClick={() => { setView({ type: 'HOME' }); setShowProfileDropdown(false); }}
                                             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
                                         >
-                                            <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-xl">👨‍💻</div>
+                                            <div 
+                                              className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+                                              style={{ 
+                                                backgroundColor: adminColor === 'blue' ? '#1e40af' : 
+                                                                adminColor === 'indigo' ? '#3730a3' :
+                                                                adminColor === 'purple' ? '#6b21a8' :
+                                                                adminColor === 'pink' ? '#9d174d' :
+                                                                adminColor === 'rose' ? '#be123c' :
+                                                                adminColor === 'red' ? '#b91c1c' :
+                                                                adminColor === 'orange' ? '#c2410c' :
+                                                                adminColor === 'amber' ? '#b45309' :
+                                                                adminColor === 'yellow' ? '#a16207' :
+                                                                adminColor === 'green' ? '#15803d' :
+                                                                adminColor === 'emerald' ? '#047857' :
+                                                                adminColor === 'teal' ? '#0f766e' :
+                                                                adminColor === 'cyan' ? '#0e7490' :
+                                                                adminColor === 'sky' ? '#0369a1' :
+                                                                '#475569'
+                                              }}
+                                            >
+                                              {adminAvatar}
+                                            </div>
                                             <div>
                                                 <span className="font-medium block">{user.user_metadata?.full_name || user.email}</span>
                                                 <span className="text-xs text-gray-500">Daddy Dashboard</span>
@@ -1898,32 +1919,28 @@ const App: React.FC = () => {
                           onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                           className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1 transition"
                       >
-                          {user?.user_metadata?.avatar_url ? (
-                            <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full" />
-                          ) : (
-                            <div 
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-xl"
-                              style={{ 
-                                backgroundColor: adminColor === 'blue' ? '#dbeafe' : 
-                                                adminColor === 'indigo' ? '#e0e7ff' :
-                                                adminColor === 'purple' ? '#f3e8ff' :
-                                                adminColor === 'pink' ? '#fce7f3' :
-                                                adminColor === 'rose' ? '#ffe4e6' :
-                                                adminColor === 'red' ? '#fee2e2' :
-                                                adminColor === 'orange' ? '#ffedd5' :
-                                                adminColor === 'amber' ? '#fef3c7' :
-                                                adminColor === 'yellow' ? '#fef9c3' :
-                                                adminColor === 'green' ? '#dcfce7' :
-                                                adminColor === 'emerald' ? '#d1fae5' :
-                                                adminColor === 'teal' ? '#ccfbf1' :
-                                                adminColor === 'cyan' ? '#cffafe' :
-                                                adminColor === 'sky' ? '#e0f2fe' :
-                                                '#f1f5f9'
-                              }}
-                            >
-                              {adminAvatar}
-                            </div>
-                          )}
+                          <div 
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-xl"
+                            style={{ 
+                              backgroundColor: adminColor === 'blue' ? '#dbeafe' : 
+                                              adminColor === 'indigo' ? '#e0e7ff' :
+                                              adminColor === 'purple' ? '#f3e8ff' :
+                                              adminColor === 'pink' ? '#fce7f3' :
+                                              adminColor === 'rose' ? '#ffe4e6' :
+                                              adminColor === 'red' ? '#fee2e2' :
+                                              adminColor === 'orange' ? '#ffedd5' :
+                                              adminColor === 'amber' ? '#fef3c7' :
+                                              adminColor === 'yellow' ? '#fef9c3' :
+                                              adminColor === 'green' ? '#dcfce7' :
+                                              adminColor === 'emerald' ? '#d1fae5' :
+                                              adminColor === 'teal' ? '#ccfbf1' :
+                                              adminColor === 'cyan' ? '#cffafe' :
+                                              adminColor === 'sky' ? '#e0f2fe' :
+                                              '#f1f5f9'
+                            }}
+                          >
+                            {adminAvatar}
+                          </div>
                           <span className="font-medium text-gray-700 hidden sm:block">{user?.user_metadata?.full_name || user?.email}</span>
                           <svg className={`w-4 h-4 text-gray-500 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -2699,17 +2716,7 @@ const App: React.FC = () => {
                         onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                         className="text-4xl hover:scale-110 transition cursor-pointer"
                     >
-                        {user ? (user.user_metadata?.avatar_url ? (
-                          <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-12 h-12 rounded-full" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl">
-                            {adminAvatar}
-                          </div>
-                        )) : (
-                          <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl">
-                            {adminAvatar}
-                          </div>
-                        )}
+                        {child.avatar}
                     </button>
                     {showProfileDropdown && (
                         <div className="absolute right-0 top-full mt-2 w-64 bg-white text-gray-800 rounded-lg shadow-xl py-2 z-50 border border-gray-200">
@@ -2721,7 +2728,28 @@ const App: React.FC = () => {
                                     onClick={() => { setView({ type: 'HOME' }); setShowProfileDropdown(false); }}
                                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
                                 >
-                                    <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-xl">👨‍💻</div>
+                                    <div 
+                                      className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+                                      style={{ 
+                                        backgroundColor: adminColor === 'blue' ? '#1e40af' : 
+                                                        adminColor === 'indigo' ? '#3730a3' :
+                                                        adminColor === 'purple' ? '#6b21a8' :
+                                                        adminColor === 'pink' ? '#9d174d' :
+                                                        adminColor === 'rose' ? '#be123c' :
+                                                        adminColor === 'red' ? '#b91c1c' :
+                                                        adminColor === 'orange' ? '#c2410c' :
+                                                        adminColor === 'amber' ? '#b45309' :
+                                                        adminColor === 'yellow' ? '#a16207' :
+                                                        adminColor === 'green' ? '#15803d' :
+                                                        adminColor === 'emerald' ? '#047857' :
+                                                        adminColor === 'teal' ? '#0f766e' :
+                                                        adminColor === 'cyan' ? '#0e7490' :
+                                                        adminColor === 'sky' ? '#0369a1' :
+                                                        '#475569'
+                                      }}
+                                    >
+                                      {adminAvatar}
+                                    </div>
                                     <div>
                                         <span className="font-medium block">{user.user_metadata?.full_name || user.email}</span>
                                         <span className="text-xs text-gray-500">Daddy Dashboard</span>
