@@ -2729,12 +2729,9 @@ const App: React.FC = () => {
         <div className={`bg-${child.themeColor}-600 text-white pb-24 pt-8 px-6`}>
            <div className="max-w-6xl mx-auto">
               <div className="flex justify-between items-start mb-6">
-                  <div className="flex items-center gap-4">
-                    <span className="text-6xl">{child.avatar}</span>
-                    <div>
-                       <h1 className="text-3xl font-bold">{child.name}'s Space</h1>
-                       <p className="text-white/80">Ready to learn today?</p>
-                    </div>
+                  <div>
+                     <h1 className="text-3xl font-bold">{child.name}'s Space</h1>
+                     <p className="text-white/80">Ready to learn today?</p>
                   </div>
                   <div className="relative" ref={profileDropdownRef}>
                     <button 
