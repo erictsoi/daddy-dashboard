@@ -75,7 +75,16 @@ const importDataFromFile = (file: File): Promise<ChildProfile[]> => {
         const content = e.target?.result as string;
         const parsed = JSON.parse(content);
         if (parsed.children && Array.isArray(parsed.children)) {
-          // Deduplicate at year group level: each topic only once per subject per year group
+          // Generate unique topic IDs to prevent cross-contamination
+          const generateUuid = () => {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+              const r = Math.random() * 16 | 0;
+              const v = c === 'x' ? r : (r & 0x3 | 0x8);
+              return v.toString(16);
+            });
+          };
+          
+          // Deduplicate at year group level and ensure unique topic IDs
           const dedupedChildren = parsed.children.map((child: ChildProfile) => ({
             ...child,
             yearGroups: child.yearGroups.map((yg) => ({
@@ -88,6 +97,7 @@ const importDataFromFile = (file: File): Promise<ChildProfile[]> => {
                   )
                   .map((topic) => ({
                     ...topic,
+                    id: generateUuid(), // Always generate new unique ID
                     lessons: topic.lessons.filter((lesson, index, self) =>
                       index === self.findIndex((l) => l.id === lesson.id)
                     )
@@ -384,13 +394,22 @@ const App: React.FC = () => {
         return;
       }
   
-      // Pre-shuffle subjects for each child
+      // Pre-shuffle subjects for each child and weight by frequency
       const childSubjects: Record<string, { subjects: any[], topics: any[], subjectIndex: number, topicIndex: number }> = {};
       allChildren.forEach(child => {
         const subjects = shuffle(child.yearGroups.flatMap(yg => yg.subjects));
-        // Flatten all topics from all subjects into a single list
-        const allTopics = subjects.flatMap((s: any) => s.topics.map((t: any) => ({ ...t, subjectId: s.id, subjectName: s.name, subjectColor: s.color })));
-        childSubjects[child.id] = { subjects, topics: allTopics, subjectIndex: 0, topicIndex: 0 };
+        // Flatten all topics from all subjects and weight by frequency
+        const allTopics: any[] = [];
+        subjects.forEach((s: any) => {
+          s.topics.forEach((t: any) => {
+            const frequency = t.frequency || 3;
+            // Add topic multiple times based on frequency (1-5x)
+            for (let i = 0; i < frequency; i++) {
+              allTopics.push({ ...t, subjectId: s.id, subjectName: s.name, subjectColor: s.color });
+            }
+          });
+        });
+        childSubjects[child.id] = { subjects, topics: shuffle(allTopics), subjectIndex: 0, topicIndex: 0 };
       });
   
       for (let i = 0; i < hours; i++) {
@@ -848,6 +867,36 @@ const App: React.FC = () => {
       });
   };
 
+  const handleUpdateTopicFrequency = (childId: string, subjectId: string, topicId: string, frequency: number) => {
+    setData(prev => {
+      const newData = prev.map(child => {
+        if (child.id !== childId) return child;
+        return {
+          ...child,
+          yearGroups: child.yearGroups.map(yg => ({
+            ...yg,
+            subjects: yg.subjects.map(s => {
+              if (s.id !== subjectId) return s;
+              return {
+                ...s,
+                topics: s.topics.map(t => {
+                  if (t.id !== topicId) return t;
+                  return { ...t, frequency };
+                })
+              };
+            })
+          }))
+        };
+      });
+      if (user) {
+        saveFullCurriculum(newData, user.id).catch(console.error);
+      } else {
+        saveLocalData(newData);
+      }
+      return newData;
+    });
+  };
+
   // --- Components for Views ---
 
   const LandingView = () => {
@@ -1294,7 +1343,7 @@ const App: React.FC = () => {
         } else {
           saveLocalData(newData);
         }
-        return newData;
+      return newData;
       });
       setEditingTopic(null);
     };
@@ -1448,11 +1497,11 @@ const App: React.FC = () => {
                            
                            return (
                               <div key={topic.id} className="border border-gray-200 rounded-xl overflow-hidden">
-                                {editingTopic?.topicId === topic.id ? (
+                                 {editingTopic?.topicId === topic.id ? (
                                   <div className="px-6 py-4 bg-gray-50 flex items-center gap-3">
                                     <input
                                       type="text"
-                                      autoFocus
+                                      ref={(el) => { if (el) { el.focus({ preventScroll: true }); } }}
                                       value={editingTopic.name}
                                       onChange={(e) => setEditingTopic({ ...editingTopic, name: e.target.value })}
                                       onKeyDown={(e) => {
@@ -1530,11 +1579,11 @@ const App: React.FC = () => {
                                         
                                         return (
                                           <div key={lesson.id} className="p-4">
-                                            {isEditing ? (
+                                             {isEditing ? (
                                               <div className="space-y-3">
                                                 <input
                                                   type="text"
-                                                  autoFocus
+                                                  ref={(el) => { if (el) { el.focus({ preventScroll: true }); } }}
                                                   value={editingLesson.title}
                                                   onChange={(e) => setEditingLesson({ ...editingLesson, title: e.target.value })}
                                                   className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
@@ -1651,11 +1700,11 @@ const App: React.FC = () => {
                                     {/* Add Lesson button for this topic */}
                                     {!isReadOnly && (
                                       <div className="p-4 bg-gray-50 border-t border-gray-100">
-                                        {addingLessonTo === topic.id ? (
+                                         {addingLessonTo === topic.id ? (
                                           <div className="flex gap-2">
                                             <input 
                                               type="text"
-                                              autoFocus
+                                              ref={(el) => { if (el) { el.focus({ preventScroll: true }); } }}
                                               value={newLessonTitle}
                                               onChange={(e) => setNewLessonTitle(e.target.value)}
                                               onKeyDown={(e) => {
@@ -2592,11 +2641,11 @@ const App: React.FC = () => {
                                                           </div>
                                                         )}
 
-                                                        {isEditing ? (
+                                                         {isEditing ? (
                                                           <div className="space-y-2">
                                                             <input
                                                               type="text"
-                                                              autoFocus
+                                                              ref={(el) => { if (el) { el.focus({ preventScroll: true }); } }}
                                                               value={editingSubject.category}
                                                               onChange={(e) => setEditingSubject({ ...editingSubject, category: e.target.value })}
                                                               onClick={(e) => e.stopPropagation()}
@@ -2641,41 +2690,64 @@ const App: React.FC = () => {
                                                                {topicCompleted === topicTotal && topicTotal > 0 && <CheckCircle size={14} className="text-green-500" />}
                                                             </div>
                                                             
-                                                            {!showBulkActions && (
-                                                              <button
-                                                                  onClick={(e) => {
-                                                                      e.stopPropagation();
-                                                                      handleStartEditSubject({ ...subject, id: cardId });
-                                                                  }}
-                                                                  className="absolute top-2 right-8 p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors z-20"
-                                                                  title="Edit"
-                                                              >
-                                                                  <Edit2 size={14} />
-                                                              </button>
-                                                            )}
+                                                             {!showBulkActions && (
+                                                               <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+                                                                 <button
+                                                                     onClick={(e) => {
+                                                                         e.stopPropagation();
+                                                                         handleStartEditSubject({ ...subject, id: cardId });
+                                                                     }}
+                                                                     className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                                     title="Edit"
+                                                                 >
+                                                                     <Edit2 size={16} />
+                                                                 </button>
+                                                                 <button
+                                                                     onClick={(e) => {
+                                                                         e.stopPropagation();
+                                                                         if(window.confirm(`Delete "${topic.name}" and all its lessons?`)) {
+                                                                             handleDeleteTopicAtPath(child.id, subject.id, topic.id);
+                                                                         }
+                                                                     }}
+                                                                     className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                                                     title="Delete Topic"
+                                                                 >
+                                                                     <Trash2 size={16} />
+                                                                 </button>
+                                                               </div>
+                                                             )}
 
-                                                            {!showBulkActions && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    if(window.confirm(`Delete "${topic.name}" and all its lessons?`)) {
-                                                                        handleDeleteTopicAtPath(child.id, subject.id, topic.id);
-                                                                    }
-                                                                }}
-                                                                className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors z-20"
-                                                                title="Delete Topic"
-                                                            >
-                                                                <Trash2 size={16} />
-                                                            </button>
-                                                            )}
+                                                              <div>
+                                                                  <div className="font-bold text-gray-800 text-xs mb-1 truncate group-hover:text-blue-600 transition-colors">
+                                                                      {topic.name}
+                                                                  </div>
+                                                                   {/* Frequency Selector */}
+                                                                  <div className="flex items-center gap-2 mb-2" onClick={(e) => e.stopPropagation()}>
+                                                                    {[
+                                                                      { value: 1, label: 'Low' },
+                                                                      { value: 3, label: 'Med' },
+                                                                      { value: 5, label: 'High' }
+                                                                    ].map(({ value, label }) => {
+                                                                      const isSelected = (topic.frequency || 3) === value;
+                                                                      return (
+                                                                        <button
+                                                                          key={value}
+                                                                          onClick={() => handleUpdateTopicFrequency(child.id, subject.id, topic.id, value)}
+                                                                          className={`px-2 py-0.5 text-[10px] rounded-full border transition-colors ${
+                                                                            isSelected
+                                                                              ? 'border-gray-500 bg-gray-100 text-gray-700 font-medium'
+                                                                              : 'border-gray-300 bg-white text-gray-400 hover:border-gray-400'
+                                                                          }`}
+                                                                          title={`${label} frequency (${value}x per week)`}
+                                                                        >
+                                                                          {label}
+                                                                        </button>
+                                                                      );
+                                                                    })}
+                                                                  </div>
+                                                              </div>
 
-                                                             <div>
-                                                                 <div className="font-bold text-gray-800 text-xs mb-3 truncate group-hover:text-blue-600 transition-colors">
-                                                                     {topic.name}
-                                                                 </div>
-                                                             </div>
-
-                                                           <div className="space-y-1">
+                                                            <div className="space-y-1">
                                                                 <div className="flex justify-between text-[10px] text-gray-400 font-medium">
                                                                    <span>{topicCompleted}/{topicTotal} completed</span>
                                                                 </div>
