@@ -85,6 +85,7 @@ const importDataFromFile = (file: File): Promise<ChildProfile[]> => {
           };
           
           // Deduplicate at year group level and ensure unique topic IDs
+          // Keep ALL lessons - don't deduplicate across topics (same video can be in multiple topics)
           const dedupedChildren = parsed.children.map((child: ChildProfile) => ({
             ...child,
             yearGroups: child.yearGroups.map((yg) => ({
@@ -97,10 +98,8 @@ const importDataFromFile = (file: File): Promise<ChildProfile[]> => {
                   )
                   .map((topic) => ({
                     ...topic,
-                    id: generateUuid(), // Always generate new unique ID
-                    lessons: topic.lessons.filter((lesson, index, self) =>
-                      index === self.findIndex((l) => l.id === lesson.id)
-                    )
+                    id: generateUuid() // Always generate new unique ID
+                    // Keep all lessons - no deduplication
                   }))
               }))
             }))
