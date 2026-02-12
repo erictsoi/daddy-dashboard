@@ -1045,6 +1045,7 @@ const App: React.FC = () => {
     const child = data.find(c => c.id === childId);
     const yg = child?.yearGroups.find(y => y.subjects.some(s => s.id === subjectId));
     const subject = yg?.subjects.find(s => s.id === subjectId);
+    const { signOut } = useAuth() || {};
     
     const [showTrash, setShowTrash] = useState(false);
     const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
@@ -1052,6 +1053,8 @@ const App: React.FC = () => {
     const [newLessonTitle, setNewLessonTitle] = useState("");
     const [editingLesson, setEditingLesson] = useState<{ lessonId: string; title: string; focus: string; notes: string; videoUrl: string } | null>(null);
     const [editingTopic, setEditingTopic] = useState<{ topicId: string; name: string } | null>(null);
+    const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+    const profileDropdownRef = useRef<HTMLDivElement>(null);
     
     // Admin Mode Check
     const isReadOnly = origin === 'CHILD_DASHBOARD';
@@ -1075,6 +1078,17 @@ const App: React.FC = () => {
         setExpandedTopics(new Set(allTopicIds));
       }
     }, [subject?.topics]);
+
+    // Close profile dropdown when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+          setShowProfileDropdown(false);
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Aggregate stats across all topics - memoized
     const allActiveLessons = useMemo(() => 
@@ -1279,12 +1293,65 @@ const App: React.FC = () => {
                     }} className="flex items-center gap-2 hover:opacity-80 mb-4 transition">
                         <ArrowLeft size={20}/> Back to {isReadOnly ? `${child.name}'s Space` : 'Daddy Dashboard'}
                     </button>
-                    <div className="flex justify-between items-end">
+                    <div className="flex justify-between items-end relative">
                         <div>
                              <h1 className="text-3xl font-bold">{subject.name}</h1>
                              <p className="opacity-90">{child.name} • {yg?.name}</p>
                         </div>
-                        <div className="text-4xl opacity-50 ml-4">{child.avatar}</div>
+                        <div className="relative" ref={profileDropdownRef}>
+                            <button 
+                                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                                className="text-4xl ml-4 hover:scale-110 transition cursor-pointer"
+                            >
+                                {child.avatar}
+                            </button>
+                            {showProfileDropdown && (
+                                <div className="absolute right-0 top-full mt-2 w-64 bg-white text-gray-800 rounded-lg shadow-xl py-2 z-50 border border-gray-200">
+                                    <div className="px-3 py-2 border-b border-gray-100">
+                                        <p className="font-medium text-sm text-gray-500">Switch Profile</p>
+                                    </div>
+                                    {user && (
+                                        <button
+                                            onClick={() => { setView({ type: 'HOME' }); setShowProfileDropdown(false); }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
+                                        >
+                                            <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-xl">👨‍💻</div>
+                                            <div>
+                                                <span className="font-medium block">{user.user_metadata?.full_name || user.email}</span>
+                                                <span className="text-xs text-gray-500">Daddy Dashboard</span>
+                                            </div>
+                                        </button>
+                                    )}
+                                    {data.map(c => (
+                                        <button
+                                            key={c.id}
+                                            onClick={() => { setView({ type: 'CHILD_DASHBOARD', childId: c.id }); setShowProfileDropdown(false); }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
+                                        >
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-${c.themeColor}-100`}>
+                                                {c.avatar}
+                                            </div>
+                                            <div>
+                                                <span className="font-medium block">{c.name}</span>
+                                                <span className="text-xs text-gray-500">Student Access</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                    {user && (
+                                        <>
+                                            <div className="border-t border-gray-100 mt-2 pt-2">
+                                                <button
+                                                    onClick={() => { signOut?.(); setShowProfileDropdown(false); }}
+                                                    className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 transition text-left text-sm"
+                                                >
+                                                    Sign Out
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </header>
