@@ -165,6 +165,10 @@ const App: React.FC = () => {
   const [view, setView] = useState<ViewState>({ type: 'LANDING' });
   const [data, setData] = useState<ChildProfile[]>([]);
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
+  const [allChildren, setAllChildren] = useState<{id: string, name: string, avatar: string, themeColor: string}[]>(() => {
+    const saved = localStorage.getItem('all_children');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [loading, setLoading] = useState(true);
   const [showChildManagement, setShowChildManagement] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -313,6 +317,18 @@ const App: React.FC = () => {
       }
     }
   }, [user, data, authLoading, loading]);
+
+  // Update allChildren list when data changes (for profile switching)
+  useEffect(() => {
+    const childrenList = data.map(c => ({
+      id: c.id,
+      name: c.name,
+      avatar: c.avatar,
+      themeColor: c.themeColor
+    }));
+    setAllChildren(childrenList);
+    localStorage.setItem('all_children', JSON.stringify(childrenList));
+  }, [data]);
 
 
 
@@ -1388,23 +1404,23 @@ const App: React.FC = () => {
                                                 <span className="text-xs text-gray-500">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard</span>
                                             </div>
                                         </button>
-                                    )}
-                                    {data.map(c => (
-                                        <button
-                                            key={c.id}
-                                            onClick={() => { setView({ type: 'CHILD_DASHBOARD', childId: c.id }); setShowProfileDropdown(false); }}
-                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
-                                        >
-                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-${c.themeColor}-100`}>
-                                                {c.avatar}
-                                            </div>
-                                            <div>
-                                                <span className="font-medium block">{c.name}</span>
-                                                <span className="text-xs text-gray-500">Student Access</span>
-                                            </div>
-                                        </button>
-                                    ))}
-                                    {user && (
+                            )}
+                            {allChildren.filter(c => c.id !== childProfile?.id).map(c => (
+                                <button
+                                    key={c.id}
+                                    onClick={() => { setView({ type: 'CHILD_DASHBOARD', childId: c.id }); setShowProfileDropdown(false); }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
+                                >
+                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-${c.themeColor}-100`}>
+                                        {c.avatar}
+                                    </div>
+                                    <div>
+                                        <span className="font-medium block">{c.name}</span>
+                                        <span className="text-xs text-gray-500">Student Access</span>
+                                    </div>
+                                </button>
+                            ))}
+                            {user && !childProfile && (
                                         <>
                                             <div className="border-t border-gray-100 mt-2 pt-2">
                                                 <button
@@ -2529,12 +2545,12 @@ const App: React.FC = () => {
                     >
                         {child.avatar}
                     </button>
-                    {showProfileDropdown && (
+                            {showProfileDropdown && (
                         <div className="absolute right-0 top-full mt-2 w-64 bg-white text-gray-800 rounded-lg shadow-xl py-2 z-50 border border-gray-200">
                             <div className="px-3 py-2 border-b border-gray-100">
                                 <p className="font-medium text-sm text-gray-500">Switch Profile</p>
                             </div>
-                            {user && (
+                            {user && !childProfile && (
                                 <button
                                     onClick={() => { setView({ type: 'HOME' }); setShowProfileDropdown(false); }}
                                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
