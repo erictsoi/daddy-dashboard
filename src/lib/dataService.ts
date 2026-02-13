@@ -67,6 +67,18 @@ export const saveFullCurriculum = async (
     }
     
     await setDoc(childRef, childData, { merge: true })
+    
+    // Create/update linked account if child has googleEmail
+    if (child.googleEmail) {
+      const linkRef = doc(db, 'linkedAccounts', child.googleEmail.toLowerCase())
+      await setDoc(linkRef, {
+        childEmail: child.googleEmail.toLowerCase(),
+        parentUid: userId,
+        childId: child.id,
+        childName: child.name,
+        updatedAt: new Date().toISOString()
+      }, { merge: true })
+    }
   }
   
   console.log('saveFullCurriculum: complete')
@@ -96,9 +108,39 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
 
 export const fetchChildByEmail = async (email: string): Promise<ChildProfile[]> => {
   console.log('fetchChildByEmail: looking for email', email)
-  // For Firebase, we search in a profile collection or just return empty
-  // This is used for child login - would need separate collection
-  return []
+  
+  if (!email) return []
+  
+  try {
+    // First, look up which parent this child is linked to
+    const linkRef = collection(db, 'linkedAccounts')
+    const linkQuery = query(linkRef, where('childEmail', '==', email.toLowerCase()))
+    const linkSnapshot = await getDocs(linkQuery)
+    
+    if (linkSnapshot.empty) {
+      console.log('fetchChildByEmail: no linked account found')
+      return []
+    }
+    
+    const linkData = linkSnapshot.docs[0].data()
+    const parentUid = linkData.parentUid
+    console.log('fetchChildByEmail: found parentUid', parentUid)
+    
+    // Now fetch the child from parent's children collection
+    const childrenRef = collection(db, 'users', parentUid, 'children')
+    const childrenQuery = query(childrenRef, where('googleEmail', '==', email.toLowerCase()))
+    const childrenSnapshot = await getDocs(childrenQuery)
+    
+    if (childrenSnapshot.empty) return []
+    
+    return childrenSnapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id
+    })) as ChildProfile[]
+  } catch (error) {
+    console.error('fetchChildByEmail error:', error)
+    return []
+  }
 }
 
 export const uploadToFirebase = async (
