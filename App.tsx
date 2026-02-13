@@ -167,7 +167,9 @@ const App: React.FC = () => {
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
   const [allChildren, setAllChildren] = useState<{id: string, name: string, avatar: string, themeColor: string}[]>(() => {
     const saved = localStorage.getItem('all_children');
-    return saved ? JSON.parse(saved) : [];
+    const parsed = saved ? JSON.parse(saved) : [];
+    console.log('Loaded allChildren from localStorage:', parsed.length);
+    return parsed;
   });
   const [loading, setLoading] = useState(true);
   const [showChildManagement, setShowChildManagement] = useState(false);
@@ -2639,7 +2641,8 @@ const App: React.FC = () => {
                                     </div>
                                 </button>
                             )}
-                            {data.map(c => (
+                            {/* Show siblings from allChildren */}
+                            {allChildren.length > 0 && allChildren.filter(c => c.id !== child?.id).map(c => (
                                 <button
                                     key={c.id}
                                     onClick={() => { setView({ type: 'CHILD_DASHBOARD', childId: c.id }); setShowProfileDropdown(false); }}
@@ -2650,11 +2653,12 @@ const App: React.FC = () => {
                                     </div>
                                     <div>
                                         <span className="font-medium block">{c.name}</span>
-                                        <span className="text-xs text-gray-500">Student Access</span>
+                                        <span className="text-xs text-gray-500">Switch to</span>
                                     </div>
                                 </button>
                             ))}
-                            {user && (
+                            {/* Admin dashboard - only if NOT child signed in */}
+                            {user && !childProfile && (
                                 <>
                                     <div className="border-t border-gray-100 mt-2 pt-2">
                                         <button
