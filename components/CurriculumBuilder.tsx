@@ -96,7 +96,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
         yearGroup,
         subjectCategory,
         subjectName: topicName,
-        lessonTitle: lessonTitle || topicName || 'Lesson',
+        lessonTitle: lessonTitle || '', // Don't fallback - let handleProcessYouTube fill with YouTube title
         lessonFocus,
         lessonNotes,
         videoUrl,
@@ -480,8 +480,13 @@ const PreviewTable = memo(function PreviewTable({ rows }: PreviewTableProps) {
         {(Object.entries(groups) as [string, ParsedRow[]][]).map(([key, groupRows]) => {
           const [year, category, topic] = key.split('|');
           const allVideos = groupRows.flatMap((row) =>
-            row.expandedLessons?.map((l) => ({ title: l.title, position: l.position, videoUrl: l.videoUrl })) ||
-            (row.lessonTitle ? [{ title: row.lessonTitle, position: 0, videoUrl: row.videoUrl }] : [])
+            row.expandedLessons?.map((l) => ({ 
+              title: l.title, 
+              position: l.position, 
+              videoUrl: l.videoUrl,
+              subheading: row.lessonFocus || row.lessonNotes || ''
+            })) ||
+            (row.lessonTitle ? [{ title: row.lessonTitle, position: 0, videoUrl: row.videoUrl, subheading: row.lessonFocus || row.lessonNotes || '' }] : [])
           );
 
           return (
@@ -499,7 +504,7 @@ interface PreviewGroupRowProps {
   year: string;
   category: string;
   topic: string;
-  videos: { title: string; position: number; videoUrl: string }[];
+  videos: { title: string; position: number; videoUrl: string; subheading?: string }[];
 }
 
 const PreviewGroupRow = memo(function PreviewGroupRow({ year, category, topic, videos }: PreviewGroupRowProps) {
@@ -521,7 +526,10 @@ const PreviewGroupRow = memo(function PreviewGroupRow({ year, category, topic, v
           {videos.map((video, idx) => (
             <div key={idx} className="px-4 pl-12 py-2 flex items-center gap-3 hover:bg-gray-50">
               <Youtube size={14} className="text-red-500 flex-shrink-0" />
-              <span className="text-sm text-gray-700 truncate flex-1">{video.title}</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-gray-800 truncate">{video.title}</div>
+                {video.subheading && <div className="text-xs text-gray-500 truncate">{video.subheading}</div>}
+              </div>
             </div>
           ))}
         </div>
