@@ -277,6 +277,38 @@ const App: React.FC = () => {
     loadData();
   }, [user, authLoading]);
 
+  // Auto-detect child sign-in based on googleEmail match
+  useEffect(() => {
+    if (authLoading || loading) return;
+    
+    // If no user signed in, clear childProfile
+    if (!user) {
+      setChildProfile(null);
+      localStorage.removeItem('child_profile');
+      return;
+    }
+    
+    const userEmail = user.email?.toLowerCase() || '';
+    const matchedChild = data.find(child => 
+      child.googleEmail?.toLowerCase() === userEmail
+    );
+    
+    if (matchedChild && !childProfile) {
+      console.log('Auto-detected child sign-in:', matchedChild.name);
+      setChildProfile(matchedChild);
+      localStorage.setItem('child_profile', JSON.stringify(matchedChild));
+      setView({ type: 'CHILD_DASHBOARD', childId: matchedChild.id });
+    } else if (childProfile && userEmail) {
+      // Verify current childProfile still matches signed-in user
+      const currentChildEmail = childProfile.googleEmail?.toLowerCase() || '';
+      if (currentChildEmail !== userEmail) {
+        // User changed - clear child profile
+        setChildProfile(null);
+        localStorage.removeItem('child_profile');
+      }
+    }
+  }, [user, data, authLoading, loading]);
+
 
 
   // --- Child Management Functions ---

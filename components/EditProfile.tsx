@@ -31,6 +31,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ child, onSave, onClose
   const [name, setName] = useState(child.name);
   const [avatar, setAvatar] = useState(child.avatar);
   const [themeColor, setThemeColor] = useState(child.themeColor);
+  const [googleEmail, setGoogleEmail] = useState(child.googleEmail || '');
   const [avatarPage, setAvatarPage] = useState(0);
   const AVATARS_PER_PAGE = 20;
   const totalPages = Math.ceil(AVATARS.length / AVATARS_PER_PAGE);
@@ -40,6 +41,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ child, onSave, onClose
       name,
       avatar,
       themeColor,
+      googleEmail: googleEmail.trim() || undefined,
     });
     onClose();
   };
@@ -146,6 +148,24 @@ export const EditProfile: React.FC<EditProfileProps> = ({ child, onSave, onClose
                 />
               ))}
             </div>
+          </div>
+
+          {/* Google Email (for child sign-in) */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Google Account Email
+              <span className="ml-2 text-xs text-gray-400">(for child sign-in)</span>
+            </label>
+            <input
+              type="email"
+              value={googleEmail}
+              onChange={(e) => setGoogleEmail(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="e.g., adrian.kids@gmail.com"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              When this child signs in with Google, they'll see their dashboard directly.
+            </p>
           </div>
 
           {/* Actions */}
