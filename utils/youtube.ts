@@ -438,42 +438,38 @@ export async function processYouTubeUrl(
         };
       }
     } catch (error) {
-      console.warn('Scraping failed, trying fallback...');
+      console.warn('Scraping failed:', error);
     }
 
-    // Fallback: Try to treat as single video by extracting first video ID
+    // Fallback: Try to get video info via noembed (simpler than oembed)
     try {
-      // Try a different approach - use oembed to get info
-      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
-      const oembedResp = await fetch(oembedUrl);
-      if (oembedResp.ok) {
-        const oembedData = await oembedResp.json();
-        // Extract video ID from the playlist URL (try common patterns)
-        const videoIdMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
-        if (videoIdMatch) {
-          return {
-            title: oembedData.title || existingTitle || 'Video',
-            videoUrl: getEmbedUrl(videoIdMatch[1]),
-            isPlaylist: false,
-          };
+      const noembedUrl = `https://noembed.com/embed?url=${encodeURIComponent(url)}`;
+      const resp = await fetch(noembedUrl);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.url) {
+          // Extract video ID from the returned URL
+          const videoId = extractVideoId(data.url);
+          if (videoId) {
+            return {
+              title: data.title || existingTitle || 'Video',
+              videoUrl: getEmbedUrl(videoId),
+              isPlaylist: false,
+            };
+          }
         }
       }
-    } catch (fallbackError) {
-      console.warn('Fallback failed:', fallbackError);
+    } catch (e) {
+      console.warn('noembed fallback failed:', e);
     }
 
-    // Final fallback: Return the playlist as a single video entry
-    const playlistIdMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
-    if (playlistIdMatch) {
-      return {
-        title: existingTitle || 'Playlist',
-        videoUrl: getEmbedUrl(''),
-        isPlaylist: true,
-        videos: [],
-      };
-    }
-
-    return null;
+    // Final fallback: Return as playlist with empty videos (user can add manually)
+    return {
+      title: existingTitle || 'Playlist (unable to fetch videos)',
+      videoUrl: getEmbedUrl(''),
+      isPlaylist: true,
+      videos: [],
+    };
   }
 
   return null;
