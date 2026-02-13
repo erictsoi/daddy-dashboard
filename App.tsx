@@ -1151,6 +1151,7 @@ const App: React.FC = () => {
                     onChange={(e) => setParentEmailInput(e.target.value)}
                     placeholder="parent@email.com"
                     className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    autoFocus
                   />
                   <button
                     onClick={() => {
