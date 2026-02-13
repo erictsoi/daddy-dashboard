@@ -1044,7 +1044,7 @@ const App: React.FC = () => {
           {/* Header with Sign In */}
           <div className="flex justify-between items-center mb-12">
               <div>
-                  <h1 className="text-4xl font-bold text-gray-800">HK Homeschool Hub</h1>
+                  <h1 className="text-4xl font-bold text-gray-800">Daddy Dashboard</h1>
                   <p className="text-xl text-gray-500">Who is learning today?</p>
               </div>
               {user ? (
