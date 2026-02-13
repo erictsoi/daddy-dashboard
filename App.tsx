@@ -990,18 +990,21 @@ const App: React.FC = () => {
                   <p className="text-xl text-gray-500">Who is learning today?</p>
               </div>
               {user ? (
-                <ProfileSwitcher
-                  user={user}
-                  data={data}
-                  adminAvatar={adminAvatar}
-                  adminColor={adminColor}
-                  adminName={adminName || adminName || user?.user_metadata?.full_name || user?.email || 'Admin'}
-                  onSignOut={() => signOut?.()}
-                  onManageProfiles={() => setView({ type: 'MANAGE_PROFILES' })}
-                  onSwitchProfile={(childId) => setView({ type: 'CHILD_DASHBOARD', childId })}
-                  onGoToLanding={() => setView({ type: 'LANDING' })}
-                  onGoToAdmin={() => setView({ type: 'HOME' })}
-                />
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setView({ type: 'MANAGE_PROFILES' })}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                  >
+                    <Settings size={18} />
+                    Manage Children
+                  </button>
+                  <button
+                    onClick={() => signOut?.()}
+                    className="text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition"
+                  >
+                    Sign out
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={() => signInWithGoogle?.()}

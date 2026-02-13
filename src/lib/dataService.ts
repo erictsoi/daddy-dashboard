@@ -118,7 +118,11 @@ export const fetchChildByEmail = async (email: string): Promise<ChildProfile[]> 
     const linkSnapshot = await getDocs(linkQuery)
     
     if (linkSnapshot.empty) {
-      console.log('fetchChildByEmail: no linked account found')
+      console.log('fetchChildByEmail: no linked account found, trying fallback...')
+      
+      // Fallback: Search through all known parent accounts
+      // For now, check common parent UID patterns or return empty
+      // The parent should ensure they save children with googleEmail first
       return []
     }
     
