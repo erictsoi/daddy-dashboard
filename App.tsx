@@ -2712,21 +2712,26 @@ const App: React.FC = () => {
 
         <div className="max-w-6xl mx-auto px-6 -mt-16 space-y-12 pb-20">
           
-          {/* Timeline on Child Dashboard */}
+          {/* Timeline on Child Dashboard - Show dual schedule for all kids */}
           {isDayActive ? (
               <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mb-8">
                   <div className="p-4 bg-gray-50 border-b border-gray-200 font-bold text-gray-700 flex items-center gap-2">
-                      <Calendar size={18} /> Today's Plan
+                      <Calendar size={18} /> Today's Timetable
                   </div>
-                     <Timeline 
+                      <Timeline 
                         schedule={schedule}
-                        childProfiles={data}
+                        childProfiles={allChildren.length > 0 
+                          ? allChildren.map(c => {
+                              // Find the actual child data from data array or allChildren
+                              const childData = data.find(d => d.id === c.id);
+                              return childData || c;
+                            })
+                          : data
+                        }
                         focusedChildId={childId}
                         onBlockClick={(cId, sId, tId, lId) => {
-                            // Only allow navigating to their own lessons or if needed
-                             if(cId === childId) {
-                                setView({ type: 'LESSON_PLAYER', childId: cId, subjectId: sId, topicId: tId, lessonId: lId, origin: 'CHILD_DASHBOARD' });
-                             }
+                            // Allow navigating to any child's lessons
+                            setView({ type: 'LESSON_PLAYER', childId: cId, subjectId: sId, topicId: tId, lessonId: lId, origin: 'CHILD_DASHBOARD' });
                         }}
                     />
               </div>
