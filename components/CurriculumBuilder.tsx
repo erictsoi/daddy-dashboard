@@ -49,13 +49,15 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
       console.log('[CurriculumBuilder] Loaded', videos.length, 'videos');
 
       const cleanUrl = cleanPlaylistUrl(playlistUrl);
+      // Get playlist title from first video
+      const playlistTitle = videos[0]?.title?.split(' - ')[0] || 'Playlist';
       const newRow: ParsedRow = {
         childName: defaultChild,
         yearGroup: defaultYear,
         subjectCategory: defaultSubject,
         subjectName: defaultSubcategory,
-        lessonTitle: `Playlist (${videos.length} videos)`,
-        lessonNotes: `YouTube Playlist`,
+        lessonTitle: `Playlist (${videos.length} videos) - ${playlistTitle}`,
+        lessonNotes: '',
         videoUrl: cleanUrl,
         isValid: true,
         isYouTubeUrl: true,
@@ -65,6 +67,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
           videoUrl: `https://www.youtube.com/embed/${v.id}`,
           videoId: v.id,
           position: idx,
+          playlistTitle: playlistTitle,
         })),
       };
       setParsedRows([newRow]);
@@ -138,19 +141,24 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
 
       if (result) {
         const isPlaylist = result.isPlaylist;
+        const videoCount = result.videos?.length || 0;
         
         updated[i] = {
           ...updated[i],
-          lessonTitle: result.title, // This becomes the playlist title for display
+          // For playlists: show "Playlist (X videos) - Title", for videos: show YouTube title
+          lessonTitle: isPlaylist && videoCount > 0 
+            ? `Playlist (${videoCount} videos) - ${result.title}` 
+            : result.title,
           videoUrl: result.videoUrl,
           youTubeType: isPlaylist ? 'playlist' : 'video',
         };
 
         if (isPlaylist && result.videos && result.videos.length > 0) {
-          // Store YouTube playlist title and add "Video X - " prefix to each video
+          // Store YouTube playlist title for display
           const ytPlaylistTitle = result.title;
+          // Don't add "Video X - " prefix - YouTube titles already have it
           updated[i].expandedLessons = result.videos.map((v, idx) => ({
-            title: `Video ${idx + 1} - ${v.title}`,
+            title: v.title,
             videoUrl: `https://www.youtube.com/embed/${v.id}`,
             videoId: v.id,
             position: idx,
