@@ -165,7 +165,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<ViewState>({ type: 'LANDING' });
   const [data, setData] = useState<ChildProfile[]>([]);
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
-  const [allChildren, setAllChildren] = useState<{id: string, name: string, avatar: string, themeColor: string}[]>(() => {
+  const [allChildren, setAllChildren] = useState<{id: string, name: string, avatar: string, themeColor: string, yearGroups?: any[]}[]>(() => {
     const saved = localStorage.getItem('all_children');
     const parsed = saved ? JSON.parse(saved) : [];
     console.log('Loaded allChildren from localStorage:', parsed.length);
@@ -264,16 +264,23 @@ const App: React.FC = () => {
                 localStorage.setItem('parent_uid', childResult.parentUid);
               }
               
-              // Update allChildren for profile switching
+              // Update allChildren with FULL data for dual schedule
               if (childResult.allChildren.length > 1) {
-                const childrenList = childResult.allChildren.map(c => ({
+                // Store full child profiles (with curriculum) for dual schedule
+                setAllChildren(childResult.allChildren.map(c => ({
                   id: c.id,
                   name: c.name,
                   avatar: c.avatar,
-                  themeColor: c.themeColor
-                }));
-                setAllChildren(childrenList);
-                localStorage.setItem('all_children', JSON.stringify(childrenList));
+                  themeColor: c.themeColor,
+                  yearGroups: c.yearGroups || []
+                })));
+                localStorage.setItem('all_children', JSON.stringify(childResult.allChildren.map(c => ({
+                  id: c.id,
+                  name: c.name,
+                  avatar: c.avatar,
+                  themeColor: c.themeColor,
+                  yearGroups: c.yearGroups || []
+                }))));
               }
               
               isFetchingRef.current = false;
