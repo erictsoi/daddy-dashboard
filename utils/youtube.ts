@@ -429,16 +429,51 @@ export async function processYouTubeUrl(
 
     try {
       const videos = await scrapePlaylistFromBrowser(parsed.playlistId);
-      return {
-        title: existingTitle || `Playlist (${videos.length} videos)`,
-        videoUrl: getEmbedUrl(videos[0]?.id || ''),
-        isPlaylist: true,
-        videos,
-      };
+      if (videos.length > 0) {
+        return {
+          title: existingTitle || `Playlist (${videos.length} videos)`,
+          videoUrl: getEmbedUrl(videos[0]?.id || ''),
+          isPlaylist: true,
+          videos,
+        };
+      }
     } catch (error) {
-      console.error('Failed to fetch playlist:', error);
-      return null;
+      console.warn('Scraping failed, trying fallback...');
     }
+
+    // Fallback: Try to treat as single video by extracting first video ID
+    try {
+      // Try a different approach - use oembed to get info
+      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+      const oembedResp = await fetch(oembedUrl);
+      if (oembedResp.ok) {
+        const oembedData = await oembedResp.json();
+        // Extract video ID from the playlist URL (try common patterns)
+        const videoIdMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+        if (videoIdMatch) {
+          return {
+            title: oembedData.title || existingTitle || 'Video',
+            videoUrl: getEmbedUrl(videoIdMatch[1]),
+            isPlaylist: false,
+          };
+        }
+      }
+    } catch (fallbackError) {
+      console.warn('Fallback failed:', fallbackError);
+    }
+
+    // Final fallback: Return the playlist as a single video entry
+    const playlistIdMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+    if (playlistIdMatch) {
+      return {
+        title: existingTitle || 'Playlist',
+        videoUrl: getEmbedUrl(''),
+        isPlaylist: true,
+        videos: [],
+      };
+    }
+
+    return null;
   }
 
   return null;
