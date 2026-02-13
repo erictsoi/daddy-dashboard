@@ -1344,7 +1344,7 @@ const App: React.FC = () => {
                                               {adminAvatar}
                                             </div>
                                             <div>
-                                                <span className="font-medium block">{user.user_metadata?.full_name || user.email}</span>
+                                                <span className="font-medium block">{adminName || user?.user_metadata?.full_name || user?.email}</span>
                                                 <span className="text-xs text-gray-500">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard</span>
                                             </div>
                                         </button>
@@ -2201,14 +2201,14 @@ const App: React.FC = () => {
                                       : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
-                                  {showBulkActions ? 'Done' : 'Select Subjects'}
+                                  {showBulkActions ? 'Done' : 'Edit Cards'}
                                 </button>
                               )}
                           </div>
                       </div>
 
                       {/* Bulk Actions Toolbar */}
-                      {showBulkActions && selectedSubjects.size > 0 && (
+                      {showBulkActions && (
                         <div className="flex items-center gap-4 p-4 mb-6 bg-blue-50 border border-blue-200 rounded-xl">
                           <span className="text-sm font-medium text-blue-700">
                             {selectedSubjects.size} selected
@@ -2223,16 +2223,20 @@ const App: React.FC = () => {
                             onClick={clearSelection}
                             className="text-sm text-gray-500 hover:text-gray-700"
                           >
-                            Clear
+                            Undo
                           </button>
                           <div className="flex-1" />
-                          <button
-                            onClick={handleBulkDeleteSubjects}
-                            className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition flex items-center gap-2"
-                          >
-                            <Trash2 size={16} />
-                            Delete Selected
-                          </button>
+                          {selectedSubjects.size > 0 ? (
+                            <button
+                              onClick={handleBulkDeleteSubjects}
+                              className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition flex items-center gap-2"
+                            >
+                              <Trash2 size={16} />
+                              Delete Selected
+                            </button>
+                          ) : (
+                            <div className="px-4 py-2"></div>
+                          )}
                         </div>
                       )}
 
@@ -2518,7 +2522,7 @@ const App: React.FC = () => {
                                       {adminAvatar}
                                     </div>
                                     <div>
-                                        <span className="font-medium block">{user.user_metadata?.full_name || user.email}</span>
+                                        <span className="font-medium block">{adminName || user?.user_metadata?.full_name || user?.email}</span>
                                         <span className="text-xs text-gray-500">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard</span>
                                     </div>
                                 </button>
