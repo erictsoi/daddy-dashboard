@@ -2721,26 +2721,34 @@ const App: React.FC = () => {
           
           {/* Timeline on Child Dashboard - Show dual schedule for all kids */}
           {isDayActive ? (
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mb-8">
-                  <div className="p-4 bg-gray-50 border-b border-gray-200 font-bold text-gray-700 flex items-center gap-2">
-                      <Calendar size={18} /> Today's Timetable
-                  </div>
+              <div className="space-y-4 mb-8">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <Calendar size={24} className="text-gray-500" /> Today's Timetable
+                  </h2>
+                  <button 
+                    onClick={() => setIsDayActive(false)}
+                    className="text-sm text-red-500 hover:text-red-700"
+                  >
+                    Reset Day
+                  </button>
+                </div>
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
                       <Timeline 
                         schedule={schedule}
                         childProfiles={allChildren.length > 0 
                           ? allChildren.map(c => {
-                              // Find the actual child data from data array or allChildren
                               const childData = data.find(d => d.id === c.id);
                               return childData || c;
                             })
                           : data
                         }
-                        focusedChildId={childId}
+                        focusedChildId={undefined}
                         onBlockClick={(cId, sId, tId, lId) => {
-                            // Allow navigating to any child's lessons
                             setView({ type: 'LESSON_PLAYER', childId: cId, subjectId: sId, topicId: tId, lessonId: lId, origin: 'CHILD_DASHBOARD' });
                         }}
                     />
+                </div>
               </div>
           ) : (
              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 flex flex-col items-center justify-center text-center gap-6 mb-8">
