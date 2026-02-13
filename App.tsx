@@ -279,6 +279,8 @@ const App: React.FC = () => {
 
   // Auto-detect child sign-in based on googleEmail match
   useEffect(() => {
+    console.log('Child sign-in check:', { user: user?.email, authLoading, loading, dataLength: data.length, childProfile: !!childProfile });
+    
     if (authLoading || loading) return;
     
     // If no user signed in, clear childProfile
@@ -289,11 +291,14 @@ const App: React.FC = () => {
     }
     
     const userEmail = user.email?.toLowerCase() || '';
+    console.log('Checking for match:', userEmail);
+    console.log('Children emails:', data.map(c => ({ name: c.name, email: c.googleEmail })));
+    
     const matchedChild = data.find(child => 
       child.googleEmail?.toLowerCase() === userEmail
     );
     
-    if (matchedChild && !childProfile) {
+    if (matchedChild) {
       console.log('Auto-detected child sign-in:', matchedChild.name);
       setChildProfile(matchedChild);
       localStorage.setItem('child_profile', JSON.stringify(matchedChild));
