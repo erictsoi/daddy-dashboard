@@ -137,19 +137,24 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
       const result = await processYouTubeUrl(cleanPlaylistUrl(row.videoUrl), row.lessonTitle || undefined, apiKey);
 
       if (result) {
+        const isPlaylist = result.isPlaylist;
+        
         updated[i] = {
           ...updated[i],
-          lessonTitle: result.title,
+          lessonTitle: result.title, // This becomes the playlist title for display
           videoUrl: result.videoUrl,
-          youTubeType: result.isPlaylist ? 'playlist' : 'video',
+          youTubeType: isPlaylist ? 'playlist' : 'video',
         };
 
-        if (result.isPlaylist && result.videos && result.videos.length > 0) {
+        if (isPlaylist && result.videos && result.videos.length > 0) {
+          // Store YouTube playlist title and add "Video X - " prefix to each video
+          const ytPlaylistTitle = result.title;
           updated[i].expandedLessons = result.videos.map((v, idx) => ({
-            title: v.title,
+            title: `Video ${idx + 1} - ${v.title}`,
             videoUrl: `https://www.youtube.com/embed/${v.id}`,
             videoId: v.id,
             position: idx,
+            playlistTitle: ytPlaylistTitle,
           }));
         }
       }
@@ -484,7 +489,8 @@ const PreviewTable = memo(function PreviewTable({ rows }: PreviewTableProps) {
               title: l.title, 
               position: l.position, 
               videoUrl: l.videoUrl,
-              subheading: row.lessonFocus || row.lessonNotes || ''
+              // Use YouTube playlist title if available, otherwise fallback to user data
+              subheading: (l as any).playlistTitle || row.lessonFocus || row.lessonNotes || ''
             })) ||
             (row.lessonTitle ? [{ title: row.lessonTitle, position: 0, videoUrl: row.videoUrl, subheading: row.lessonFocus || row.lessonNotes || '' }] : [])
           );
