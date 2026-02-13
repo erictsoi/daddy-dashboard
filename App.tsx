@@ -1352,11 +1352,11 @@ const App: React.FC = () => {
                                 {child.avatar}
                             </button>
                             {showProfileDropdown && (
-                                <div className="absolute right-0 top-full mt-2 w-64 bg-white text-gray-800 rounded-lg shadow-xl py-2 z-50 border border-gray-200">
-                                    <div className="px-3 py-2 border-b border-gray-100">
-                                        <p className="font-medium text-sm text-gray-500">Switch Profile</p>
-                                    </div>
-                                    {user && (
+                        <div className="absolute right-0 top-full mt-2 w-64 bg-white text-gray-800 rounded-lg shadow-xl py-2 z-50 border border-gray-200">
+                            <div className="px-3 py-2 border-b border-gray-100">
+                                <p className="font-medium text-sm text-gray-500">Switch Profile</p>
+                            </div>
+                            {user && !childProfile && (
                                         <button
                                             onClick={() => { setView({ type: 'HOME' }); setShowProfileDropdown(false); }}
                                             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
