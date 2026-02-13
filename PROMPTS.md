@@ -8,6 +8,33 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-14 - Child Sign-In & Profile Switching Session
+
+**User Request:**
+> i want to be able to signin with my kids account to view their profile
+> check if this works
+> its working now. but id like for the kids to easily switch profiles without having to sign in
+> hide my dashboard (admin) when kid is logged in, but allow switching between kids
+> the kids have admin hidden but need to switch between kids
+> ... (multiple iterations to fix profile switching)
+
+**Requirements:**
+1. Kids sign in with their Google account
+2. Parent email linked to child's profile for lookup
+3. Kids can switch to sibling profiles without re-signing in
+4. Admin dashboard hidden for kids
+5. Dual schedule showing both kids on child's dashboard
+
+**Session Completed:**
+- Added googleEmail field to EditProfile component
+- Added linkedAccounts lookup in Firebase
+- Created parent email input on landing page
+- Implemented allChildren state to store full curriculum
+- Fixed profile switching to load sibling data
+- Added Sign Out button to kid dropdown
+
+---
+
 ## 2026-02-11 - Rework Session Complete
 
 **User Request:**

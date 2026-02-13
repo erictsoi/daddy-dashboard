@@ -7,6 +7,25 @@
      4. Bump version in package.json
      -->
 
+## 2026-02-14 Child Sign-In Updates
+
+### Completed
+- ✅ Google email field added to EditProfile component
+- ✅ linkedAccounts collection in Firebase for child-parent linking
+- ✅ fetchChildByEmail function returns all children for dual schedule
+- ✅ Parent email input on landing page (For Kids section)
+- ✅ Profile switching with full curriculum loading
+- ✅ Dual schedule on child dashboard using Timeline component
+- ✅ Dynamic grid columns based on card count (1-4)
+- ✅ Admin dropdown hidden for kids, Sign Out shown
+
+### Key Files Modified
+- `components/EditProfile.tsx` - Added googleEmail field
+- `src/lib/dataService.ts` - Added fetchChildById, updated fetchChildByEmail
+- `App.tsx` - Added allChildren state, parentUid, profile switching logic
+
+---
+
 ## 2026-02-11 Rework Status
 
 ### Completed

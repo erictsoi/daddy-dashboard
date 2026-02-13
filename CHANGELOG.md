@@ -8,6 +8,29 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-14 - Version 3.2.0 (Child Sign-In & Profile Switching)
+
+### Added
+- **Google Email Field** - Edit profile now has "Google Account Email" field to link child's account
+- **Auto Child Detection** - When child signs in with linked Google account, redirects to their dashboard
+- **Parent Email Input** - Landing page has "For Kids" section where kids enter parent's email before signing in
+- **Profile Switching** - Kids can switch to sibling profiles from dropdown menu
+- **Dual Schedule** - Shows both kids' timetables side by side on child's dashboard
+- **Dynamic Grid** - Profile cards auto-adjust columns (1-4 based on count)
+
+### Changed
+- **Profile Dropdown for Kids** - Shows sibling profiles + Sign Out (no admin dashboard)
+- **Profile Dropdown for Admin** - Shows all options including Manage Profiles
+- **Landing Title** - Changed to "Daddy Dashboard"
+- **Profile Cards** - Now centered with max-w-xs for consistent sizing
+
+### Fixed
+- **Profile Switching** - Now loads sibling's full curriculum when switching
+- **Cursor Focus** - Added autoFocus to email input field
+- **Input Performance** - Removed onChange saving that was causing lag
+
+---
+
 ## 2026-02-13 - Version 3.1.0 (Firebase Migration Complete)
 
 ### Added
