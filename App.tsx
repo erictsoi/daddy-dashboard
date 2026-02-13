@@ -256,7 +256,6 @@ const App: React.FC = () => {
             if (childResult.child && childResult.child.length > 0) {
               console.log('Found child profile:', childResult.child[0].name);
               setChildProfile(childResult.child[0]);
-              setData(childResult.child);
               
               // Store parent UID for profile switching
               if (childResult.parentUid) {
@@ -265,22 +264,16 @@ const App: React.FC = () => {
               }
               
               // Update allChildren with FULL data for dual schedule
-              if (childResult.allChildren.length > 1) {
+              if (childResult.allChildren.length > 0) {
+                console.log('Storing allChildren with full curriculum:', childResult.allChildren.length);
                 // Store full child profiles (with curriculum) for dual schedule
-                setAllChildren(childResult.allChildren.map(c => ({
-                  id: c.id,
-                  name: c.name,
-                  avatar: c.avatar,
-                  themeColor: c.themeColor,
-                  yearGroups: c.yearGroups || []
-                })));
-                localStorage.setItem('all_children', JSON.stringify(childResult.allChildren.map(c => ({
-                  id: c.id,
-                  name: c.name,
-                  avatar: c.avatar,
-                  themeColor: c.themeColor,
-                  yearGroups: c.yearGroups || []
-                }))));
+                setAllChildren(childResult.allChildren);
+                localStorage.setItem('all_children', JSON.stringify(childResult.allChildren));
+                
+                // Also set data to all children for dual schedule display
+                setData(childResult.allChildren);
+              } else {
+                setData(childResult.child);
               }
               
               isFetchingRef.current = false;
@@ -2736,13 +2729,7 @@ const App: React.FC = () => {
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
                       <Timeline 
                         schedule={schedule}
-                        childProfiles={allChildren.length > 0 
-                          ? allChildren.map(c => {
-                              const childData = data.find(d => d.id === c.id);
-                              return childData || c;
-                            })
-                          : data
-                        }
+                        childProfiles={data}
                         focusedChildId={undefined}
                         onBlockClick={(cId, sId, tId, lId) => {
                             setView({ type: 'LESSON_PLAYER', childId: cId, subjectId: sId, topicId: tId, lessonId: lId, origin: 'CHILD_DASHBOARD' });
