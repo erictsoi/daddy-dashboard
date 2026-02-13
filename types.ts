@@ -45,6 +45,7 @@ export interface ChildProfile {
   dob: string;
   avatar: string;
   themeColor: string;
+  googleEmail?: string;
   yearGroups: YearGroup[];
 }
 

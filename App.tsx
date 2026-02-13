@@ -2689,6 +2689,7 @@ const App: React.FC = () => {
     // Kid edit states
     const [editName, setEditName] = useState('');
     const [editDob, setEditDob] = useState('');
+    const [editGoogleEmail, setEditGoogleEmail] = useState('');
     const [editAvatar, setEditAvatar] = useState('');
     const [editColor, setEditColor] = useState('');
     const [avatarPage, setAvatarPage] = useState(0);
@@ -2737,6 +2738,7 @@ const App: React.FC = () => {
             dob: editDob,
             avatar: editAvatar,
             themeColor: editColor,
+            googleEmail: editGoogleEmail.trim() || undefined,
           };
         });
         if (user) {
@@ -2756,6 +2758,7 @@ const App: React.FC = () => {
       setEditDob(child.dob);
       setEditAvatar(child.avatar);
       setEditColor(child.themeColor);
+      setEditGoogleEmail(child.googleEmail || '');
       setAvatarPage(0);
       setIsAdding(false);
     };
@@ -2765,6 +2768,7 @@ const App: React.FC = () => {
       setEditingChildId(null);
       setEditName('');
       setEditDob('');
+      setEditGoogleEmail('');
       setEditAvatar('👶');
       setEditColor('blue');
       setAvatarPage(0);
@@ -2779,6 +2783,7 @@ const App: React.FC = () => {
         dob: editDob,
         avatar: editAvatar,
         themeColor: editColor,
+        googleEmail: editGoogleEmail.trim() || undefined,
         yearGroups: [],
       };
       
@@ -2795,6 +2800,7 @@ const App: React.FC = () => {
       setIsAdding(false);
       setEditName('');
       setEditDob('');
+      setEditGoogleEmail('');
     };
 
     const cancelEdit = () => {
@@ -3069,6 +3075,17 @@ const App: React.FC = () => {
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Google Email (optional - for student login)</label>
+                    <input
+                      type="email"
+                      value={editGoogleEmail}
+                      onChange={(e) => setEditGoogleEmail(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="student@gmail.com"
+                    />
+                  </div>
+
                   <div className="flex gap-3">
                     <button
                       onClick={handleAddChildLocal}
@@ -3106,6 +3123,7 @@ const App: React.FC = () => {
                       <div>
                         <h3 className="font-bold text-gray-800">{child.name || 'Student'}</h3>
                         <p className="text-sm text-gray-500">{child.yearGroups.map(yg => yg.name).join(', ') || 'No year groups'}</p>
+                        {child.googleEmail && <p className="text-xs text-blue-600 mt-1">🔗 {child.googleEmail}</p>}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -3220,6 +3238,17 @@ const App: React.FC = () => {
                             value={editDob}
                             onChange={(e) => setEditDob(e.target.value)}
                             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Google Email (optional - for student login)</label>
+                          <input
+                            type="email"
+                            value={editGoogleEmail}
+                            onChange={(e) => setEditGoogleEmail(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="student@gmail.com"
                           />
                         </div>
 
