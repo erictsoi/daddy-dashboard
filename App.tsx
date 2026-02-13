@@ -2,13 +2,16 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { ViewState, ChildProfile, YearGroup, Subject, Topic, Lesson, ScheduleBlock, ViewOrigin, ParsedRow } from './types';
 import { INITIAL_DATA } from './constants';
 import { AuthProvider, useAuth } from './src/lib/AuthContext';
-import { supabase } from './src/lib/supabase'
-import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, updateChildGoogleEmail, saveFullCurriculum, uploadToSupabase, loadFromSupabase, restoreLessonInSupabase, hardDeleteLessonFromSupabase, softDeleteLessonInSupabase, hardDeleteSubjectFromSupabase, migrateChildToTopicStructure } from './src/lib/dataService';
+import { auth as firebaseAuth, googleProvider, signInWithGoogle, logOut as firebaseLogOut } from './src/lib/firebase'
+import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, saveFullCurriculum, uploadToSupabase, loadFromSupabase, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, migrateChildToTopicStructure, restoreLessonInSupabase, hardDeleteLessonFromSupabase, softDeleteLessonInSupabase, hardDeleteSubjectFromSupabase } from './src/lib/dataService';
 import { usePersistentTimer, formatTime, formatTimeReadable } from './src/lib/useTimer';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
 import { Timeline } from './components/Timeline';
 import { CurriculumBuilder } from './components/CurriculumBuilder';
+
+// Firebase shim for backward compatibility (some admin features simplified)
+const supabase = null;
 
 // Export data to JSON file
 const exportDataToFile = (data: ChildProfile[], filename: string = 'daddy-dashboard-export.json') => {
@@ -175,7 +178,7 @@ const App: React.FC = () => {
   });
   const [showEditAdmin, setShowEditAdmin] = useState(false);
   
-  // Supabase status indicator
+  // Firebase status indicator
   const [supabaseStatus, setSupabaseStatus] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
   const [authDebug, setAuthDebug] = useState<string>('');
   
@@ -665,8 +668,8 @@ const App: React.FC = () => {
       const scrollY = window.scrollY;
 
       if (user) {
-        await hardDeleteSubjectFromSupabase(subjectId).catch(err => {
-          console.error('Failed to delete subject from Supabase:', err);
+        await hardDeleteSubjectFromSupabase(subjectId, user.id).catch(err => {
+          console.error('Failed to delete subject from Firebase:', err);
         });
       }
 
@@ -738,9 +741,10 @@ const App: React.FC = () => {
   };
 
   const handleRestoreLesson = async (childId: string, subjectId: string, topicId: string, lessonId: string) => {
+      // Firebase: state is updated locally, sync happens via saveFullCurriculum
       if (user) {
-        await restoreLessonInSupabase(lessonId).catch(err => {
-          console.error('Failed to restore lesson in Supabase:', err);
+        await restoreLessonInSupabase(lessonId, user.id).catch(err => {
+          console.error('Failed to restore lesson in Firebase:', err);
         });
       }
 
@@ -785,8 +789,8 @@ const App: React.FC = () => {
       }
 
       if (user) {
-        hardDeleteLessonFromSupabase(lessonId).catch(err => {
-          console.error('Failed to hard delete lesson in Supabase:', err);
+        hardDeleteLessonFromSupabase(lessonId, user.id).catch(err => {
+          console.error('Failed to hard delete lesson in Firebase:', err);
         });
       }
 
@@ -829,8 +833,8 @@ const App: React.FC = () => {
 
   const handleSoftDeleteLesson = (childId: string, subjectId: string, topicId: string, lessonId: string) => {
       if (user) {
-        softDeleteLessonInSupabase(lessonId).catch(err => {
-          console.error('Failed to soft delete lesson in Supabase:', err);
+        softDeleteLessonInSupabase(lessonId, user.id).catch(err => {
+          console.error('Failed to soft delete lesson in Firebase:', err);
         });
       }
 
@@ -1209,10 +1213,10 @@ const App: React.FC = () => {
     const handleDeleteTopic = (topicId: string) => {
       if (!confirm('Delete this topic and all its lessons?')) return;
       
-      // Delete from Supabase if exists
+      // Delete from Firebase if exists
       if (user) {
-        hardDeleteSubjectFromSupabase(topicId).catch(err => {
-          console.error('Failed to delete topic from Supabase:', err);
+        hardDeleteSubjectFromSupabase(topicId, user.id).catch(err => {
+          console.error('Failed to delete topic from Firebase:', err);
         });
       }
 
@@ -1829,9 +1833,9 @@ const App: React.FC = () => {
             for (const yg of child.yearGroups) {
               for (const subject of yg.subjects) {
                 const topic = subject.topics.find(t => `${subject.id}-${t.id}` === cardId);
-                if (topic) {
-                  await hardDeleteSubjectFromSupabase(topic.id).catch(err => {
-                    console.error('Failed to delete topic from Supabase:', err);
+                if (topic && user) {
+                  await hardDeleteSubjectFromSupabase(topic.id, user.id).catch(err => {
+                    console.error('Failed to delete topic from Firebase:', err);
                   });
                 }
               }

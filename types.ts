@@ -17,6 +17,9 @@ export interface Topic {
   id: string;
   name: string;
   lessons: Lesson[];
+  youtubeUrls?: string[];  // Raw YouTube URLs (playlists/videos)
+  focus?: string;          // "YT Playlist Focus" from table
+  notes?: string;          // Notes from table
   timeSpentSeconds?: number;
   frequency?: number;
 }
@@ -27,6 +30,7 @@ export interface Subject {
   topics: Topic[];
   category: string;
   color: string;
+  youtubeUrl?: string;  // Legacy field, now stored in topics
 }
 
 export interface YearGroup {

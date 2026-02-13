@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { ArrowLeft, Save, AlertCircle, FileText, CheckCircle, Link, Copy, Youtube, Loader2, ChevronRight } from 'lucide-react';
-import { fetchPlaylistVideos } from '../src/lib/supabase';
+import { fetchPlaylistVideos, processYouTubeUrl } from '../utils/youtube';
 import { ParsedRow } from '../types';
-import { processYouTubeUrl } from '../utils/youtube';
 
 const YOUTUBE_REGEX = /(?:youtube\.com|youtu\.be)/i;
 const PLAYLIST_ID_REGEX = /[?&]list=([a-zA-Z0-9_-]+)/;
@@ -63,8 +62,8 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
         youTubeType: 'playlist',
         expandedLessons: videos.map((v, idx) => ({
           title: v.title,
-          videoUrl: `https://www.youtube.com/embed/${v.videoId}`,
-          videoId: v.videoId,
+          videoUrl: `https://www.youtube.com/embed/${v.id}`,
+          videoId: v.id,
           position: idx,
         })),
       };
@@ -473,10 +472,12 @@ const PreviewTable = memo(function PreviewTable({ rows }: PreviewTableProps) {
     }, {});
   }, [rows]);
 
+  const groupsArray = Object.entries(groups);
+
   return (
     <div className="flex-1 overflow-auto max-h-[600px]">
       <div className="divide-y divide-gray-200">
-        {Object.entries(groups).map(([key, groupRows]) => {
+        {(Object.entries(groups) as [string, ParsedRow[]][]).map(([key, groupRows]) => {
           const [year, category, topic] = key.split('|');
           const allVideos = groupRows.flatMap((row) =>
             row.expandedLessons?.map((l) => ({ title: l.title, position: l.position, videoUrl: l.videoUrl })) ||
