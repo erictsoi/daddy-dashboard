@@ -164,6 +164,16 @@ const App: React.FC = () => {
   const { user, loading: authLoading } = useAuth() || {};
   const [view, setView] = useState<ViewState>({ type: 'LANDING' });
   const [data, setData] = useState<ChildProfile[]>([]);
+  
+  // Helper to calculate grid columns based on number of cards
+  const getGridCols = (count: number) => {
+    if (count <= 1) return 'grid-cols-1';
+    if (count === 2) return 'grid-cols-1 sm:grid-cols-2';
+    if (count === 3) return 'grid-cols-1 sm:grid-cols-3';
+    return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
+  };
+  const totalCards = 1 + data.length; // Daddy + kids
+  const gridCols = getGridCols(totalCards);
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
   const [allChildren, setAllChildren] = useState<{id: string, name: string, avatar: string, themeColor: string, yearGroups?: any[]}[]>(() => {
     const saved = localStorage.getItem('all_children');
@@ -1081,7 +1091,7 @@ const App: React.FC = () => {
           </div>
 
           {/* Profile Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center gap-6 w-full max-w-6xl mx-auto">
+          <div className={`grid ${gridCols} justify-items-center gap-6 w-full max-w-6xl mx-auto`}>
               {/* Daddy Card */}
               <div className="relative group w-full max-w-xs">
                 <button 
