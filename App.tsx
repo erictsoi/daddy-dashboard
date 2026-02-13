@@ -1137,15 +1137,15 @@ const App: React.FC = () => {
                   <input
                     type="email"
                     value={parentEmailInput}
-                    onChange={(e) => setParentEmailInput(e.target.value)}
+                    onChange={(e) => {
+                      setParentEmailInput(e.target.value);
+                      localStorage.setItem('parent_email', e.target.value);
+                    }}
                     placeholder="parent@email.com"
                     className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                   <button
-                    onClick={() => {
-                      localStorage.setItem('parent_email', parentEmailInput);
-                      signInWithGoogle?.();
-                    }}
+                    onClick={() => signInWithGoogle?.()}
                     disabled={!parentEmailInput || loading}
                     className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition"
                   >
