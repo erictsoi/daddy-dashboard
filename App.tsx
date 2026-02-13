@@ -1081,9 +1081,9 @@ const App: React.FC = () => {
           </div>
 
           {/* Profile Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center gap-6 w-full max-w-6xl mx-auto">
               {/* Daddy Card */}
-              <div className="relative group">
+              <div className="relative group w-full max-w-xs">
                 <button 
                     onClick={() => setView({ type: 'HOME' })}
                     className="w-full bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 flex flex-col items-center gap-6 border border-gray-100 group"
@@ -1108,8 +1108,8 @@ const App: React.FC = () => {
 
               {/* Kids Cards */}
               {data.map(child => (
-                  <div key={child.id} className="relative group">
-                    <button 
+                  <div key={child.id} className="relative group w-full max-w-xs">
+                    <button
                         onClick={() => setView({ type: 'CHILD_DASHBOARD', childId: child.id })}
                         className={`w-full bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 flex flex-col items-center gap-6 border-b-[8px] border-${child.themeColor}-500`}
                     >
