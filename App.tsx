@@ -185,6 +185,9 @@ const App: React.FC = () => {
     return localStorage.getItem('admin_name') || '';
   });
   const [showEditAdmin, setShowEditAdmin] = useState(false);
+  const [parentEmailInput, setParentEmailInput] = useState(() => {
+    return localStorage.getItem('parent_email') || '';
+  });
   
   // Firebase status indicator
   const [supabaseStatus, setSupabaseStatus] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
@@ -240,14 +243,38 @@ const App: React.FC = () => {
         if (user) {
           // Check if user is a child by matching email
           try {
-            const childData = await fetchChildByEmail(user.email || '');
-            if (childData && childData.length > 0) {
-              console.log('Found child profile:', childData[0].name);
-              setChildProfile(childData[0]);
-              setData(childData);
+            // Get parent's email from localStorage input by kid
+            const storedParentEmail = localStorage.getItem('parent_email');
+            
+            // Try to fetch child by email - this looks up the linked account
+            const childResult = await fetchChildByEmail(user.email || '');
+            if (childResult.child && childResult.child.length > 0) {
+              console.log('Found child profile:', childResult.child[0].name);
+              setChildProfile(childResult.child[0]);
+              setData(childResult.child);
+              
+              // Update allChildren for profile switching
+              if (childResult.allChildren.length > 1) {
+                const childrenList = childResult.allChildren.map(c => ({
+                  id: c.id,
+                  name: c.name,
+                  avatar: c.avatar,
+                  themeColor: c.themeColor
+                }));
+                setAllChildren(childrenList);
+                localStorage.setItem('all_children', JSON.stringify(childrenList));
+              }
+              
               isFetchingRef.current = false;
               setLoading(false);
               return;
+            }
+            
+            // If linked account not found but we have parent email, try fetching from parent's Firebase
+            if (storedParentEmail) {
+              // We can't directly query by email in Firebase without knowing the UID
+              // For now, show the child profile selector based on allChildren from localStorage
+              console.log('No linked account, using localStorage children list');
             }
           } catch (e) {
             console.log('Not a child account, checking for admin data');
@@ -1098,11 +1125,36 @@ const App: React.FC = () => {
           {/* Guest Mode Notice */}
           {!user && (
             <div className="mt-12 text-center max-w-2xl mx-auto">
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 text-sm mb-4">
                 You're viewing the demo mode. Sign in with Google to save your custom curriculum data.
               </p>
+              
+              {/* Parent Email Input for Kids */}
+              <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                <h3 className="text-lg font-bold text-gray-800 mb-2">For Kids</h3>
+                <p className="text-sm text-gray-500 mb-4">Enter your parent's email to access your profile</p>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={parentEmailInput}
+                    onChange={(e) => setParentEmailInput(e.target.value)}
+                    placeholder="parent@email.com"
+                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('parent_email', parentEmailInput);
+                      signInWithGoogle?.();
+                    }}
+                    disabled={!parentEmailInput || loading}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition"
+                  >
+                    Sign In
+                  </button>
+                </div>
               </div>
-            )}
+            </div>
+          )}
         </div>
     );
   };

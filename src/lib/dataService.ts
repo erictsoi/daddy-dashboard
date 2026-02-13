@@ -106,10 +106,10 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
   return children
 }
 
-export const fetchChildByEmail = async (email: string): Promise<ChildProfile[]> => {
+export const fetchChildByEmail = async (email: string): Promise<{ child: ChildProfile[]; allChildren: ChildProfile[]; parentUid: string }> => {
   console.log('fetchChildByEmail: looking for email', email)
   
-  if (!email) return []
+  if (!email) return { child: [], allChildren: [], parentUid: '' }
   
   try {
     // First, look up which parent this child is linked to
@@ -118,32 +118,32 @@ export const fetchChildByEmail = async (email: string): Promise<ChildProfile[]> 
     const linkSnapshot = await getDocs(linkQuery)
     
     if (linkSnapshot.empty) {
-      console.log('fetchChildByEmail: no linked account found, trying fallback...')
-      
-      // Fallback: Search through all known parent accounts
-      // For now, check common parent UID patterns or return empty
-      // The parent should ensure they save children with googleEmail first
-      return []
+      console.log('fetchChildByEmail: no linked account found')
+      return { child: [], allChildren: [], parentUid: '' }
     }
     
     const linkData = linkSnapshot.docs[0].data()
     const parentUid = linkData.parentUid
     console.log('fetchChildByEmail: found parentUid', parentUid)
     
-    // Now fetch the child from parent's children collection
+    // Fetch ALL children from parent's collection (for profile switching)
     const childrenRef = collection(db, 'users', parentUid, 'children')
-    const childrenQuery = query(childrenRef, where('googleEmail', '==', email.toLowerCase()))
-    const childrenSnapshot = await getDocs(childrenQuery)
+    const allChildrenSnapshot = await getDocs(childrenRef)
     
-    if (childrenSnapshot.empty) return []
-    
-    return childrenSnapshot.docs.map(doc => ({
+    const allChildren = allChildrenSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id
     })) as ChildProfile[]
+    
+    // Filter to find the signed-in child
+    const child = allChildren.filter(c => c.googleEmail?.toLowerCase() === email.toLowerCase())
+    
+    console.log('fetchChildByEmail: found', allChildren.length, 'children, matching child:', child.length)
+    
+    return { child, allChildren, parentUid }
   } catch (error) {
     console.error('fetchChildByEmail error:', error)
-    return []
+    return { child: [], allChildren: [], parentUid: '' }
   }
 }
 
