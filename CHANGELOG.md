@@ -8,6 +8,28 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-13 - Version 3.1.0 (Firebase Migration Complete)
+
+### Added
+- **Firebase Auth** - Replaced Supabase with Firebase Authentication
+- **Firebase Firestore** - Data persistence using single document per child
+
+### Removed
+- **Supabase Admin Buttons** - Deduplicate, Nuke Supabase, Clean DB (kept local Dedupe Lessons)
+- **Unused supabase.ts file** - Deleted legacy client
+
+### Changed
+- **User ID** - Changed `user.id` to `user.uid` (Firebase uses uid)
+- **UI Labels** - "Supabase" renamed to "Firebase" throughout
+- **Status Indicator** - Renamed state from `supabaseStatus` to `dataStatus`
+- **Headers** - Added z-50 to sticky headers to fix icon overlap
+
+### Fixed
+- **Lesson Counts** - Now showing correctly on cards
+- **Import/Export** - JSON import now saves to Firebase automatically
+
+---
+
 ## 2026-02-11 - Version 2.7.0 (Rework Complete)
 
 ### Removed

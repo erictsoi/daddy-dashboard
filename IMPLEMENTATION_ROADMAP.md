@@ -32,31 +32,21 @@ Migrating from Supabase to Firebase to fix loading issues and simplify data stru
 
 ---
 
-## PHASE 2: Clean Up Remaining Supabase References (IN PROGRESS)
+## PHASE 2: Clean Up Remaining Supabase References (COMPLETE)
 
-### 2.1 App.tsx Admin Functions (LINES 2138-2356)
-These admin features still use Supabase directly:
-- `checkForDuplicates()` - LINE 2138
-- `cleanupOrphanedData()` - LINE 2168
-- `deleteAllData()` - LINE 2202
-- `cleanupDuplicateLessons()` - LINE 2285
-- `cleanupDuplicateTopics()` - LINE 2305
-- `cleanupDuplicateSubjects()` - LINE 2324
-- `cleanupDuplicateYearGroups()` - LINE 2343
-
-**STATUS:** These are admin/debug functions. Can be disabled or rewritten for Firebase.
+### 2.1 App.tsx Admin Functions
+✅ Removed Supabase-only buttons (Deduplicate, Nuke Supabase, Clean DB)
+✅ Kept local Dedupe Lessons (works with Firebase)
+✅ Updated Check Subjects to work on local data
+✅ Renamed UI "Supabase" to "Firebase"
+✅ Deleted unused src/lib/supabase.ts
 
 ### 2.2 CurriculumBuilder.tsx
-**STATUS:** Fixed - now uses `utils/youtube.ts` instead of Supabase.
-
-### 2.3 Other Files to Check
-```bash
-grep -r "supabase" --include="*.ts" --include="*.tsx"
-```
+✅ Fixed - now uses `utils/youtube.ts` instead of Supabase.
 
 ---
 
-## PHASE 3: Card Display Fixes
+## PHASE 3: Card Display Fixes (COMPLETE)
 
 ### 3.1 Problem
 Mobile shows wrong number of lessons per card.
@@ -84,7 +74,7 @@ const totalCount = allLessons.filter(l => !l.deleted).length;
 
 ---
 
-## PHASE 4: Import Your Table Data
+## PHASE 4: Import Your Table Data (COMPLETE)
 
 ### 4.1 Your Data Summary
 | Field | Count |
@@ -151,26 +141,38 @@ Deploy rules when ready for production.
 
 ---
 
+## REMAINING
+
+### Firebase Security Rules
+Deploy the production Firestore rules from Phase 5 to restrict access to user's own data only.
+
+### Video Playback
+Test that YouTube videos play correctly in the lesson player.
+
+---
+
 ## PHASE 6: Testing Checklist
 
 ### 6.1 Pre-Deployment
-- [ ] Build succeeds: `npm run build`
-- [ ] No TypeScript errors
+- [x] Build succeeds: `npm run build`
+- [x] No TypeScript errors
 
 ### 6.2 Login Tests
-- [ ] Google login works
-- [ ] Logout works
-- [ ] State resets on logout
+- [x] Google login works
+- [x] Logout works
+- [x] State resets on logout
 
 ### 6.3 Data Tests
-- [ ] Data saves to Firebase
-- [ ] Data loads from Firebase
-- [ ] Offline persistence works
+- [x] Data saves to Firebase
+- [x] Data loads from Firebase
+- [x] Offline persistence works
+- [x] JSON import works
+- [x] JSON export works
 
 ### 6.4 UI Tests
-- [ ] Lesson counts correct on desktop
-- [ ] Lesson counts correct on mobile
-- [ ] Cards display correctly
+- [x] Lesson counts correct on desktop
+- [x] Lesson counts correct on mobile
+- [x] Cards display correctly
 - [ ] Video playback works
 
 ---

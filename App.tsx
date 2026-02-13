@@ -155,8 +155,9 @@ import {
   UserPlus,
   Timer,
   Settings,
-  UploadCloud,
-  DownloadCloud
+  Upload,
+  Download,
+  Cloud
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -175,6 +176,9 @@ const App: React.FC = () => {
   });
   const [adminColor, setAdminColor] = useState(() => {
     return localStorage.getItem('admin_color') || 'blue';
+  });
+  const [adminName, setAdminName] = useState(() => {
+    return localStorage.getItem('admin_name') || '';
   });
   const [showEditAdmin, setShowEditAdmin] = useState(false);
   
@@ -204,10 +208,10 @@ const App: React.FC = () => {
       return;
     }
 
-    console.log('Auth loaded, user =', user?.id || 'null');
+    console.log('Auth loaded, user =', user?.uid || 'null');
 
     // Only skip if we've already loaded data for this user
-    if (lastUserIdRef.current === user?.id && data.length > 0) {
+    if (lastUserIdRef.current === user?.uid && data.length > 0) {
       console.log('Already loaded data for this user, skipping');
       return;
     }
@@ -218,14 +222,14 @@ const App: React.FC = () => {
       return;
     }
     
-    lastUserIdRef.current = user?.id || null;
+    lastUserIdRef.current = user?.uid || null;
     isFetchingRef.current = true;
 
     const loadData = async () => {
       setAuthDebug('loadData starting...');
-      console.log('loadData: user =', user?.id || 'null');
+      console.log('loadData: user =', user?.uid || 'null');
       console.log('loadData: user email =', user?.email || 'null');
-      setAuthDebug('User: ' + (user?.id || 'null') + ', Email: ' + (user?.email || 'null'));
+      setAuthDebug('User: ' + (user?.uid || 'null') + ', Email: ' + (user?.email || 'null'));
 
       setLoading(true);
       try {
@@ -245,10 +249,10 @@ const App: React.FC = () => {
             console.log('Not a child account, checking for admin data');
           }
           
-          console.log('Fetching children for userId:', user.id);
-          setAuthDebug('Fetching children for: ' + user.id);
+          console.log('Fetching children for userId:', user.uid);
+          setAuthDebug('Fetching children for: ' + user.uid);
           setChildProfile(null);
-          const childrenData = await fetchChildren(user.id);
+          const childrenData = await fetchChildren(user.uid);
           console.log('Got childrenData:', childrenData.length, 'children');
           setAuthDebug('Found ' + childrenData.length + ' children');
           if (childrenData.length > 0) {
@@ -286,7 +290,7 @@ const App: React.FC = () => {
     setData(prev => {
       const newData = [...prev, newChild];
       if (user) {
-        saveFullCurriculum(newData, user.id).catch(console.error);
+        saveFullCurriculum(newData, user.uid).catch(console.error);
       } else {
         saveLocalData(newData);
       }
@@ -298,7 +302,7 @@ const App: React.FC = () => {
     setData(prev => {
       const newData = prev.filter(child => child.id !== id);
       if (user) {
-        saveFullCurriculum(newData, user.id).catch(console.error);
+        saveFullCurriculum(newData, user.uid).catch(console.error);
       } else {
         saveLocalData(newData);
       }
@@ -313,7 +317,7 @@ const App: React.FC = () => {
         return { ...child, ...updates };
       });
       if (user) {
-        saveFullCurriculum(newData, user.id).catch(console.error);
+        saveFullCurriculum(newData, user.uid).catch(console.error);
       } else {
         saveLocalData(newData);
       }
@@ -327,7 +331,7 @@ const App: React.FC = () => {
       setChildProfile(updated);
       if (user) {
         const allChildren = data.map(c => c.id === updated.id ? updated : c);
-        saveFullCurriculum(allChildren, user.id).catch(console.error);
+        saveFullCurriculum(allChildren, user.uid).catch(console.error);
       }
     }
   };
@@ -344,7 +348,7 @@ const App: React.FC = () => {
         return { ...child, yearGroups: [...child.yearGroups, newYearGroup] };
       });
       if (user) {
-        saveFullCurriculum(newData, user.id).catch(console.error);
+        saveFullCurriculum(newData, user.uid).catch(console.error);
       } else {
         saveLocalData(newData);
       }
@@ -359,7 +363,7 @@ const App: React.FC = () => {
         return { ...child, yearGroups: child.yearGroups.filter(yg => yg.id !== yearGroupId) };
       });
       if (user) {
-        saveFullCurriculum(newData, user.id).catch(console.error);
+        saveFullCurriculum(newData, user.uid).catch(console.error);
       } else {
         saveLocalData(newData);
       }
@@ -516,7 +520,7 @@ const App: React.FC = () => {
         };
       });
       if (user) {
-        saveFullCurriculum(newData, user.id).catch(console.error);
+        saveFullCurriculum(newData, user.uid).catch(console.error);
       } else {
         saveLocalData(newData);
       }
@@ -646,7 +650,7 @@ const App: React.FC = () => {
     setData(newData);
     
     if (user) {
-      saveFullCurriculum(newData, user.id)
+      saveFullCurriculum(newData, user.uid)
         .then(() => {
           console.log('handleBulkImport: Saved to Supabase');
           (window as any).__handleBulkImportRunning = false;
@@ -668,7 +672,7 @@ const App: React.FC = () => {
       const scrollY = window.scrollY;
 
       if (user) {
-        await hardDeleteSubjectFromSupabase(subjectId, user.id).catch(err => {
+        await hardDeleteSubjectFromSupabase(subjectId, user.uid).catch(err => {
           console.error('Failed to delete subject from Firebase:', err);
         });
       }
@@ -685,7 +689,7 @@ const App: React.FC = () => {
             };
         });
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -732,7 +736,7 @@ const App: React.FC = () => {
             };
         });
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -743,7 +747,7 @@ const App: React.FC = () => {
   const handleRestoreLesson = async (childId: string, subjectId: string, topicId: string, lessonId: string) => {
       // Firebase: state is updated locally, sync happens via saveFullCurriculum
       if (user) {
-        await restoreLessonInSupabase(lessonId, user.id).catch(err => {
+        await restoreLessonInSupabase(lessonId, user.uid).catch(err => {
           console.error('Failed to restore lesson in Firebase:', err);
         });
       }
@@ -772,7 +776,7 @@ const App: React.FC = () => {
             };
         });
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -789,7 +793,7 @@ const App: React.FC = () => {
       }
 
       if (user) {
-        hardDeleteLessonFromSupabase(lessonId, user.id).catch(err => {
+        hardDeleteLessonFromSupabase(lessonId, user.uid).catch(err => {
           console.error('Failed to hard delete lesson in Firebase:', err);
         });
       }
@@ -822,7 +826,7 @@ const App: React.FC = () => {
         console.log(`Deleted ${originalCount - targetTopic.lessons.length} lessons`);
         
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -833,7 +837,7 @@ const App: React.FC = () => {
 
   const handleSoftDeleteLesson = (childId: string, subjectId: string, topicId: string, lessonId: string) => {
       if (user) {
-        softDeleteLessonInSupabase(lessonId, user.id).catch(err => {
+        softDeleteLessonInSupabase(lessonId, user.uid).catch(err => {
           console.error('Failed to soft delete lesson in Firebase:', err);
         });
       }
@@ -862,7 +866,7 @@ const App: React.FC = () => {
             };
         });
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -892,7 +896,7 @@ const App: React.FC = () => {
         };
       });
       if (user) {
-        saveFullCurriculum(newData, user.id).catch(console.error);
+        saveFullCurriculum(newData, user.uid).catch(console.error);
       } else {
         saveLocalData(newData);
       }
@@ -954,7 +958,7 @@ const App: React.FC = () => {
                   data={data}
                   adminAvatar={adminAvatar}
                   adminColor={adminColor}
-                  adminName={user?.user_metadata?.full_name || user?.email || 'Admin'}
+                  adminName={adminName || adminName || user?.user_metadata?.full_name || user?.email || 'Admin'}
                   onSignOut={() => signOut?.()}
                   onManageProfiles={() => setView({ type: 'MANAGE_PROFILES' })}
                   onSwitchProfile={(childId) => setView({ type: 'CHILD_DASHBOARD', childId })}
@@ -990,7 +994,7 @@ const App: React.FC = () => {
                         {adminAvatar}
                     </div>
                     <div className="text-center">
-                        <h2 className="text-2xl font-bold text-gray-800">Daddy</h2>
+                        <h2 className="text-2xl font-bold text-gray-800">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'}</h2>
                         <p className="text-gray-500 mt-2">Dashboard & Admin</p>
                     </div>
                 </button>
@@ -1037,80 +1041,9 @@ const App: React.FC = () => {
               <p className="text-gray-500 text-sm">
                 You're viewing the demo mode. Sign in with Google to save your custom curriculum data.
               </p>
-             </div>
-           )}
-
-            {/* Admin Utilities - Data Management */}
-            {user && data.length > 0 && (
-              <div className="mt-12 pt-8 border-t border-gray-200 max-w-5xl mx-auto w-full">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">Data Management</h3>
-                <div className="flex flex-wrap gap-4">
-                  <button
-                    onClick={() => exportDataToFile(data)}
-                    className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-medium hover:bg-green-200 transition flex items-center gap-2"
-                  >
-                    <DownloadCloud size={16} />
-                    Export Curriculum
-                  </button>
-                  <button
-                    onClick={() => importFileInputRef?.click()}
-                    className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium hover:bg-blue-200 transition flex items-center gap-2"
-                  >
-                    <UploadCloud size={16} />
-                    Import Curriculum
-                  </button>
-                  <button
-                    onClick={async () => {
-                      const { data: subjects, error } = await supabase?.from('subjects').select('id, name').order('name');
-                      if (error) {
-                        showStatus('Error: ' + error.message, 'error');
-                        return;
-                      }
-                      const nameCounts: Record<string, number> = {};
-                      subjects?.forEach(s => {
-                        nameCounts[s.name] = (nameCounts[s.name] || 0) + 1;
-                      });
-                      const duplicates = Object.entries(nameCounts).filter(([_, count]) => count > 1);
-                      if (duplicates.length > 0) {
-                        showStatus(`${subjects?.length || 0} subjects, ${duplicates.length} duplicates found`, 'error');
-                      } else {
-                        showStatus(`${subjects?.length || 0} subjects, no duplicates`, 'success');
-                      }
-                    }}
-                    className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg font-medium hover:bg-gray-200 transition flex items-center gap-2"
-                  >
-                    <Book size={16} />
-                    Check Subjects
-                  </button>
-                </div>
-                <input
-                  type="file"
-                  accept=".json"
-                  ref={(el) => { importFileInputRef = el; }}
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    try {
-                      const importedData = await importDataFromFile(file);
-                      if (user) {
-                        await saveFullCurriculum(importedData, user.id);
-                        showStatus('Imported and saved to Supabase!', 'success');
-                        setTimeout(() => window.location.reload(), 1500);
-                      } else {
-                        saveLocalData(importedData);
-                        showStatus('Imported to localStorage!', 'success');
-                        setTimeout(() => window.location.reload(), 1500);
-                      }
-                    } catch (err) {
-                      showStatus('Import failed: ' + (err instanceof Error ? err.message : 'Unknown error'), 'error');
-                    }
-                    e.target.value = '';
-                  }}
-                  className="hidden"
-                />
               </div>
             )}
-       </div>
+        </div>
     );
   };
 
@@ -1202,7 +1135,7 @@ const App: React.FC = () => {
             };
         });
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -1215,7 +1148,7 @@ const App: React.FC = () => {
       
       // Delete from Firebase if exists
       if (user) {
-        hardDeleteSubjectFromSupabase(topicId, user.id).catch(err => {
+        hardDeleteSubjectFromSupabase(topicId, user.uid).catch(err => {
           console.error('Failed to delete topic from Firebase:', err);
         });
       }
@@ -1243,7 +1176,7 @@ const App: React.FC = () => {
           };
         });
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -1300,7 +1233,7 @@ const App: React.FC = () => {
           };
         });
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -1342,7 +1275,7 @@ const App: React.FC = () => {
           };
         });
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -1355,7 +1288,7 @@ const App: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-white">
-            <header className={`bg-${child.themeColor}-600 text-white p-6 sticky top-0 z-10 shadow-md`}>
+            <header className={`bg-${child.themeColor}-600 text-white p-6 sticky top-0 z-50 shadow-md`}>
                 <div className="max-w-4xl mx-auto">
                     <button onClick={() => {
                         if (origin === 'HOME') {
@@ -1364,7 +1297,7 @@ const App: React.FC = () => {
                             setView({ type: 'CHILD_DASHBOARD', childId });
                         }
                     }} className="flex items-center gap-2 hover:opacity-80 mb-4 transition">
-                        <ArrowLeft size={20}/> Back to {isReadOnly ? `${child.name}'s Space` : 'Daddy Dashboard'}
+                        <ArrowLeft size={20}/> Back to {isReadOnly ? `${child.name}'s Space` : `${adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard`}
                     </button>
                     <div className="flex justify-between items-end relative">
                         <div>
@@ -1412,7 +1345,7 @@ const App: React.FC = () => {
                                             </div>
                                             <div>
                                                 <span className="font-medium block">{user.user_metadata?.full_name || user.email}</span>
-                                                <span className="text-xs text-gray-500">Daddy Dashboard</span>
+                                                <span className="text-xs text-gray-500">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard</span>
                                             </div>
                                         </button>
                                     )}
@@ -1834,7 +1767,7 @@ const App: React.FC = () => {
               for (const subject of yg.subjects) {
                 const topic = subject.topics.find(t => `${subject.id}-${t.id}` === cardId);
                 if (topic && user) {
-                  await hardDeleteSubjectFromSupabase(topic.id, user.id).catch(err => {
+                  await hardDeleteSubjectFromSupabase(topic.id, user.uid).catch(err => {
                     console.error('Failed to delete topic from Firebase:', err);
                   });
                 }
@@ -1857,7 +1790,7 @@ const App: React.FC = () => {
           }))
         }));
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         }
         return newData;
       });
@@ -1894,7 +1827,7 @@ const App: React.FC = () => {
           }))
         }));
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -1928,7 +1861,7 @@ const App: React.FC = () => {
           };
         });
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -1939,10 +1872,10 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-100 pb-20">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 p-6 sticky top-0 z-10">
+        <header className="bg-white border-b border-gray-200 p-6 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Daddy Dashboard</h1>
+              <h1 className="text-2xl font-bold text-gray-800">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard</h1>
               <p className="text-gray-500 text-sm mt-1">HK Homeschool Relocation Plan</p>
             </div>
             
@@ -1977,30 +1910,47 @@ const App: React.FC = () => {
                 {user && (
                   <>
                     <button 
-                        onClick={async () => {
-                          const result = await uploadToSupabase(user.id, data);
-                          showStatus(result.message, result.success ? 'success' : 'error');
-                        }}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition shadow-lg"
-                        title="Upload current data to Supabase"
+                        onClick={() => exportDataToFile(data, `daddy-dashboard-${new Date().toISOString().split('T')[0]}.json`)}
+                        className="bg-green-600 text-white p-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition shadow-lg"
+                        title="Export to Computer"
                     >
-                        <UploadCloud size={16} /> Upload
+                        <Download size={18} />
                     </button>
+                    <input
+                      type="file"
+                      accept=".json"
+                      id="header-import-file"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const importedData = await importDataFromFile(file);
+                          setData(importedData);
+                          await saveFullCurriculum(importedData, user.uid);
+                          showStatus('Imported and saved to Firebase!', 'success');
+                        } catch (err) {
+                          showStatus('Import failed: ' + (err instanceof Error ? err.message : 'Unknown error'), 'error');
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                    <label
+                      htmlFor="header-import-file"
+                      className="bg-blue-600 text-white p-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition shadow-lg cursor-pointer"
+                      title="Import from Computer"
+                    >
+                      <Upload size={18} />
+                    </label>
                     <button 
                         onClick={async () => {
-                          const result = await loadFromSupabase(user.id);
-                          if (result.success && result.data) {
-                            setData(result.data);
-                            saveLocalData(result.data);
-                            showStatus(result.message, 'success');
-                          } else {
-                            showStatus(result.message, 'error');
-                          }
+                          await saveFullCurriculum(data, user.uid);
+                          showStatus('Saved to Cloud!', 'success');
                         }}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition shadow-lg"
-                        title="Load data from Supabase"
+                        className="bg-purple-600 text-white p-2 rounded-lg flex items-center gap-2 hover:bg-purple-700 transition shadow-lg"
+                        title="Save to Cloud"
                     >
-                        <DownloadCloud size={16} /> Load
+                        <Cloud size={18} />
                     </button>
                     <div className="relative" ref={profileDropdownRef}>
                       <button 
@@ -2029,7 +1979,7 @@ const App: React.FC = () => {
                           >
                             {adminAvatar}
                           </div>
-                          <span className="font-medium text-gray-700 hidden sm:block">{user?.user_metadata?.full_name || user?.email}</span>
+                          <span className="font-medium text-gray-700 hidden sm:block">{adminName || user?.user_metadata?.full_name || user?.email}</span>
                           <svg className={`w-4 h-4 text-gray-500 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                           </svg>
@@ -2066,8 +2016,8 @@ const App: React.FC = () => {
                                     {adminAvatar}
                                   </div>
                                   <div>
-                                      <span className="font-medium block">{user?.user_metadata?.full_name || user?.email || 'Daddy'}</span>
-                                      <span className="text-xs text-gray-500">Daddy Dashboard</span>
+                                      <span className="font-medium block">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'}</span>
+                                      <span className="text-xs text-gray-500">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard</span>
                                   </div>
                               </button>
                               {data.map(c => (
@@ -2113,306 +2063,6 @@ const App: React.FC = () => {
                     </div>
                   </>
                 )}
-                <button
-                  onClick={() => {
-                    if (confirm('Clear all local data? This cannot be undone.')) {
-                      localStorage.removeItem('daddy_dashboard_data');
-                      localStorage.removeItem('admin_avatar');
-                      localStorage.removeItem('admin_color');
-                      window.location.reload();
-                    }
-                  }}
-                  className="text-red-500 hover:text-red-700 text-sm px-2 py-1"
-                  title="Clear local storage"
-                >
-                  🗑️ Clear Data
-                </button>
-                {user && (
-                  <>
-                    <button
-                      onClick={async () => {
-                        if (!confirm('Delete duplicate children from Supabase? Only one per name will be kept.')) return;
-                        
-                        showStatus('Finding duplicates...', 'info');
-                        try {
-                          const { data: children } = await supabase
-                            .from('children')
-                            .select('id, name')
-                            .eq('user_id', user.id);
-                          
-                          if (!children || children.length === 0) {
-                            showStatus('No children found', 'error');
-                            return;
-                          }
-                          
-                          const nameCount: Record<string, string[]> = {};
-                          children.forEach(c => {
-                            if (!nameCount[c.name]) nameCount[c.name] = [];
-                            nameCount[c.name].push(c.id);
-                          });
-                          
-                          const duplicates: string[] = [];
-                          Object.values(nameCount).forEach(ids => {
-                            if (ids.length > 1) duplicates.push(...ids.slice(1));
-                          });
-                          
-                          if (duplicates.length === 0) {
-                            showStatus('No duplicates found!', 'success');
-                            return;
-                          }
-                          
-                          if (!confirm(`Found ${duplicates.length} duplicates. Delete them?`)) return;
-                          
-                          showStatus('Deleting duplicates...', 'info');
-                          for (const childId of duplicates) {
-                            const { data: ygs } = await supabase.from('year_groups').select('id').eq('child_id', childId);
-                            if (ygs) {
-                              const ygIds = ygs.map(y => y.id);
-                              const { data: subs } = await supabase.from('subjects').select('id').in('year_group_id', ygIds);
-                              if (subs) {
-                                const subIds = subs.map(s => s.id);
-                                const { data: tops } = await supabase.from('topics').select('id').in('subject_id', subIds);
-                                if (tops) await supabase.from('lessons').delete().in('topic_id', tops.map(t => t.id));
-                                await supabase.from('topics').delete().in('subject_id', subIds);
-                              }
-                              await supabase.from('subjects').delete().in('year_group_id', ygIds);
-                            }
-                            await supabase.from('year_groups').delete().eq('child_id', childId);
-                          }
-                          await supabase.from('children').delete().in('id', duplicates);
-                          
-                          showStatus(`Deleted ${duplicates.length} duplicates! Reloading...`, 'success');
-                          setTimeout(() => window.location.reload(), 1500);
-                        } catch (e) {
-                          showStatus('Error: ' + e, 'error');
-                        }
-                      }}
-                      className="text-amber-600 hover:text-amber-800 text-sm px-2 py-1"
-                      title="Delete duplicate children"
-                    >
-                      🔄 Deduplicate
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (!confirm('DELETE ALL DATA FROM SUPABASE? This cannot be undone!')) return;
-                        if (!confirm('Are you absolutely sure?')) return;
-                        
-                        showStatus('Deleting all Supabase data...', 'info');
-                        try {
-                          await supabase.from('lessons').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                          await supabase.from('topics').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                          await supabase.from('subjects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                          await supabase.from('year_groups').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                          await supabase.from('children').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                          showStatus('Supabase wiped! Refresh page.', 'success');
-                          setTimeout(() => window.location.reload(), 1500);
-                        } catch (e) {
-                          showStatus('Error: ' + e, 'error');
-                        }
-                      }}
-                      className="text-red-600 hover:text-red-800 text-sm px-2 py-1"
-                      title="Delete all Supabase data"
-                    >
-                      💥 Nuke Supabase
-                    </button>
-                    <button
-                      onClick={() => {
-                        let removed = 0;
-                        setData(prev => {
-                          const newData = prev.map(child => ({
-                            ...child,
-                            yearGroups: child.yearGroups.map(yg => ({
-                              ...yg,
-                              subjects: yg.subjects.map(sub => ({
-                                ...sub,
-                                topics: sub.topics.map(topic => {
-                                  const urlCount: Record<string, string[]> = {};
-                                  topic.lessons.forEach(l => {
-                                    if (l.videoUrl && !l.deleted) {
-                                      if (!urlCount[l.videoUrl]) urlCount[l.videoUrl] = [];
-                                      urlCount[l.videoUrl].push(l.id);
-                                    }
-                                  });
-                                  
-                                  Object.values(urlCount).forEach(ids => {
-                                    if (ids.length > 1) {
-                                      removed += ids.length - 1;
-                                    }
-                                  });
-                                  
-                                  return {
-                                    ...topic,
-                                    lessons: topic.lessons.filter(l => {
-                                      if (l.deleted) return false;
-                                      const url = l.videoUrl;
-                                      if (!url) return true;
-                                      const ids = urlCount[url];
-                                      if (!ids || ids.length === 1) return true;
-                                      const keep = ids[0] === l.id;
-                                      if (!keep) removed++;
-                                      return keep;
-                                    })
-                                  };
-                                })
-                              }))
-                            }))
-                          }));
-                          if (user) {
-                            saveFullCurriculum(newData, user.id).catch(console.error);
-                          } else {
-                            saveLocalData(newData);
-                          }
-                          return newData;
-                        });
-                        alert(`Removed ${removed} duplicate lessons!`);
-                      }}
-                      className="text-amber-600 hover:text-amber-800 text-sm px-2 py-1"
-                      title="Remove duplicate lessons by video URL"
-                    >
-                      🎬 Dedupe Lessons
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (!user) {
-                          alert('Sign in first');
-                          return;
-                        }
-                        if (!confirm('Clean up ALL duplicate rows in Supabase? This cannot be undone.')) return;
-                        
-                        showStatus('Cleaning duplicates...', 'info');
-                        try {
-                          // Clean lessons
-                          const { data: lessons } = await supabase.from('lessons').select('id, topic_id, video_url, title');
-                          if (lessons) {
-                            const urlCount: Record<string, string[]> = {};
-                            lessons.forEach(l => {
-                              if (l.video_url) {
-                                if (!urlCount[l.video_url]) urlCount[l.video_url] = [];
-                                urlCount[l.video_url].push(l.id);
-                              }
-                            });
-                            const toDelete: string[] = [];
-                            Object.values(urlCount).forEach(ids => {
-                              if (ids.length > 1) toDelete.push(...ids.slice(1));
-                            });
-                            if (toDelete.length > 0) {
-                              await supabase.from('lessons').delete().in('id', toDelete);
-                              console.log('Deleted', toDelete.length, 'duplicate lessons');
-                            }
-                          }
-                          
-                          // Clean topics
-                          const { data: topics } = await supabase.from('topics').select('id, subject_id, name');
-                          if (topics) {
-                            const nameCount: Record<string, string[]> = {};
-                            topics.forEach(t => {
-                              const key = `${t.subject_id}::${t.name}`;
-                              if (!nameCount[key]) nameCount[key] = [];
-                              nameCount[key].push(t.id);
-                            });
-                            const toDelete: string[] = [];
-                            Object.values(nameCount).forEach(ids => {
-                              if (ids.length > 1) toDelete.push(...ids.slice(1));
-                            });
-                            if (toDelete.length > 0) {
-                              await supabase.from('topics').delete().in('id', toDelete);
-                              console.log('Deleted', toDelete.length, 'duplicate topics');
-                            }
-                          }
-                          
-                          // Clean subjects
-                          const { data: subjects } = await supabase.from('subjects').select('id, year_group_id, name, category');
-                          if (subjects) {
-                            const nameCount: Record<string, string[]> = {};
-                            subjects.forEach(s => {
-                              const key = `${s.year_group_id}::${s.name}::${s.category}`;
-                              if (!nameCount[key]) nameCount[key] = [];
-                              nameCount[key].push(s.id);
-                            });
-                            const toDelete: string[] = [];
-                            Object.values(nameCount).forEach(ids => {
-                              if (ids.length > 1) toDelete.push(...ids.slice(1));
-                            });
-                            if (toDelete.length > 0) {
-                              await supabase.from('subjects').delete().in('id', toDelete);
-                              console.log('Deleted', toDelete.length, 'duplicate subjects');
-                            }
-                          }
-                          
-                          // Clean year_groups
-                          const { data: ygs } = await supabase.from('year_groups').select('id, child_id, name');
-                          if (ygs) {
-                            const nameCount: Record<string, string[]> = {};
-                            ygs.forEach(y => {
-                              const key = `${y.child_id}::${y.name}`;
-                              if (!nameCount[key]) nameCount[key] = [];
-                              nameCount[key].push(y.id);
-                            });
-                            const toDelete: string[] = [];
-                            Object.values(nameCount).forEach(ids => {
-                              if (ids.length > 1) toDelete.push(...ids.slice(1));
-                            });
-                            if (toDelete.length > 0) {
-                              await supabase.from('year_groups').delete().in('id', toDelete);
-                              console.log('Deleted', toDelete.length, 'duplicate year_groups');
-                            }
-                          }
-                          
-                          showStatus('Duplicates cleaned! Reloading...', 'success');
-                          setTimeout(() => window.location.reload(), 1500);
-                        } catch (e) {
-                          showStatus('Error: ' + e, 'error');
-                        }
-                      }}
-                      className="text-red-600 hover:text-red-800 text-sm px-2 py-1"
-                      title="Clean up duplicate rows in Supabase"
-                    >
-                      🧹 Clean DB
-                    </button>
-                    
-                    {/* Export/Import Section */}
-                    <button
-                      onClick={() => exportDataToFile(data, `daddy-dashboard-${new Date().toISOString().split('T')[0]}.json`)}
-                      className="text-green-600 hover:text-green-800 text-sm px-2 py-1"
-                      title="Export curriculum to JSON file"
-                    >
-                      📤 Export
-                    </button>
-                    
-                    <input
-                      type="file"
-                      accept=".json"
-                      id="import-file"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        try {
-                          const importedData = await importDataFromFile(file);
-                          setData(importedData);
-                          if (user) {
-                            saveFullCurriculum(importedData, user.id)
-                              .then(() => showStatus('Import successful!', 'success'))
-                              .catch(err => console.error(err));
-                          } else {
-                            saveLocalData(importedData);
-                            showStatus('Import successful!', 'success');
-                          }
-                        } catch (err) {
-                          showStatus('Import failed: ' + err, 'error');
-                        }
-                        e.target.value = ''; // Reset
-                      }}
-                    />
-                    <label
-                      htmlFor="import-file"
-                      className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 cursor-pointer"
-                      title="Import curriculum from JSON file"
-                    >
-                      📥 Import
-                    </label>
-                  </>
-                )}
               </div>
             </div>
           </header>
@@ -2455,7 +2105,7 @@ const App: React.FC = () => {
                                       return (
                                           <div key={sub.id} className="p-3 rounded-xl border border-gray-100 shadow-sm bg-white hover:shadow-md transition cursor-default">
                                              <div className="flex items-center gap-2 mb-2">
-                                                <div className={`w-2 h-2 rounded-full ${sub.color.includes('blue') ? 'bg-blue-500' : sub.color.includes('green') ? 'bg-green-500' : 'bg-amber-500'}`}></div>
+                                                 <div className={`w-2 h-2 rounded-full ${child.themeColor.includes('blue') ? 'bg-blue-500' : child.themeColor.includes('green') ? 'bg-green-500' : child.themeColor.includes('rose') ? 'bg-rose-500' : child.themeColor.includes('indigo') ? 'bg-indigo-500' : 'bg-amber-500'}`}></div>
                                                 <div className="text-xs font-bold text-gray-700 truncate w-full">{sub.category}</div>
                                              </div>
                                              <div className="text-[11px] text-gray-500 truncate mb-3 leading-tight min-h-[1.5em]">
@@ -2465,7 +2115,7 @@ const App: React.FC = () => {
                                                 current={activeCompleted || 1} 
                                                 total={activeTotal || 5} 
                                                 heightClass="h-1.5"
-                                                colorClass={sub.color.includes('blue') ? 'bg-blue-500' : sub.color.includes('green') ? 'bg-green-500' : 'bg-amber-500'}
+                                                colorClass={child.themeColor.includes('blue') ? 'bg-blue-500' : child.themeColor.includes('green') ? 'bg-green-500' : child.themeColor.includes('rose') ? 'bg-rose-500' : child.themeColor.includes('indigo') ? 'bg-indigo-500' : 'bg-amber-500'}
                                              />
                                           </div>
                                       );
@@ -2869,7 +2519,7 @@ const App: React.FC = () => {
                                     </div>
                                     <div>
                                         <span className="font-medium block">{user.user_metadata?.full_name || user.email}</span>
-                                        <span className="text-xs text-gray-500">Daddy Dashboard</span>
+                                        <span className="text-xs text-gray-500">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard</span>
                                     </div>
                                 </button>
                             )}
@@ -3027,6 +2677,7 @@ const App: React.FC = () => {
     
     // Admin edit states
     const [adminDob, setAdminDob] = useState(() => localStorage.getItem('admin_dob') || '');
+    const [newAdminName, setNewAdminName] = useState(() => localStorage.getItem('admin_name') || '');
     const [newAdminAvatar, setNewAdminAvatar] = useState(adminAvatar);
     const [newAdminColor, setNewAdminColor] = useState(() => localStorage.getItem('admin_color') || 'blue');
     const [adminAvatarPage, setAdminAvatarPage] = useState(0);
@@ -3062,7 +2713,10 @@ const App: React.FC = () => {
     const handleSaveAdmin = () => {
       localStorage.setItem('admin_dob', adminDob);
       localStorage.setItem('admin_color', newAdminColor);
+      localStorage.setItem('admin_name', newAdminName);
       setAdminAvatar(newAdminAvatar);
+      setAdminColor(newAdminColor);
+      setAdminName(newAdminName);
       localStorage.setItem('admin_avatar', newAdminAvatar);
       setEditingAdmin(false);
     };
@@ -3082,7 +2736,7 @@ const App: React.FC = () => {
           };
         });
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -3127,7 +2781,7 @@ const App: React.FC = () => {
       setData(prev => {
         const newData = [...prev, newChild];
         if (user) {
-          saveFullCurriculum(newData, user.id).catch(console.error);
+          saveFullCurriculum(newData, user.uid).catch(console.error);
         } else {
           saveLocalData(newData);
         }
@@ -3186,7 +2840,7 @@ const App: React.FC = () => {
                     {adminAvatar}
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800">{user?.user_metadata?.full_name || user?.email || 'Admin'}</h3>
+                    <h3 className="font-bold text-gray-800">{adminName || adminName || user?.user_metadata?.full_name || user?.email || 'Admin'}</h3>
                     <p className="text-sm text-gray-500">Account Administrator</p>
                   </div>
                 </div>
@@ -3196,6 +2850,7 @@ const App: React.FC = () => {
                     setNewAdminAvatar(adminAvatar);
                     setNewAdminColor(localStorage.getItem('admin_color') || 'blue');
                     setAdminDob(localStorage.getItem('admin_dob') || '');
+                    setNewAdminName(localStorage.getItem('admin_name') || '');
                   }}
                   className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition"
                 >
@@ -3264,6 +2919,29 @@ const App: React.FC = () => {
                           />
                         ))}
                       </div>
+                    </div>
+
+                    {/* Name */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
+                      <input
+                        type="text"
+                        value={newAdminName}
+                        onChange={(e) => setNewAdminName(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="Enter your name"
+                      />
+                    </div>
+
+                    {/* Email (read-only) */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Sign-in Email</label>
+                      <input
+                        type="text"
+                        value={user?.email || ''}
+                        readOnly
+                        className="w-full p-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-500"
+                      />
                     </div>
 
                     {/* DOB */}
@@ -3832,14 +3510,14 @@ const ProfileSwitcher: React.FC<{
             {adminAvatar}
           </div>
         )}
-        <span className="font-medium text-gray-700 hidden sm:block">{user?.user_metadata?.full_name || user?.email}</span>
+        <span className="font-medium text-gray-700 hidden sm:block">{adminName || user?.user_metadata?.full_name || user?.email}</span>
         <svg className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-72 bg-gray-900 text-white rounded-lg shadow-2xl py-2 z-50">
+        <div className="absolute right-0 top-full mt-2 w-72 bg-white text-gray-800 rounded-lg shadow-2xl py-2 z-50 border border-gray-200">
           {/* Profiles Section */}
           <div className="px-2 pb-2">
             {/* Admin Profile */}
@@ -3849,7 +3527,7 @@ const ProfileSwitcher: React.FC<{
                   onGoToAdmin();
                   setIsOpen(false);
                 }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-800 transition text-left"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition text-left"
               >
                 <div 
                   className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
@@ -3875,14 +3553,14 @@ const ProfileSwitcher: React.FC<{
                 </div>
                 <div>
                   <span className="font-medium">{adminName || 'Daddy'}</span>
-                  <span className="block text-xs text-gray-400">Admin</span>
+                  <span className="block text-xs text-gray-500">Admin</span>
                 </div>
               </button>
             )}
             
             {/* Divider if admin is shown */}
             {onGoToAdmin && data.length > 0 && (
-              <div className="border-t border-gray-700 my-2"></div>
+              <div className="border-t border-gray-100 my-2"></div>
             )}
             
             {data.map(child => (
@@ -3892,7 +3570,7 @@ const ProfileSwitcher: React.FC<{
                   onSwitchProfile(child.id);
                   setIsOpen(false);
                 }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-800 transition text-left"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition text-left"
               >
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl`} style={{ backgroundColor: child.themeColor === 'indigo' ? '#3730a3' : child.themeColor === 'rose' ? '#be123c' : '#065f46' }}>
                   {child.avatar || '👤'}
@@ -3903,7 +3581,7 @@ const ProfileSwitcher: React.FC<{
           </div>
 
           {/* Divider */}
-          <div className="border-t border-gray-700 my-2"></div>
+          <div className="border-t border-gray-100 my-2"></div>
 
           {/* Menu Options */}
           <div className="px-2">
@@ -3912,9 +3590,9 @@ const ProfileSwitcher: React.FC<{
                 onManageProfiles();
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-800 transition text-left"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition text-left"
             >
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
               <span>Manage Profiles</span>
