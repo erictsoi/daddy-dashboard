@@ -109,12 +109,22 @@ export async function fetchPlaylistVideos(playlistUrl: string, apiKey?: string):
 
   const playlistId = playlistIdMatch[1];
 
+  // Helper to filter out non-video entries
+  const filterNonVideos = (videos: YouTubeVideo[]): YouTubeVideo[] => {
+    return videos.filter(v => {
+      const title = (v.title || '').toLowerCase().trim();
+      return !title.includes('play all') && 
+             !title.includes('private video') && 
+             !title.includes('deleted video');
+    });
+  };
+
   const effectiveApiKey = apiKey || getYouTubeApiKey();
   if (effectiveApiKey) {
     try {
       const videos = await fetchPlaylistVideosFromApi(playlistId, effectiveApiKey);
       if (videos.length > 0) {
-        return videos;
+        return filterNonVideos(videos);
       }
     } catch (error) {
       console.warn('API fetch failed, falling back to scraping:', error);
@@ -123,7 +133,7 @@ export async function fetchPlaylistVideos(playlistUrl: string, apiKey?: string):
 
   try {
     const videos = await scrapePlaylistFromBrowser(playlistId);
-    return videos;
+    return filterNonVideos(videos);
   } catch (error) {
     console.error('All playlist fetching methods failed:', error);
     if (!effectiveApiKey) {
