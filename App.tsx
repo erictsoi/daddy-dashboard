@@ -3,7 +3,7 @@ import { ViewState, ChildProfile, YearGroup, Subject, Topic, Lesson, ScheduleBlo
 import { INITIAL_DATA } from './constants';
 import { AuthProvider, useAuth } from './src/lib/AuthContext';
 import { auth as firebaseAuth, googleProvider, signInWithGoogle, logOut as firebaseLogOut } from './src/lib/firebase'
-import { fetchChildren, fetchChildByEmail, getLocalData, saveLocalData, saveFullCurriculum, uploadToSupabase, loadFromSupabase, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, migrateChildToTopicStructure, restoreLessonInSupabase, hardDeleteLessonFromSupabase, softDeleteLessonInSupabase, hardDeleteSubjectFromSupabase } from './src/lib/dataService';
+import { fetchChildren, fetchChildByEmail, fetchChildById, getLocalData, saveLocalData, saveFullCurriculum, uploadToSupabase, loadFromSupabase, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, migrateChildToTopicStructure, restoreLessonInSupabase, hardDeleteLessonFromSupabase, softDeleteLessonInSupabase, hardDeleteSubjectFromSupabase } from './src/lib/dataService';
 import { usePersistentTimer, formatTime, formatTimeReadable } from './src/lib/useTimer';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
@@ -190,6 +190,9 @@ const App: React.FC = () => {
   const [parentEmailInput, setParentEmailInput] = useState(() => {
     return localStorage.getItem('parent_email') || '';
   });
+  const [parentUid, setParentUid] = useState<string>(() => {
+    return localStorage.getItem('parent_uid') || '';
+  });
   
   // Firebase status indicator
   const [supabaseStatus, setSupabaseStatus] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
@@ -254,6 +257,12 @@ const App: React.FC = () => {
               console.log('Found child profile:', childResult.child[0].name);
               setChildProfile(childResult.child[0]);
               setData(childResult.child);
+              
+              // Store parent UID for profile switching
+              if (childResult.parentUid) {
+                setParentUid(childResult.parentUid);
+                localStorage.setItem('parent_uid', childResult.parentUid);
+              }
               
               // Update allChildren for profile switching
               if (childResult.allChildren.length > 1) {
@@ -2645,7 +2654,20 @@ const App: React.FC = () => {
                             {allChildren.length > 0 && allChildren.filter(c => c.id !== child?.id).map(c => (
                                 <button
                                     key={c.id}
-                                    onClick={() => { setView({ type: 'CHILD_DASHBOARD', childId: c.id }); setShowProfileDropdown(false); }}
+                                    onClick={async () => {
+                                      // Fetch sibling's full data if we have parent UID
+                                      if (parentUid) {
+                                        const siblingData = await fetchChildById(parentUid, c.id);
+                                        if (siblingData) {
+                                          const migratedSibling = migrateChildToTopicStructure(siblingData);
+                                          setData([migratedSibling]);
+                                          setChildProfile(migratedSibling);
+                                          localStorage.setItem('child_profile', JSON.stringify(migratedSibling));
+                                        }
+                                      }
+                                      setView({ type: 'CHILD_DASHBOARD', childId: c.id });
+                                      setShowProfileDropdown(false);
+                                    }}
                                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
                                 >
                                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-${c.themeColor}-100`}>

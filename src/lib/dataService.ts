@@ -106,6 +106,28 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
   return children
 }
 
+export const fetchChildById = async (parentUid: string, childId: string): Promise<ChildProfile | null> => {
+  console.log('fetchChildById: loading child', childId, 'from parent', parentUid)
+  
+  try {
+    const childRef = doc(db, 'users', parentUid, 'children', childId)
+    const childSnap = await getDoc(childRef)
+    
+    if (!childSnap.exists()) {
+      console.log('fetchChildById: child not found')
+      return null
+    }
+    
+    return {
+      ...childSnap.data(),
+      id: childSnap.id
+    } as ChildProfile
+  } catch (error) {
+    console.error('fetchChildById error:', error)
+    return null
+  }
+}
+
 export const fetchChildByEmail = async (email: string): Promise<{ child: ChildProfile[]; allChildren: ChildProfile[]; parentUid: string }> => {
   console.log('fetchChildByEmail: looking for email', email)
   
