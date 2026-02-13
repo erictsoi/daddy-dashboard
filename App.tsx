@@ -320,14 +320,18 @@ const App: React.FC = () => {
 
   // Update allChildren list when data changes (for profile switching)
   useEffect(() => {
-    const childrenList = data.map(c => ({
-      id: c.id,
-      name: c.name,
-      avatar: c.avatar,
-      themeColor: c.themeColor
-    }));
-    setAllChildren(childrenList);
-    localStorage.setItem('all_children', JSON.stringify(childrenList));
+    // Only update allChildren if we have more than 1 child (parent login)
+    // or if allChildren is empty
+    if (data.length > 1 || allChildren.length === 0) {
+      const childrenList = data.map(c => ({
+        id: c.id,
+        name: c.name,
+        avatar: c.avatar,
+        themeColor: c.themeColor
+      }));
+      setAllChildren(childrenList);
+      localStorage.setItem('all_children', JSON.stringify(childrenList));
+    }
   }, [data]);
 
 
