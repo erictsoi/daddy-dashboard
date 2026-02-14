@@ -19,6 +19,13 @@
 - ✅ Dynamic grid columns based on card count (1-4)
 - ✅ Admin dropdown hidden for kids, Sign Out shown
 
+### Schedule Generation
+- Each child can start their day independently by clicking "Let's Go!"
+- Schedule is randomly generated for each child based on their curriculum
+- **Breaks and lunch are synchronized** - both kids have Refresh Breaks and Lunch at the same times
+- This allows siblings to take breaks together even if they started at different times
+- The schedule aligns breaks across all children in the household
+
 ### Key Files Modified
 - `components/EditProfile.tsx` - Added googleEmail field
 - `src/lib/dataService.ts` - Added fetchChildById, updated fetchChildByEmail
