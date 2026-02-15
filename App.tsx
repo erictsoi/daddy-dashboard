@@ -601,6 +601,7 @@ const App: React.FC = () => {
  
   // --- Curriculum Actions ---
   const handleCompleteLesson = (childId: string, subjectId: string, topicId: string, lessonId: string, timeSpentSeconds: number) => {
+    console.log('handleCompleteLesson called:', { childId, subjectId, topicId, lessonId });
     setData(prev => {
       const newData = prev.map(child => {
         if (child.id !== childId) return child;
@@ -614,10 +615,13 @@ const App: React.FC = () => {
                 ...sub,
                 topics: sub.topics.map(topic => {
                   if (topic.id !== topicId) return topic;
-                  return {
+                  console.log('Topic found, lessons before:', topic.lessons.map(l => ({ id: l.id, completed: l.completed })));
+                  const updated = {
                     ...topic,
                     lessons: topic.lessons.map(l => l.id === lessonId ? { ...l, completed: true, timeSpentSeconds } : l)
                   };
+                  console.log('Lessons after:', updated.lessons.map(l => ({ id: l.id, completed: l.completed })));
+                  return updated;
                 })
               };
             })
