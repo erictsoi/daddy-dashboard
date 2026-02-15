@@ -617,16 +617,22 @@ const App: React.FC = () => {
                   if (topic.id !== topicId) return topic;
                   const completedCountBefore = topic.lessons.filter(l => l.completed).length;
                   console.log('Topic found, lessons before:', completedCountBefore, 'completed out of', topic.lessons.length);
-                  const updated = {
-                    ...topic,
-                    lessons: topic.lessons.map(l => {
-                      const isTarget = l.id === lessonId;
-                      console.log('Mapping lesson:', l.id.substring(0,20), 'isTarget=', isTarget, 'was=', l.completed);
-                      return isTarget ? { ...l, completed: true, timeSpentSeconds } : l;
-                    })
-                  };
-                  const completedCountAfter = updated.lessons.filter(l => l.completed).length;
-                  console.log('Lessons after:', completedCountAfter, 'completed out of', updated.lessons.length);
+                  console.log('Target lessonId:', lessonId);
+                  
+                  const updatedLessons = topic.lessons.map(l => {
+                    const isTarget = l.id === lessonId;
+                    console.log('Mapping:', l.id.substring(0,25), 'MATCH=', isTarget);
+                    if (isTarget) {
+                      console.log('>>> MARKING COMPLETE:', l.id);
+                      return { ...l, completed: true, timeSpentSeconds };
+                    }
+                    return l;
+                  });
+                  
+                  const completedCountAfter = updatedLessons.filter(l => l.completed).length;
+                  console.log('Lessons after:', completedCountAfter, 'completed - should be', completedCountBefore + 1);
+                  
+                  const updated = { ...topic, lessons: updatedLessons };
                   return updated;
                 })
               };
