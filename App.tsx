@@ -749,9 +749,10 @@ const App: React.FC = () => {
         return; // Skip this row
       }
 
-      // Add new lesson
+      // Add new lesson - include videoPosition to ensure unique IDs
+      const lessonIndex = row.videoPosition || topic.lessons.length + 1;
       const newLesson: Lesson = {
-        id: `${topic.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
+        id: `${topic.id}-${lessonIndex}-${Date.now()}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 50),
         title: lessonTitle,
         durationMinutes: 45,
         completed: false,
