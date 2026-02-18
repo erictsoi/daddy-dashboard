@@ -7,6 +7,261 @@
      4. Bump version in package.json
      -->
 
+## 2026-02-18 Tab Shell & Navigation
+
+### Tab Navigation
+
+Added fixed top navigation bar matching v6 reference:
+
+```tsx
+const tabs = [
+  { type: 'LANDING', label: '🏠 Landing' },
+  { type: 'RETURNING', label: '👤 Returning' },
+  { type: 'ADMIN', label: '👨 Admin' },
+  { type: 'KIDSDASH', label: '🧒 Kids' },
+  { type: 'LESSON', label: '🎬 Lesson' },
+];
+
+// In render:
+<div style={{ position: "fixed", top: 0, zIndex: 9999, background: `${DS.card}F5`, backdropFilter: "blur(12px)", borderBottom: DS.border }}>
+  {tabs.map(tab => (
+    <Shadow offset={isActive ? 2 : 0} radius={DS.radius.pill}>
+      <button>{tab.label}</button>
+    </Shadow>
+  ))}
+</div>
+```
+
+### Navigation Comments
+
+App.tsx now has section markers for easy navigation:
+
+```tsx
+// ============================================
+// RETURNING VIEW (lines 1032-1255)
+// ============================================
+
+// ============================================
+// SUBJECT DETAIL VIEW (lines 1257-1899)
+// ============================================
+
+// ============================================
+// ADMIN VIEW (lines 1902-2653)
+// ============================================
+
+// ============================================
+// KIDSDASH VIEW (lines 2655-2897)
+// ============================================
+
+// ============================================
+// MANAGE PROFILES VIEW (lines 2899-3539)
+// ============================================
+
+// ============================================
+// MAIN RENDER SWITCH (lines 3541-3636)
+// ============================================
+```
+
+---
+
+## 2026-02-18 View Naming Convention
+
+### Updated View Names
+
+To match v6 reference (`daddy_dashboard_v6_fixed.jsx`):
+
+| Old Name | New Name | Description |
+|----------|----------|-------------|
+| `HOME` | `ADMIN` | Daddy Dashboard (admin) |
+| `CHILD_DASHBOARD` | `KIDSDASH` | Kid's personal view |
+| `LESSON_PLAYER` | `LESSON` | Video player with timer |
+| - | `RETURNING` | New - Returning user welcome |
+
+### ViewState Type
+
+```typescript
+export type ViewOrigin = 'ADMIN' | 'KIDSDASH';
+
+export type ViewState = 
+  | { type: 'LANDING' }
+  | { type: 'RETURNING' }
+  | { type: 'ADMIN' }
+  | { type: 'CURRICULUM_BUILDER' }
+  | { type: 'KIDSDASH'; childId: string }
+  | { type: 'SUBJECT_DETAIL'; childId: string; subjectId: string; origin: ViewOrigin }
+  | { type: 'LESSON'; childId: string; subjectId: string; topicId: string; lessonId: string; origin: ViewOrigin }
+  | { type: 'MANAGE_PROFILES' };
+```
+
+### Component Names
+
+```typescript
+// App.tsx
+const ReturningView = () => { ... };  // New
+const LandingView = () => { ... };    // Existing
+const AdminView = () => { ... };      // Was DaddyDashboardView
+const KidsDash = ({ childId }) => { ... };  // Was ChildDashboard
+const SubjectDetail = (...) => { ... };      // Was same
+const LessonPlayer = (...) => { ... };       // Was same
+```
+
+---
+
+## 2026-02-18 UI v6 Design System
+
+### Overview
+
+The v6 design system brings a cohesive visual identity to Daddy Dashboard:
+- Cream background (#FAF6F0)
+- Dark ink color (#1A1A2E)
+- Flat shadow effects (solid offset shadows)
+- Custom typography (Baloo 2, Nunito)
+- Consistent border style
+
+### Design System Components
+
+**File:** `components/design-system.tsx`
+
+```typescript
+// Design Constants
+DS = {
+  cream:    "#FAF6F0",
+  card:     "#FFFFFF",
+  ink:      "#1A1A2E",
+  inkSoft:  "#6B6580",
+  inkFade:  "#B0A8C0",
+  border:   "2.5px solid #1A1A2E",
+  radius:   { sm:10, md:16, lg:22, pill:100 },
+}
+
+// Theme Colors
+THEME_COLORS = {
+  blue:   { main: "#2B8ED4", tint: "#EAF4FC" },
+  indigo: { main: "#6366F1", tint: "#EEF2FF" },
+  rose:   { main: "#F43F5E", tint: "#FFE4E6" },
+  emerald:{ main: "#10B981", tint: "#D1FAE5" },
+  amber:  { main: "#F59E0B", tint: "#FEF3C7" },
+  purple: { main: "#8B5CF6", tint: "#EDE9FE" },
+  pink:   { main: "#EC4899", tint: "#FCE7F3" },
+  teal:   { main: "#14B8A6", tint: "#CCFBF1" },
+}
+```
+
+### Typography Classes
+
+```css
+.b    { font-family: 'Baloo 2', cursive; }
+.n    { font-family: 'Nunito', sans-serif; }
+.ns   { font-family: 'Nunito Sans', sans-serif; }
+
+.t-hero  { font-size: 56px; font-weight: 800; }
+.t-h1    { font-size: 32px; font-weight: 800; }
+.t-h2    { font-size: 22px; font-weight: 800; }
+.t-h3    { font-size: 16px; font-weight: 800; }
+.t-body  { font-size: 14px; font-weight: 500; }
+.t-small { font-size: 12px; font-weight: 600; }
+.t-label { font-size: 10px; font-weight: 800; text-transform: uppercase; }
+```
+
+### Animations
+
+```css
+.float  { animation: float  3s   ease-in-out infinite; }
+.blink  { animation: blink  2s   ease-in-out infinite; }
+.pop    { animation: pop    .3s  cubic-bezier(.34,1.56,.64,1) forwards; }
+.slide  { animation: slide  .28s ease-out forwards; }
+.fadeUp { animation: fadeUp .32s ease-out forwards; }
+.wiggle { animation: wiggle .4s ease-in-out infinite; }
+
+/* Staggered card animations */
+.card-0  { animation: fadeUp .28s .00s ease-out both; }
+.card-1  { animation: fadeUp .28s .03s ease-out both; }
+/* ... through card-7 */
+```
+
+### Components
+
+| Component | Purpose |
+|-----------|---------|
+| `Shadow` | Flat shadow wrapper |
+| `FlatShadow` | Simpler shadow variant |
+| `Tag` | Pill-shaped labels |
+| `Chip` | Icon + value + label |
+| `SectionHead` | Section headers with decorative line |
+| `Button` | Primary/secondary/ghost/danger variants |
+| `IconButton` | Circular icon buttons |
+| `Card` | Content container |
+| `MiniCard` | Grid card for subjects/topics |
+| `Input` | Styled text input |
+| `ProgressBar2` | Custom progress bar |
+| `Avatar` | Profile avatars |
+| `DropdownMenu` | Dropdown container |
+| `DropdownItem` | Dropdown menu items |
+| `Texture` | Dot pattern background |
+| `Blobs` | Color blob decorations |
+| `Deco` | Decorative emojis |
+
+### Usage
+
+```tsx
+import { GlobalStyles, getThemeColor, DS, Card, Button, 
+  Avatar, DropdownMenu, DropdownItem, ProgressBar2,
+  MiniCard } from './components/design-system';
+
+// Use in component
+const MyComponent = () => {
+  const colors = getThemeColor('indigo');
+  
+  return (
+    <>
+      <GlobalStyles />
+      <div style={{ background: DS.cream }}>
+        <Card style={{ padding: 24 }}>
+          <h2 className="b t-h2" style={{ color: DS.ink }}>
+            Hello World
+          </h2>
+          <ProgressBar2 current={3} total={10} color={colors.main} />
+        </Card>
+      </div>
+    </>
+  );
+}
+```
+
+### Migration Strategy
+
+**Phase 1: Design System Available** ✅
+- Created all components in `design-system.tsx`
+- Imported into App.tsx
+- Views continue working with Tailwind
+
+**Phase 2: Gradual View Updates** (In Progress)
+- Update header/nav areas first
+- Update card components
+- Update typography classes
+- Avoid complex nested views (JSX complexity)
+
+**Phase 3: Full Migration** (Future)
+- Replace all Tailwind with v6 styles
+- Remove Tailwind dependency
+- Consistent visual identity
+
+### Key Files Modified
+
+| File | Purpose |
+|------|---------|
+| `components/design-system.tsx` | New design system components |
+| `App.tsx` | Added imports for design system |
+
+### Fonts
+
+Google Fonts loaded via GlobalStyles:
+- **Baloo 2** - Headlines (cursive)
+- **Nunito** - Body text (700, 800, 900 weights)
+- **Nunito Sans** - UI elements (400-700 weights)
+
+---
+
 ## 2026-02-14 Child Sign-In Updates
 
 ### Completed

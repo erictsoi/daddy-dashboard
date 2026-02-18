@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
             manualChunks: {
               vendor: ['react', 'react-dom'],
               lucide: ['lucide-react'],
-              supabase: ['@supabase/ssr', '@supabase/supabase-js'],
+              firebase: ['firebase/app', 'firebase/auth', 'firebase/database'],
             },
           },
         },

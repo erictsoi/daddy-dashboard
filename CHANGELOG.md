@@ -8,6 +8,90 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-18 - Version 3.4.0 (Refactor & Cleanup)
+
+### Removed
+- **Supabase** - Complete removal of Supabase backend
+  - Deleted `supabase/` Edge Functions directory
+  - Removed supabase chunk from vite.config.ts
+  - Replaced all Supabase function calls with Firebase equivalents
+  - Removed supabase status indicator and debug logging
+  - Updated types.ts comment (now just "Database Types")
+
+### Refactored
+- **Code Organization**
+  - Created `src/lib/helpers.ts` - Consolidated utility functions
+    - `saveData()` - Unified save helper (Firebase/localStorage)
+    - `exportDataToFile()` - Export curriculum to JSON
+    - `importDataFromFile()` - Import curriculum from JSON
+    - `generateUuid()` - UUID generation
+    - `getGridCols()` - Grid column helper
+  - Created `src/lib/handlers.ts` - Handler factory (partial)
+  - Created `app/AdminAvatarEditModal.tsx` - Extracted modal component
+  - Created `views/SubjectDetailView.tsx` - Extracted view (not yet wired)
+  - Created `views/ReturningView.tsx` - Extracted view (not yet wired)
+
+### Stats
+- App.tsx: 3780 lines (down from 3921 originally)
+- Removed ~140 lines of duplicate/supabase code
+- Build passes successfully
+
+---
+
+## 2026-02-18 - Version 3.3.0 (UI v6 Design System)
+
+### Added
+- **Tab Shell** - Fixed top navigation bar with tabs (like v6 reference)
+  - 🏠 Landing, 👤 Returning, 👨 Admin, 🧒 Kids, 🎬 Lesson
+  - Active tab highlighted with dark ink background
+  - Flat shadow on active tab, backdrop blur effect
+- **Navigation Comments** - Added section markers in App.tsx for easy navigation
+  - `// RETURNING VIEW (lines 1032-1255)`
+  - `// SUBJECT DETAIL VIEW (lines 1257-1899)`
+  - `// ADMIN VIEW (lines 1902-2653)`
+  - `// KIDSDASH VIEW (lines 2655-2897)`
+  - `// MANAGE PROFILES VIEW (lines 2899-3539)`
+  - `// MAIN RENDER SWITCH (lines 3541-3636)`
+- **Design System Components** (`components/design-system.tsx`)
+  - `DS` - Design constants (cream background, dark ink, borders, radius)
+  - `THEME_COLORS` - Blue, indigo, rose, emerald, amber, purple, pink, teal
+  - `getThemeColor()` - Helper function for theme colors
+  - `GlobalStyles` - Custom fonts (Baloo 2, Nunito) and animations
+  - `Shadow` - Flat shadow component (no Tailwind shadows)
+  - `Tag`, `Chip`, `SectionHead` - Label components
+  - `Button` - Primary/secondary/ghost/danger variants with flat shadows
+  - `IconButton` - Circular icon buttons
+  - `Card`, `MiniCard` - Content containers with flat shadows
+  - `Input` - Styled text input
+  - `ProgressBar2` - Custom progress bar component
+  - `Avatar` - Profile avatars with theme colors
+  - `DropdownMenu`, `DropdownItem` - Menu components
+  - `Texture`, `Blobs`, `Deco` - Background decorations
+
+### Changed
+- **View Naming** - Updated to match v6 reference:
+  - `HOME` → `ADMIN` (Daddy Dashboard)
+  - `CHILD_DASHBOARD` → `KIDSDASH`
+  - `LESSON_PLAYER` → `LESSON`
+- **New View** - Added `RETURNING` view for returning users
+- **Visual Style** - Migrating from Tailwind to v6 design system:
+  - Cream background (#FAF6F0) instead of gray-50
+  - Dark ink color (#1A1A2E) instead of Tailwind grays
+  - Flat shadows (solid offset shadows) instead of Tailwind shadows
+  - Custom Baloo 2 / Nunito typography
+  - Consistent border style (2.5px solid #1A1A2E)
+  - Rounded corners (10/16/22px)
+
+### Available Components
+All components exported and ready to use in App.tsx:
+```tsx
+import { GlobalStyles, getThemeColor, DS, Shadow, Tag, Card, Button, 
+  IconButton, Input, ProgressBar2, MiniCard, Avatar, 
+  DropdownMenu, DropdownItem } from './components/design-system';
+```
+
+---
+
 ## 2026-02-14 - Version 3.2.0 (Child Sign-In & Profile Switching)
 
 ### Added

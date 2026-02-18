@@ -1,52 +1,30 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { ViewState, ChildProfile, YearGroup, Subject, Topic, Lesson, ScheduleBlock, ViewOrigin, ParsedRow } from './types';
 import { INITIAL_DATA } from './constants';
 import { AuthProvider, useAuth } from './src/lib/AuthContext';
 import { auth as firebaseAuth, googleProvider, signInWithGoogle, logOut as firebaseLogOut } from './src/lib/firebase'
-import { fetchChildren, fetchChildByEmail, fetchChildById, getLocalData, saveLocalData, saveFullCurriculum, uploadToSupabase, loadFromSupabase, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, migrateChildToTopicStructure, restoreLessonInSupabase, hardDeleteLessonFromSupabase, softDeleteLessonInSupabase, hardDeleteSubjectFromSupabase } from './src/lib/dataService';
+import { fetchChildren, fetchChildByEmail, fetchChildById, getLocalData, saveLocalData, saveFullCurriculum, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, migrateChildToTopicStructure } from './src/lib/dataService';
 import { usePersistentTimer, formatTime, formatTimeReadable } from './src/lib/useTimer';
+import { saveData, generateUuid, exportDataToFile } from './src/lib/helpers';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
 import { Timeline } from './components/Timeline';
-import { CurriculumBuilder } from './components/CurriculumBuilder';
+const CurriculumBuilder = lazy(() => import('./components/CurriculumBuilder').then(m => ({ default: m.CurriculumBuilder })));
+import { AdminAvatarEditModal } from './app/AdminAvatarEditModal';
+import { ProfileSwitcher } from './components/ProfileSwitcher';
+import { DaddyDashboardView } from './views/DaddyDashboardView';
+import { SubjectDetail } from './views/SubjectDetailView';
 
 // Firebase shim for backward compatibility (some admin features simplified)
 const supabase = null;
 
-// Export data to JSON file
-const exportDataToFile = (data: ChildProfile[], filename: string = 'daddy-dashboard-export.json') => {
-  const exportObj = {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    children: data
-  };
-  const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+// Helper for grid columns
+const getGridCols = (count: number): string => {
+  if (count <= 1) return 'grid-cols-1';
+  if (count === 2) return 'grid-cols-1 sm:grid-cols-2';
+  if (count === 3) return 'grid-cols-1 sm:grid-cols-3';
+  return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
 };
-
-function shallowClone(obj: any): any {
-  return Array.isArray(obj) ? obj.slice() : { ...obj };
-}
-
-function cloneWithPath(obj: any, path: string[], value: any): any {
-  if (path.length === 0) return value;
-  
-  const result = shallowClone(obj);
-  let current: any = result;
-  
-  for (let i = 0; i < path.length - 1; i++) {
-    current[path[i]] = shallowClone(current[path[i]]);
-    current = current[path[i]];
-  }
-  
-  current[path[path.length - 1]] = value;
-  return result;
-}
 
 const findChildById = (data: ChildProfile[], childId: string): ChildProfile | undefined => {
   return data.find(c => c.id === childId);
@@ -394,11 +372,7 @@ const App: React.FC = () => {
     };
     setData(prev => {
       const newData = [...prev, newChild];
-      if (user) {
-        saveFullCurriculum(newData, user.uid).catch(console.error);
-      } else {
-        saveLocalData(newData);
-      }
+      saveData(newData, user);
       return newData;
     });
   };
@@ -406,11 +380,7 @@ const App: React.FC = () => {
   const handleDeleteChild = (id: string) => {
     setData(prev => {
       const newData = prev.filter(child => child.id !== id);
-      if (user) {
-        saveFullCurriculum(newData, user.uid).catch(console.error);
-      } else {
-        saveLocalData(newData);
-      }
+      saveData(newData, user);
       return newData;
     });
   };
@@ -421,11 +391,7 @@ const App: React.FC = () => {
         if (child.id !== id) return child;
         return { ...child, ...updates };
       });
-      if (user) {
-        saveFullCurriculum(newData, user.uid).catch(console.error);
-      } else {
-        saveLocalData(newData);
-      }
+      saveData(newData, user);
       return newData;
     });
   };
@@ -434,10 +400,8 @@ const App: React.FC = () => {
     if (childProfile) {
       const updated = { ...childProfile, ...updates };
       setChildProfile(updated);
-      if (user) {
-        const allChildren = data.map(c => c.id === updated.id ? updated : c);
-        saveFullCurriculum(allChildren, user.uid).catch(console.error);
-      }
+      const allChildren = data.map(c => c.id === updated.id ? updated : c);
+      saveData(allChildren, user);
     }
   };
 
@@ -452,11 +416,7 @@ const App: React.FC = () => {
         if (child.id !== childId) return child;
         return { ...child, yearGroups: [...child.yearGroups, newYearGroup] };
       });
-      if (user) {
-        saveFullCurriculum(newData, user.uid).catch(console.error);
-      } else {
-        saveLocalData(newData);
-      }
+      saveData(newData, user);
       return newData;
     });
   };
@@ -467,11 +427,7 @@ const App: React.FC = () => {
         if (child.id !== childId) return child;
         return { ...child, yearGroups: child.yearGroups.filter(yg => yg.id !== yearGroupId) };
       });
-      if (user) {
-        saveFullCurriculum(newData, user.uid).catch(console.error);
-      } else {
-        saveLocalData(newData);
-      }
+      saveData(newData, user);
       return newData;
     });
   };
@@ -640,11 +596,7 @@ const App: React.FC = () => {
           }))
         };
       });
-      if (user) {
-        saveFullCurriculum(newData, user.uid).catch(console.error);
-      } else {
-        saveLocalData(newData);
-      }
+      saveData(newData, user);
       return newData;
     });
 
@@ -771,21 +723,7 @@ const App: React.FC = () => {
     // Update state and save
     setData(newData);
     
-    if (user) {
-      saveFullCurriculum(newData, user.uid)
-        .then(() => {
-          console.log('handleBulkImport: Saved to Supabase');
-          (window as any).__handleBulkImportRunning = false;
-        })
-        .catch(err => {
-          console.error('handleBulkImport: Error saving to Supabase:', err);
-          (window as any).__handleBulkImportRunning = false;
-        });
-    } else {
-      saveLocalData(newData);
-      console.log('handleBulkImport: Saved to localStorage');
-      (window as any).__handleBulkImportRunning = false;
-    }
+            saveData(newData, user);
     
     setView({ type: 'HOME' });
   };
@@ -794,7 +732,7 @@ const App: React.FC = () => {
       const scrollY = window.scrollY;
 
       if (user) {
-        await hardDeleteSubjectFromSupabase(subjectId, user.uid).catch(err => {
+        await hardDeleteSubjectFromFirebase(subjectId, childId, user.uid).catch(err => {
           console.error('Failed to delete subject from Firebase:', err);
         });
       }
@@ -810,11 +748,7 @@ const App: React.FC = () => {
                 }))
             };
         });
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
+        saveData(newData, user);
         return newData;
       });
 
@@ -857,22 +791,13 @@ const App: React.FC = () => {
                 }))
             };
         });
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
+        saveData(newData, user);
         return newData;
       });
   };
 
   const handleRestoreLesson = async (childId: string, subjectId: string, topicId: string, lessonId: string) => {
       // Firebase: state is updated locally, sync happens via saveFullCurriculum
-      if (user) {
-        await restoreLessonInSupabase(lessonId, user.uid).catch(err => {
-          console.error('Failed to restore lesson in Firebase:', err);
-        });
-      }
 
       setData(prev => {
         const newData = prev.map(child => {
@@ -897,11 +822,7 @@ const App: React.FC = () => {
                 }))
             };
         });
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
+        saveData(newData, user);
         return newData;
       });
   };
@@ -909,16 +830,12 @@ const App: React.FC = () => {
   const handleHardDeleteLesson = (childId: string, subjectId: string, topicId: string, lessonId: string) => {
       console.log('Deleting lesson:', lessonId, 'from topic:', topicId);
       
-      if (!lessonId) {
+        if (!lessonId) {
         console.error('Cannot delete: lessonId is undefined');
         return;
       }
 
-      if (user) {
-        hardDeleteLessonFromSupabase(lessonId, user.uid).catch(err => {
-          console.error('Failed to hard delete lesson in Firebase:', err);
-        });
-      }
+      // Firebase sync handled by saveFullCurriculum below
 
       setData(prevData => {
         // Deep clone to avoid mutation issues
@@ -947,22 +864,14 @@ const App: React.FC = () => {
         
         console.log(`Deleted ${originalCount - targetTopic.lessons.length} lessons`);
         
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
+        saveData(newData, user);
         
         return newData;
       });
   };
 
   const handleSoftDeleteLesson = (childId: string, subjectId: string, topicId: string, lessonId: string) => {
-      if (user) {
-        softDeleteLessonInSupabase(lessonId, user.uid).catch(err => {
-          console.error('Failed to soft delete lesson in Firebase:', err);
-        });
-      }
+      // Firebase sync handled by saveFullCurriculum below
 
       setData(prev => {
         const newData = prev.map(child => {
@@ -987,11 +896,7 @@ const App: React.FC = () => {
                 }))
             };
         });
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
+        saveData(newData, user);
         return newData;
       });
   };
@@ -1017,11 +922,7 @@ const App: React.FC = () => {
           }))
         };
       });
-      if (user) {
-        saveFullCurriculum(newData, user.uid).catch(console.error);
-      } else {
-        saveLocalData(newData);
-      }
+      saveData(newData, user);
       return newData;
     });
   };
@@ -1285,11 +1186,7 @@ const App: React.FC = () => {
                 }))
             };
         });
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
+        saveData(newData, user);
         return newData;
       });
     }, [childId, subjectId, user]);
@@ -1299,7 +1196,7 @@ const App: React.FC = () => {
       
       // Delete from Firebase if exists
       if (user) {
-        hardDeleteSubjectFromSupabase(topicId, user.uid).catch(err => {
+        hardDeleteSubjectFromFirebase(topicId, user.uid).catch(err => {
           console.error('Failed to delete topic from Firebase:', err);
         });
       }
@@ -1326,11 +1223,7 @@ const App: React.FC = () => {
             }))
           };
         });
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
+        saveData(newData, user);
         return newData;
       });
     };
@@ -1383,11 +1276,7 @@ const App: React.FC = () => {
             }))
           };
         });
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
+        saveData(newData, user);
         return newData;
       });
       setEditingLesson(null);
@@ -1425,11 +1314,7 @@ const App: React.FC = () => {
             }))
           };
         });
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
+        saveData(newData, user);
       return newData;
       });
       setEditingTopic(null);
@@ -1843,759 +1728,6 @@ const App: React.FC = () => {
       );
     };
 
-    const DaddyDashboardView = () => {
-    // Restore scroll position on mount
-    useEffect(() => {
-        window.scrollTo(0, scrollYRef.current);
-    }, []);
-
-    const handleNavigate = (newView: ViewState) => {
-        scrollYRef.current = window.scrollY;
-        setView(newView);
-    };
-
-    const { user, signOut } = useAuth() || {};
-    const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-    const profileDropdownRef = useRef<HTMLDivElement>(null);
-
-    // Bulk selection state for subjects
-    const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set());
-    const [showBulkActions, setShowBulkActions] = useState(false);
-    const [editingSubject, setEditingSubject] = useState<{ subjectId: string; category: string; topicName: string } | null>(null);
-
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
-          setShowProfileDropdown(false);
-        }
-      };
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const toggleSubjectSelection = (cardId: string) => {
-      const newSelected = new Set(selectedSubjects);
-      if (newSelected.has(cardId)) {
-        newSelected.delete(cardId);
-      } else {
-        newSelected.add(cardId);
-      }
-      setSelectedSubjects(newSelected);
-      setShowBulkActions(newSelected.size > 0);
-    };
-
-    const selectAllSubjects = () => {
-      const allIds = new Set<string>();
-      data.forEach(child => {
-        child.yearGroups.forEach(yg => {
-          yg.subjects.forEach(subject => {
-            subject.topics.forEach(topic => {
-              allIds.add(`${subject.id}-${topic.id}`);
-            });
-          });
-        });
-      });
-      setSelectedSubjects(allIds);
-      setShowBulkActions(true);
-    };
-
-    const clearSelection = () => {
-      setSelectedSubjects(new Set());
-      setShowBulkActions(false);
-    };
-
-    const handleBulkDeleteSubjects = async () => {
-      if (!confirm(`Delete ${selectedSubjects.size} topics? This cannot be undone.`)) return;
-
-      // Delete from Supabase first
-      for (const cardId of selectedSubjects) {
-        // Extract topic id from cardId (format: subjectId-topicId)
-        const topicId = cardId.split('-').slice(-1)[0];
-        if (topicId) {
-          // We need to find the actual topic to get its id
-          for (const child of data) {
-            for (const yg of child.yearGroups) {
-              for (const subject of yg.subjects) {
-                const topic = subject.topics.find(t => `${subject.id}-${t.id}` === cardId);
-                if (topic && user) {
-                  await hardDeleteSubjectFromSupabase(topic.id, user.uid).catch(err => {
-                    console.error('Failed to delete topic from Firebase:', err);
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // Then update local state
-      setData(prev => {
-        const newData = prev.map(child => ({
-          ...child,
-          yearGroups: child.yearGroups.map(yg => ({
-            ...yg,
-            subjects: yg.subjects.map(subject => ({
-              ...subject,
-              topics: subject.topics.filter(topic => !selectedSubjects.has(`${subject.id}-${topic.id}`))
-            }))
-          }))
-        }));
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        }
-        return newData;
-      });
-
-      clearSelection();
-    };
-
-    const handleStartEditSubject = (subject: any) => {
-      setEditingSubject({
-        subjectId: subject.id,
-        category: subject.category,
-        topicName: subject.topics[0]?.name || ''
-      });
-    };
-
-    const handleSaveSubject = () => {
-      if (!editingSubject) return;
-      setData(prev => {
-        const newData = prev.map(child => ({
-          ...child,
-          yearGroups: child.yearGroups.map(yg => ({
-            ...yg,
-            subjects: yg.subjects.map(s => {
-              if (s.id !== editingSubject.subjectId) return s;
-              return {
-                ...s,
-                category: editingSubject.category,
-                topics: s.topics.map(t => ({
-                  ...t,
-                  name: editingSubject.topicName || t.name
-                }))
-              };
-            })
-          }))
-        }));
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
-        return newData;
-      });
-      setEditingSubject(null);
-    };
-
-    const handleDeleteTopicAtPath = (childId: string, subjectId: string, topicId: string) => {
-      if (!confirm('Delete this topic and all its lessons?')) return;
-      
-      setData(prev => {
-        const newData = prev.map(ch => {
-          if (ch.id !== childId) return ch;
-          return {
-            ...ch,
-            yearGroups: ch.yearGroups.map(y => ({
-              ...y,
-              subjects: y.subjects.map(s => {
-                if (s.id !== subjectId) return s;
-                const updatedTopics = s.topics.filter(t => t.id !== topicId);
-                if (updatedTopics.length === 0) {
-                  return null;
-                }
-                return {
-                  ...s,
-                  topics: updatedTopics
-                };
-              }).filter(Boolean)
-            }))
-          };
-        });
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
-        return newData;
-      });
-    };
-
-    return (
-      <div className="min-h-screen bg-gray-100 pb-20">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 p-6 sticky top-0 z-50">
-          <div className="max-w-6xl mx-auto flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard</h1>
-              <p className="text-gray-500 text-sm mt-1">HK Homeschool Relocation Plan</p>
-            </div>
-            
-            {/* Supabase Status Indicator */}
-            {supabaseStatus && (
-              <div className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
-                supabaseStatus.type === 'success' ? 'bg-green-100 text-green-700' :
-                supabaseStatus.type === 'error' ? 'bg-red-100 text-red-700' :
-                'bg-blue-100 text-blue-700'
-              }`}>
-                {supabaseStatus.type === 'success' && <CheckCircle size={16} />}
-                {supabaseStatus.type === 'error' && <XCircle size={16} />}
-                {supabaseStatus.type === 'info' && <Clock size={16} />}
-                {supabaseStatus.message}
-              </div>
-            )}
-            
-            {/* Auth Debug */}
-            {authDebug && (
-              <div className="text-xs text-gray-400 font-mono bg-gray-100 px-2 py-1 rounded">
-                {authDebug}
-              </div>
-            )}
-            
-            <div className="flex gap-3 items-center">
-                <button 
-                    onClick={() => handleNavigate({ type: 'CURRICULUM_BUILDER' })}
-                    className="bg-gray-900 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition shadow-lg"
-                >
-                    <Sparkles size={16} /> Build Curriculum
-                </button>
-                {user && (
-                  <>
-                    <button 
-                        onClick={() => exportDataToFile(data, `daddy-dashboard-${new Date().toISOString().split('T')[0]}.json`)}
-                        className="bg-green-600 text-white p-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition shadow-lg"
-                        title="Export to Computer"
-                    >
-                        <Download size={18} />
-                    </button>
-                    <input
-                      type="file"
-                      accept=".json"
-                      id="header-import-file"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        try {
-                          const importedData = await importDataFromFile(file);
-                          setData(importedData);
-                          await saveFullCurriculum(importedData, user.uid);
-                          showStatus('Imported and saved to Firebase!', 'success');
-                        } catch (err) {
-                          showStatus('Import failed: ' + (err instanceof Error ? err.message : 'Unknown error'), 'error');
-                        }
-                        e.target.value = '';
-                      }}
-                    />
-                    <label
-                      htmlFor="header-import-file"
-                      className="bg-blue-600 text-white p-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition shadow-lg cursor-pointer"
-                      title="Import from Computer"
-                    >
-                      <Upload size={18} />
-                    </label>
-                    <button 
-                        onClick={async () => {
-                          await saveFullCurriculum(data, user.uid);
-                          showStatus('Saved to Cloud!', 'success');
-                        }}
-                        className="bg-purple-600 text-white p-2 rounded-lg flex items-center gap-2 hover:bg-purple-700 transition shadow-lg"
-                        title="Save to Cloud"
-                    >
-                        <Cloud size={18} />
-                    </button>
-                    <div className="relative" ref={profileDropdownRef}>
-                      <button 
-                          onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                          className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1 transition"
-                      >
-                          <div 
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-xl"
-                            style={{ 
-                              backgroundColor: adminColor === 'blue' ? '#dbeafe' : 
-                                              adminColor === 'indigo' ? '#e0e7ff' :
-                                              adminColor === 'purple' ? '#f3e8ff' :
-                                              adminColor === 'pink' ? '#fce7f3' :
-                                              adminColor === 'rose' ? '#ffe4e6' :
-                                              adminColor === 'red' ? '#fee2e2' :
-                                              adminColor === 'orange' ? '#ffedd5' :
-                                              adminColor === 'amber' ? '#fef3c7' :
-                                              adminColor === 'yellow' ? '#fef9c3' :
-                                              adminColor === 'green' ? '#dcfce7' :
-                                              adminColor === 'emerald' ? '#d1fae5' :
-                                              adminColor === 'teal' ? '#ccfbf1' :
-                                              adminColor === 'cyan' ? '#cffafe' :
-                                              adminColor === 'sky' ? '#e0f2fe' :
-                                              '#f1f5f9'
-                            }}
-                          >
-                            {adminAvatar}
-                          </div>
-                          <span className="font-medium text-gray-700 hidden sm:block">{adminName || user?.user_metadata?.full_name || user?.email}</span>
-                          <svg className={`w-4 h-4 text-gray-500 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                      </button>
-                      {showProfileDropdown && (
-                          <div className="absolute right-0 top-full mt-2 w-72 bg-white text-gray-800 rounded-lg shadow-2xl py-2 z-50 border border-gray-200">
-                              <div className="px-3 py-2 border-b border-gray-100">
-                                  <p className="font-medium text-sm text-gray-500">Switch Profile</p>
-                              </div>
-                              <button
-                                  onClick={() => { setView({ type: 'HOME' }); setShowProfileDropdown(false); }}
-                                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
-                              >
-                                  <div 
-                                    className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
-                                    style={{ 
-                                      backgroundColor: adminColor === 'blue' ? '#1e40af' : 
-                                                      adminColor === 'indigo' ? '#3730a3' :
-                                                      adminColor === 'purple' ? '#6b21a8' :
-                                                      adminColor === 'pink' ? '#9d174d' :
-                                                      adminColor === 'rose' ? '#be123c' :
-                                                      adminColor === 'red' ? '#b91c1c' :
-                                                      adminColor === 'orange' ? '#c2410c' :
-                                                      adminColor === 'amber' ? '#b45309' :
-                                                      adminColor === 'yellow' ? '#a16207' :
-                                                      adminColor === 'green' ? '#15803d' :
-                                                      adminColor === 'emerald' ? '#047857' :
-                                                      adminColor === 'teal' ? '#0f766e' :
-                                                      adminColor === 'cyan' ? '#0e7490' :
-                                                      adminColor === 'sky' ? '#0369a1' :
-                                                      '#475569'
-                                    }}
-                                  >
-                                    {adminAvatar}
-                                  </div>
-                                  <div>
-                                      <span className="font-medium block">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'}</span>
-                                      <span className="text-xs text-gray-500">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard</span>
-                                  </div>
-                              </button>
-                              {data.map(c => (
-                                  <button
-                                      key={c.id}
-                                      onClick={() => { setView({ type: 'CHILD_DASHBOARD', childId: c.id }); setShowProfileDropdown(false); }}
-                                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
-                                  >
-                                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-${c.themeColor}-100`}>
-                                          {c.avatar}
-                                      </div>
-                                      <div>
-                                          <span className="font-medium block">{c.name}</span>
-                                          <span className="text-xs text-gray-500">Student Access</span>
-                                      </div>
-                                  </button>
-                              ))}
-                              <div className="border-t border-gray-100 mt-2 pt-2">
-                                  <button
-                                      onClick={() => { /* TODO: Account page */ }}
-                                      className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
-                                  >
-                                      <User size={16} />
-                                      Account
-                                  </button>
-                                  <button
-                                      onClick={() => { setView({ type: 'MANAGE_PROFILES' }); setShowProfileDropdown(false); }}
-                                      className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
-                                  >
-                                      <Edit2 size={16} />
-                                      Manage Profiles
-                                  </button>
-                                  <button
-                                      onClick={() => { signOut?.(); setShowProfileDropdown(false); }}
-                                      className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 transition text-left text-sm"
-                                  >
-                                      <LogOut size={16} />
-                                      Sign Out
-                                  </button>
-                              </div>
-                          </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </header>
-
-        <div className="max-w-6xl mx-auto p-6 space-y-12">
-            {/* Daily Schedule Section */}
-            {!isDayActive ? (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-8">
-                    <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                        <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                           <BarChart3 className="text-blue-600" size={20}/> Previous Session Summary
-                        </h2>
-                        <span className="text-sm text-gray-500 font-medium">Yesterday</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
-                        {data.map(child => {
-                           const recentSubjects = child.yearGroups
-                             .flatMap(yg => yg.subjects)
-                             .filter(s => s.topics.flatMap(t => t.lessons).some(l => !l.deleted))
-                             .slice(0, 4);
-
-                           return (
-                             <div key={child.id} className="p-6">
-                                <div className="flex items-center gap-3 mb-6">
-                                   <div className="text-3xl bg-gray-100 p-2 rounded-xl">{child.avatar}</div>
-                                   <div>
-                                      <div className="font-bold text-gray-900 text-lg">{child.name}</div>
-                                      <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                                         {child.yearGroups[0]?.name}
-                                      </div>
-                                   </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-3 mb-6">
-                                   {recentSubjects.map(sub => {
-                                      const allLessons = sub.topics.flatMap(t => t.lessons);
-                                      const activeTotal = allLessons.filter(l => !l.deleted).length;
-                                      const activeCompleted = allLessons.filter(l => l.completed && !l.deleted).length;
-                                      return (
-                                          <div key={sub.id} className="p-3 rounded-xl border border-gray-100 shadow-sm bg-white hover:shadow-md transition cursor-default">
-                                             <div className="flex items-center gap-2 mb-2">
-                                                 <div className={`w-2 h-2 rounded-full ${child.themeColor.includes('blue') ? 'bg-blue-500' : child.themeColor.includes('green') ? 'bg-green-500' : child.themeColor.includes('rose') ? 'bg-rose-500' : child.themeColor.includes('indigo') ? 'bg-indigo-500' : 'bg-amber-500'}`}></div>
-                                                <div className="text-xs font-bold text-gray-700 truncate w-full">{sub.category}</div>
-                                             </div>
-                                             <div className="text-[11px] text-gray-500 truncate mb-3 leading-tight min-h-[1.5em]">
-                                                {sub.name}
-                                             </div>
-                                             <ProgressBar 
-                                                current={activeCompleted || 1} 
-                                                total={activeTotal || 5} 
-                                                heightClass="h-1.5"
-                                                colorClass={child.themeColor.includes('blue') ? 'bg-blue-500' : child.themeColor.includes('green') ? 'bg-green-500' : child.themeColor.includes('rose') ? 'bg-rose-500' : child.themeColor.includes('indigo') ? 'bg-indigo-500' : 'bg-amber-500'}
-                                             />
-                                          </div>
-                                      );
-                                   })}
-                                </div>
-
-                                <div className="flex justify-between items-center text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
-                                  <span>Time Studied</span>
-                                  <span className="font-bold text-gray-800">4h 15m</span>
-                                </div>
-                             </div>
-                           );
-                        })}
-                    </div>
-
-                    <div className="p-6 bg-gray-50 border-t border-gray-200 flex flex-col items-center">
-                        <div className="flex flex-col items-center gap-4 w-full max-w-md">
-                            <button 
-                                onClick={() => generateSchedule(5)} 
-                                className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold shadow-xl hover:bg-black transition flex items-center justify-center gap-3 text-lg"
-                            >
-                               <Play size={24} fill="currentColor" /> Start Today's Session
-                            </button>
-                            
-                            <div className="flex items-center gap-4 text-sm text-gray-500">
-                               <button onClick={() => generateSchedule(4)} className="hover:text-gray-800 hover:underline">Light (4h)</button>
-                               <span className="text-gray-300">•</span>
-                               <span className="font-medium text-gray-800">Standard (5h)</span>
-                               <span className="text-gray-300">•</span>
-                               <button onClick={() => generateSchedule(6)} className="hover:text-gray-800 hover:underline">Long (6h)</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <div className="space-y-4 mb-8">
-                     <div className="flex items-center justify-between">
-                          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                              <Calendar className="text-gray-500" /> Today's Timetable
-                          </h2>
-                          <button 
-                            onClick={() => { setIsDayActive(false); setSchedule([]); }}
-                            className="text-sm text-red-500 hover:text-red-700"
-                          >
-                             Reset Day
-                          </button>
-                     </div>
-                      <Timeline 
-                          schedule={schedule}
-                          childProfiles={data}
-                          onBlockClick={(childId, subjectId, topicId, lessonId) => {
-                              handleNavigate({ type: 'LESSON_PLAYER', childId, subjectId, topicId, lessonId, origin: 'HOME' });
-                          }}
-                      />
-                 </div>
-            )}
-
-            {/* Main Curriculum Hierarchy */}
-            <div className="space-y-12">
-              {data.map(child => (
-                  <div key={child.id} className={`bg-white rounded-3xl border-l-[16px] shadow-lg p-8 border-${child.themeColor}-500`}>
-                      {/* Child Header */}
-                      <div className="flex items-center gap-5 mb-8 border-b-2 border-gray-100 pb-6">
-                          <div className="text-6xl bg-gray-50 shadow-sm p-4 rounded-2xl">{child.avatar}</div>
-                          <div>
-                              <h2 className="text-4xl font-bold text-gray-900">{child.name}</h2>
-                              <p className={`text-${child.themeColor}-600 font-bold mt-1 uppercase tracking-wide`}>Homeschool Track</p>
-                          </div>
-                          <div className="ml-auto flex items-center gap-3">
-                              <button 
-                                onClick={() => handleNavigate({ type: 'CHILD_DASHBOARD', childId: child.id })}
-                                className={`px-5 py-2 rounded-lg bg-gray-50 text-${child.themeColor}-700 font-semibold hover:bg-${child.themeColor}-50 transition flex items-center gap-2 text-sm shadow-sm border border-gray-200`}
-                              >
-                                View Dashboard <ChevronRight size={16} />
-                              </button>
-                              {/* Bulk Select Toggle */}
-                              {child.yearGroups.flatMap(yg => yg.subjects).length > 0 && (
-                                <button
-                                  onClick={() => showBulkActions ? clearSelection() : setShowBulkActions(true)}
-                                  className={`px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2 text-sm shadow-sm border ${
-                                    showBulkActions 
-                                      ? 'bg-blue-100 text-blue-700 border-blue-300' 
-                                      : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                                  }`}
-                                >
-                                  {showBulkActions ? 'Done' : 'Edit Cards'}
-                                </button>
-                              )}
-                          </div>
-                      </div>
-
-                      {/* Bulk Actions Toolbar */}
-                      {showBulkActions && (
-                        <div className="flex items-center gap-4 p-4 mb-6 bg-blue-50 border border-blue-200 rounded-xl">
-                          <span className="text-sm font-medium text-blue-700">
-                            {selectedSubjects.size} selected
-                          </span>
-                          <button
-                            onClick={selectAllSubjects}
-                            className="text-sm text-blue-600 hover:text-blue-700"
-                          >
-                            Select All
-                          </button>
-                          <button
-                            onClick={clearSelection}
-                            className="text-sm text-gray-500 hover:text-gray-700"
-                          >
-                            Undo
-                          </button>
-                          <div className="flex-1" />
-                          {selectedSubjects.size > 0 ? (
-                            <button
-                              onClick={handleBulkDeleteSubjects}
-                              className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition flex items-center gap-2"
-                            >
-                              <Trash2 size={16} />
-                              Delete Selected
-                            </button>
-                          ) : (
-                            <div className="px-4 py-2"></div>
-                          )}
-                        </div>
-                      )}
-
-                       {/* Year Groups */}
-                       <div className="space-y-12 pl-2">
-                           {child.yearGroups.map(yg => {
-                               const ygTotal = yg.subjects.reduce((acc, s) => acc + s.topics.flatMap(t => t.lessons).filter(l=>!l.deleted).length, 0);
-                               const ygCompleted = yg.subjects.reduce((acc, s) => acc + s.topics.flatMap(t => t.lessons).filter(l => l.completed && !l.deleted).length, 0);
-                               const percent = ygTotal > 0 ? Math.round((ygCompleted / ygTotal) * 100) : 0;
-
-                               return (
-                                   <div key={yg.id} className="relative">
-                                       {/* Vertical Line Connector */}
-                                       <div className="absolute left-[-24px] top-12 bottom-0 w-1 bg-gray-200 rounded-full hidden lg:block"></div>
-
-                                       {/* Year Group Header & Progress */}
-                                       <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-                                           <div className="flex items-center gap-3">
-                                               <div className={`w-10 h-10 rounded-full bg-white text-${child.themeColor}-600 flex items-center justify-center font-bold shadow-sm border border-${child.themeColor}-200`}>
-                                                   {yg.name.replace(/[^0-9]/g, '')}
-                                               </div>
-                                               <h3 className="text-2xl font-bold text-gray-800">{yg.name}</h3>
-                                           </div>
-                                           
-                                           {/* Compact Progress Bar for Year */}
-                                           <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200 md:ml-4">
-                                               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Curriculum Progress</span>
-                                               <div className="w-24">
-                                                 <ProgressBar current={ygCompleted} total={ygTotal} heightClass="h-2" colorClass={`bg-${child.themeColor}-500`} />
-                                               </div>
-                                               <span className={`text-sm font-bold text-${child.themeColor}-600`}>{percent}%</span>
-                                           </div>
-                                       </div>
-
-                                        {/* 4-Column Grid of Mini Cards */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                            {yg.subjects.flatMap(subject => 
-                                              subject.topics.map(topic => {
-                                                const topicLessons = topic.lessons.filter(l => !l.deleted);
-                                                const topicCompleted = topicLessons.filter(l => l.completed).length;
-                                                const topicTotal = topicLessons.length;
-                                                const cardId = `${subject.id}-${topic.id}`;
-                                                const isSelected = selectedSubjects.has(cardId);
-                                                const isEditing = editingSubject?.subjectId === cardId;
-
-                                                return (
-                                                    <div 
-                                                        key={cardId}
-                                                        onClick={() => showBulkActions ? toggleSubjectSelection(cardId) : handleNavigate({ type: 'SUBJECT_DETAIL', childId: child.id, subjectId: subject.id, origin: 'HOME' })}
-                                                        className={`relative p-3 rounded-xl border shadow-sm bg-white hover:shadow-md transition cursor-pointer group flex flex-col justify-between ${
-                                                          isSelected ? 'border-blue-400 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300'
-                                                        }`}
-                                                    >
-                                                        {showBulkActions && (
-                                                          <div className={`absolute top-2 left-2 w-5 h-5 rounded border-2 flex items-center justify-center z-10 ${
-                                                            isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300 bg-white'
-                                                          }`}>
-                                                            {isSelected && <CheckCircle size={14} className="text-white" />}
-                                                          </div>
-                                                        )}
-
-                                                         {isEditing ? (
-                                                          <div className="space-y-2">
-                                                            <input
-                                                              type="text"
-                                                              ref={(el) => { if (el) { el.focus({ preventScroll: true }); } }}
-                                                              value={editingSubject.category}
-                                                              onChange={(e) => setEditingSubject({ ...editingSubject, category: e.target.value })}
-                                                              onClick={(e) => e.stopPropagation()}
-                                                              className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                                              placeholder="Category (English, Maths, etc.)"
-                                                            />
-                                                            <input
-                                                              type="text"
-                                                              value={editingSubject.topicName}
-                                                              onChange={(e) => setEditingSubject({ ...editingSubject, topicName: e.target.value })}
-                                                              onClick={(e) => e.stopPropagation()}
-                                                              className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                                              placeholder="Topic name"
-                                                            />
-                                                            <div className="flex gap-2">
-                                                              <button
-                                                                onClick={(e) => { e.stopPropagation(); handleSaveSubject(); }}
-                                                                className="flex-1 bg-blue-600 text-white px-2 py-1 rounded-lg text-xs hover:bg-blue-700"
-                                                              >
-                                                                Save
-                                                              </button>
-                                                              <button
-                                                                onClick={(e) => { e.stopPropagation(); setEditingSubject(null); }}
-                                                                className="px-2 py-1 text-gray-500 text-xs hover:text-gray-700"
-                                                              >
-                                                                Cancel
-                                                              </button>
-                                                            </div>
-                                                          </div>
-                                                        ) : (
-                                                          <>
-                                                            <div className="flex items-center gap-2 mb-2 pr-6">
-                                                               <div className={`w-2 h-2 rounded-full ${
-                                                                  subject.color.includes('blue') ? 'bg-blue-500' : 
-                                                                  subject.color.includes('green') ? 'bg-green-500' : 
-                                                                  subject.color.includes('amber') ? 'bg-amber-500' : 
-                                                                  subject.color.includes('rose') ? 'bg-rose-500' : 
-                                                                  subject.color.includes('indigo') ? 'bg-indigo-500' : 
-                                                                  'bg-gray-400'
-                                                               }`}></div>
-                                                               <div className="text-xs font-bold text-gray-500 uppercase tracking-wider flex-1 truncate">{subject.category}</div>
-                                                               {topicCompleted === topicTotal && topicTotal > 0 && <CheckCircle size={14} className="text-green-500" />}
-                                                            </div>
-                                                            
-                                                             {!showBulkActions && (
-                                                               <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
-                                                                 <button
-                                                                     onClick={(e) => {
-                                                                         e.stopPropagation();
-                                                                         handleStartEditSubject({ ...subject, id: cardId });
-                                                                     }}
-                                                                     className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                                                     title="Edit"
-                                                                 >
-                                                                     <Edit2 size={16} />
-                                                                 </button>
-                                                                 <button
-                                                                     onClick={(e) => {
-                                                                         e.stopPropagation();
-                                                                         if(window.confirm(`Delete "${topic.name}" and all its lessons?`)) {
-                                                                             handleDeleteTopicAtPath(child.id, subject.id, topic.id);
-                                                                         }
-                                                                     }}
-                                                                     className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                                                                     title="Delete Topic"
-                                                                 >
-                                                                     <Trash2 size={16} />
-                                                                 </button>
-                                                               </div>
-                                                             )}
-
-                                                              <div>
-                                                                  <div className="font-bold text-gray-800 text-xs mb-1 truncate group-hover:text-blue-600 transition-colors">
-                                                                      {topic.name}
-                                                                  </div>
-                                                                   {/* Frequency Selector */}
-                                                                  <div className="flex items-center gap-2 mb-2" onClick={(e) => e.stopPropagation()}>
-                                                                    {[
-                                                                      { value: 1, label: 'Low' },
-                                                                      { value: 3, label: 'Med' },
-                                                                      { value: 5, label: 'High' }
-                                                                    ].map(({ value, label }) => {
-                                                                      const isSelected = (topic.frequency || 3) === value;
-                                                                      return (
-                                                                        <button
-                                                                          key={value}
-                                                                          onClick={() => handleUpdateTopicFrequency(child.id, subject.id, topic.id, value)}
-                                                                          className={`px-2 py-0.5 text-[10px] rounded-full border transition-colors ${
-                                                                            isSelected
-                                                                              ? 'border-gray-500 bg-gray-100 text-gray-700 font-medium'
-                                                                              : 'border-gray-300 bg-white text-gray-400 hover:border-gray-400'
-                                                                          }`}
-                                                                          title={`${label} frequency (${value}x per week)`}
-                                                                        >
-                                                                          {label}
-                                                                        </button>
-                                                                      );
-                                                                    })}
-                                                                  </div>
-                                                              </div>
-
-                                                            <div className="space-y-1">
-                                                                <div className="flex justify-between text-[10px] text-gray-400 font-medium">
-                                                                   <span>{topicCompleted}/{topicTotal} completed</span>
-                                                                </div>
-                                                                <ProgressBar 
-                                                                   current={topicCompleted} 
-                                                                   total={topicTotal} 
-                                                                   heightClass="h-1.5" 
-                                                                   colorClass={`bg-${child.themeColor}-500`} 
-                                                                />
-                                                           </div>
-                                                          </>
-                                                        )}
-                                                   </div>
-                                                );
-                                              })
-                                            )}
-                                          
-                                          {/* Add Subject Placeholder - Matching Mini Card Height */}
-                                          <div 
-                                            onClick={() => handleNavigate({ type: 'CURRICULUM_BUILDER' })}
-                                            className="border-2 border-dashed border-gray-300 rounded-xl p-3 flex flex-col items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition cursor-pointer gap-2 min-h-[105px]"
-                                          >
-                                              <div className="bg-gray-100 p-2 rounded-full group-hover:bg-blue-200 transition">
-                                                  <Plus size={16} />
-                                              </div>
-                                              <span className="text-[10px] font-bold uppercase tracking-wider">Add Subject</span>
-                                          </div>
-                                      </div>
-                                  </div>
-                              );
-                          })}
-                      </div>
-                  </div>
-              ))}
-            </div>
-        </div>
-      </div>
-    );
-  };
-
   const ChildDashboard = ({ childId }: { childId: string }) => {
     let child = data.find(c => c.id === childId);
     
@@ -2909,11 +2041,7 @@ const App: React.FC = () => {
             googleEmail: editGoogleEmail.trim() || undefined,
           };
         });
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
+        saveData(newData, user);
         return newData;
       });
       
@@ -2957,11 +2085,7 @@ const App: React.FC = () => {
       
       setData(prev => {
         const newData = [...prev, newChild];
-        if (user) {
-          saveFullCurriculum(newData, user.uid).catch(console.error);
-        } else {
-          saveLocalData(newData);
-        }
+        saveData(newData, user);
         return newData;
       });
       
@@ -3487,7 +2611,7 @@ const App: React.FC = () => {
   return (
     <>
       {view.type === 'LANDING' && <LandingView />}
-      {view.type === 'CURRICULUM_BUILDER' && <CurriculumBuilder onBack={() => setView({ type: 'HOME' })} onImport={handleBulkImport} onImportComplete={() => {}} />}
+      {view.type === 'CURRICULUM_BUILDER' && <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><CurriculumBuilder onBack={() => setView({ type: 'HOME' })} onImport={handleBulkImport} onImportComplete={() => {}} /></Suspense>}
       {view.type === 'SUBJECT_DETAIL' && <SubjectDetail childId={view.childId} subjectId={view.subjectId} origin={view.origin} />}
       {view.type === 'LESSON_PLAYER' && (() => {
         const child = data.find(c => c.id === view.childId);
@@ -3513,7 +2637,24 @@ const App: React.FC = () => {
         console.error('LessonPlayer: Could not find data', { childId: view.childId, subjectId: view.subjectId, topicId: view.topicId, lessonId: view.lessonId });
         return <div>Error loading lesson - data not found</div>;
       })()}
-      {view.type === 'HOME' && <DaddyDashboardView />}
+      {view.type === 'HOME' && <DaddyDashboardView 
+        data={data}
+        setData={setData}
+        view={view}
+        setView={setView}
+        adminName={adminName}
+        adminAvatar={adminAvatar}
+        adminColor={adminColor}
+        isDayActive={isDayActive}
+        setIsDayActive={setIsDayActive}
+        schedule={schedule}
+        setSchedule={setSchedule}
+        generateSchedule={generateSchedule}
+        supabaseStatus={supabaseStatus}
+        authDebug={authDebug}
+        showStatus={showStatus}
+        saveData={saveData}
+      />}
       {view.type === 'CHILD_DASHBOARD' && <ChildDashboard childId={view.childId} />}
       {view.type === 'MANAGE_PROFILES' && <ManageProfilesView />}
       
@@ -3562,259 +2703,6 @@ const App: React.FC = () => {
 // Simple Icons wrappers for use inside logic without cluttering imports
 const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
-
-// Admin Avatar Edit Modal Component
-const AdminAvatarEditModal: React.FC<{currentAvatar: string, onSave: (avatar: string) => void, onClose: () => void}> = ({ currentAvatar, onSave, onClose }) => {
-  const [avatar, setAvatar] = useState(currentAvatar);
-  const [avatarPage, setAvatarPage] = useState(0);
-  const AVATARS = ['👶', '🧒', '👦', '👧', '🧑‍🦰', '👱', '🧒', '👦', '👧', '🧒', '👦', '👧', '🧑', '👨‍🦱', '👩‍🦱', '🧑‍🦳', '👨‍🦳', '👩‍🦳', '🧑‍🦲', '👨‍🦲', '👩‍🦲', '🧔', '👨', '👩', '🧑‍🚀', '👩‍🚀', '🧑‍🔬', '👩‍🔬', '🧑‍🎨', '👩‍🎨', '🧑‍🏫', '👩‍🏫', '🧑‍⚕️', '👩‍⚕️', '🧑‍🌾', '👩‍🌾', '🧑‍🍳', '👩‍🍳', '🧑‍🎤', '👩‍🎤', '🧑‍🎭', '👩‍🎭', '🧑‍🚒', '👩‍🚒', '🧑‍✈️', '👩‍✈️', '🧑‍🚀', '👩‍🚀', '🦸', '🦸‍♀️', '🦹', '🦹‍♀️', '🧙', '🧙‍♀️', '🧚', '🧚‍♀️', '🧛', '🧛‍♀️', '🧜', '🧜‍♀️', '🧝', '🧝‍♀️', '🧞', '🧞‍♀️', '🧟', '🧟‍♀️', '👼', '🎅', '🤶', '🦸‍♂️', '🦹‍♂️', '🧙‍♂️', '🧚‍♂️', '🧛‍♂️', '🧜‍♂️', '🧝‍♂️', '🧞‍♂️', '🧟‍♂️', '👼', '🎅', '🤶'];
-  const AVATARS_PER_PAGE = 20;
-  const totalPages = Math.ceil(AVATARS.length / AVATARS_PER_PAGE);
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">Edit Admin Avatar</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition">
-            <X size={24} />
-          </button>
-        </div>
-
-        <div className="p-6 overflow-y-auto">
-          {/* Avatar Preview */}
-          <div className="flex items-center gap-6 mb-8 p-6 bg-gray-50 rounded-xl justify-center">
-            <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-5xl">
-              {avatar}
-            </div>
-          </div>
-
-          {/* Avatar Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Avatar</label>
-            <div className="border border-gray-200 rounded-xl p-4">
-              <div className="flex flex-wrap gap-2 justify-center">
-                {AVATARS.slice(avatarPage * AVATARS_PER_PAGE, (avatarPage + 1) * AVATARS_PER_PAGE).map((a) => (
-                  <button
-                    key={a}
-                    onClick={() => setAvatar(a)}
-                    className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl transition ${
-                      avatar === a
-                        ? 'bg-blue-100 ring-2 ring-blue-500'
-                        : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    {a}
-                  </button>
-                ))}
-              </div>
-              {totalPages > 1 && (
-                <div className="flex justify-center gap-4 mt-4">
-                  <button
-                    onClick={() => setAvatarPage(p => Math.max(0, p - 1))}
-                    disabled={avatarPage === 0}
-                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                  <span className="text-sm text-gray-500">
-                    {avatarPage + 1} / {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setAvatarPage(p => Math.min(totalPages - 1, p + 1))}
-                    disabled={avatarPage === totalPages - 1}
-                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                  >
-                    <ChevronRight size={20} />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
-            <button
-              onClick={() => onSave(avatar)}
-              className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition"
-            >
-              Save Changes
-            </button>
-            <button
-              onClick={onClose}
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Profile Switcher Dropdown Component
-const ProfileSwitcher: React.FC<{
-  user: any;
-  data: ChildProfile[];
-  adminAvatar: string;
-  adminColor?: string;
-  adminName?: string;
-  onSignOut: () => void;
-  onManageProfiles: () => void;
-  onSwitchProfile: (childId: string) => void;
-  onGoToLanding: () => void;
-  onGoToAdmin?: () => void;
-}> = ({ user, data, adminAvatar, adminColor = 'blue', adminName, onSignOut, onManageProfiles, onSwitchProfile, onGoToLanding, onGoToAdmin }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1 transition"
-      >
-        {user?.user_metadata?.avatar_url ? (
-          <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full" />
-        ) : (
-          <div 
-            className="w-8 h-8 rounded-full flex items-center justify-center text-lg"
-            style={{ 
-              backgroundColor: adminColor === 'blue' ? '#dbeafe' : 
-                              adminColor === 'indigo' ? '#e0e7ff' :
-                              adminColor === 'purple' ? '#f3e8ff' :
-                              adminColor === 'pink' ? '#fce7f3' :
-                              adminColor === 'rose' ? '#ffe4e6' :
-                              adminColor === 'red' ? '#fee2e2' :
-                              adminColor === 'orange' ? '#ffedd5' :
-                              adminColor === 'amber' ? '#fef3c7' :
-                              adminColor === 'yellow' ? '#fef9c3' :
-                              adminColor === 'green' ? '#dcfce7' :
-                              adminColor === 'emerald' ? '#d1fae5' :
-                              adminColor === 'teal' ? '#ccfbf1' :
-                              adminColor === 'cyan' ? '#cffafe' :
-                              adminColor === 'sky' ? '#e0f2fe' :
-                              '#f1f5f9'
-            }}
-          >
-            {adminAvatar}
-          </div>
-        )}
-        <span className="font-medium text-gray-700 hidden sm:block">{adminName || user?.user_metadata?.full_name || user?.email}</span>
-        <svg className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-72 bg-white text-gray-800 rounded-lg shadow-2xl py-2 z-50 border border-gray-200">
-          {/* Profiles Section */}
-          <div className="px-2 pb-2">
-            {/* Admin Profile */}
-            {onGoToAdmin && (
-              <button
-                onClick={() => {
-                  onGoToAdmin();
-                  setIsOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition text-left"
-              >
-                <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
-                  style={{ 
-                    backgroundColor: adminColor === 'blue' ? '#1e40af' : 
-                                    adminColor === 'indigo' ? '#3730a3' :
-                                    adminColor === 'purple' ? '#6b21a8' :
-                                    adminColor === 'pink' ? '#9d174d' :
-                                    adminColor === 'rose' ? '#be123c' :
-                                    adminColor === 'red' ? '#b91c1c' :
-                                    adminColor === 'orange' ? '#c2410c' :
-                                    adminColor === 'amber' ? '#b45309' :
-                                    adminColor === 'yellow' ? '#a16207' :
-                                    adminColor === 'green' ? '#15803d' :
-                                    adminColor === 'emerald' ? '#047857' :
-                                    adminColor === 'teal' ? '#0f766e' :
-                                    adminColor === 'cyan' ? '#0e7490' :
-                                    adminColor === 'sky' ? '#0369a1' :
-                                    '#475569'
-                  }}
-                >
-                  {adminAvatar}
-                </div>
-                <div>
-                  <span className="font-medium">{adminName || 'Daddy'}</span>
-                  <span className="block text-xs text-gray-500">Admin</span>
-                </div>
-              </button>
-            )}
-            
-            {/* Divider if admin is shown */}
-            {onGoToAdmin && data.length > 0 && (
-              <div className="border-t border-gray-100 my-2"></div>
-            )}
-            
-            {data.map(child => (
-              <button
-                key={child.id}
-                onClick={() => {
-                  onSwitchProfile(child.id);
-                  setIsOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition text-left"
-              >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl`} style={{ backgroundColor: child.themeColor === 'indigo' ? '#3730a3' : child.themeColor === 'rose' ? '#be123c' : '#065f46' }}>
-                  {child.avatar || '👤'}
-                </div>
-                <span className="font-medium">{child.name || 'Student'}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Divider */}
-          <div className="border-t border-gray-100 my-2"></div>
-
-          {/* Menu Options */}
-          <div className="px-2">
-            <button
-              onClick={() => {
-                onManageProfiles();
-                setIsOpen(false);
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition text-left"
-            >
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-              <span>Manage Profiles</span>
-            </button>
-
-            <button
-              onClick={() => {
-                onSignOut();
-                setIsOpen(false);
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-800 transition text-left"
-            >
-              <LogOut size={20} className="text-gray-400" />
-              <span>Sign out</span>
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
 
 export default App;

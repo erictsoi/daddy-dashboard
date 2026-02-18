@@ -49,15 +49,16 @@ export interface ChildProfile {
   yearGroups: YearGroup[];
 }
 
-export type ViewOrigin = 'HOME' | 'CHILD_DASHBOARD';
+export type ViewOrigin = 'ADMIN' | 'KIDSDASH';
 
 export type ViewState = 
   | { type: 'LANDING' }
-  | { type: 'HOME' }
+  | { type: 'RETURNING' }
+  | { type: 'ADMIN' }
   | { type: 'CURRICULUM_BUILDER' }
-  | { type: 'CHILD_DASHBOARD'; childId: string }
+  | { type: 'KIDSDASH'; childId: string }
   | { type: 'SUBJECT_DETAIL'; childId: string; subjectId: string; origin: ViewOrigin }
-  | { type: 'LESSON_PLAYER'; childId: string; subjectId: string; topicId: string; lessonId: string; origin: ViewOrigin }
+  | { type: 'LESSON'; childId: string; subjectId: string; topicId: string; lessonId: string; origin: ViewOrigin }
   | { type: 'MANAGE_PROFILES' };
 
 export interface ScheduleBlock {
@@ -101,7 +102,7 @@ export interface ParsedRow {
   videoPosition?: number;
 }
 
-// Supabase Database Types
+// Database Types
 
 export interface DbProfile {
   id: string;

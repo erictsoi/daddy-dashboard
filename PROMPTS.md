@@ -8,6 +8,50 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-18 - UI v6 Design System & View Cleanup
+
+**User Request:**
+> i want to use the current site and update the ui/ look with the code from C:\Users\user\Documents\daddy-dashboard\daddy_dashboard_v6_fixed.jsx
+> yes continue
+> update the logs, and create a ui implementation update plan
+> run
+> how many pages are there?
+> [shows v6 has 5 pages]
+> In the current app. [mapping old views to v6 naming]
+> update the logs
+> pls confirm that you have followed the ui outlined in daddy_dashboard_v6_fixed
+> yes, also do run a dev
+> do we need to seperate out th emain code block? is it still 1200+ lines long?
+> yes
+> a
+> run
+> update logs
+
+**Session Completed:**
+- Added tab shell navigation (like v6 reference)
+- Added navigation comments to App.tsx
+- Renamed views to match v6: HOME→ADMIN, CHILD_DASHBOARD→KIDSDASH, LESSON_PLAYER→LESSON
+- Added RETURNING view
+- Created design-system.tsx with all v6 components
+
+**Views (7 total):**
+| # | View | Description |
+|---|------|-------------|
+| 1 | LANDING | User selection |
+| 2 | RETURNING | New - Returning user welcome |
+| 3 | ADMIN | Daddy Dashboard |
+| 4 | KIDSDASH | Kid's Dashboard |
+| 5 | SUBJECT_DETAIL | Subject/Topic view |
+| 6 | LESSON | Video player |
+| 7 | CURRICULUM_BUILDER | Bulk import |
+
+**App.tsx Structure:**
+- Added navigation comments for each view section
+- Tab shell at top for quick view switching
+- ~3900 lines (kept inline due to state dependencies)
+
+---
+
 ## 2026-02-14 - Child Sign-In & Profile Switching Session
 
 **User Request:**

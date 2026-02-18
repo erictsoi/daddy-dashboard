@@ -315,23 +315,3 @@ export const migrateChildToTopicStructure = (child: ChildProfile): ChildProfile 
     }))
   }
 }
-
-// Backward compatibility aliases (for Supabase naming)
-export const uploadToSupabase = uploadToFirebase
-export const loadFromSupabase = loadFromFirebase
-export const restoreLessonInSupabase = async (lessonId: string, userId: string) => {
-  // Firebase: restore = set deleted = false (not implemented - use local state)
-  console.warn('restoreLessonInSupabase: Use local state in Firebase version')
-}
-export const hardDeleteLessonFromSupabase = async (lessonId: string, userId: string) => {
-  // Legacy signature - need childId, not implemented
-  console.warn('hardDeleteLessonFromSupabase: Use Firebase version with childId')
-}
-export const softDeleteLessonInSupabase = async (lessonId: string, userId: string) => {
-  // Legacy signature - need childId, not implemented  
-  console.warn('softDeleteLessonInSupabase: Use Firebase version with childId')
-}
-export const hardDeleteSubjectFromSupabase = async (subjectId: string, userId: string) => {
-  // Legacy signature - need childId, not implemented
-  console.warn('hardDeleteSubjectFromSupabase: Use Firebase version with childId')
-}
