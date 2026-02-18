@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ScheduleBlock, ChildProfile } from '../types';
 import { Pencil } from 'lucide-react';
+import { DS, getThemeColor } from './design-system';
 
 interface Props {
   schedule: ScheduleBlock[];
@@ -38,31 +39,32 @@ export const Timeline: React.FC<Props> = ({ schedule, onBlockClick, focusedChild
 
   if (allChildren.length === 0) {
     return (
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 p-8 text-center text-gray-500">
+      <div style={{ background: DS.card, borderRadius: DS.radius.lg, border: DS.border, padding: 32, textAlign: "center", color: DS.inkSoft }}>
         Loading schedule...
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
+    <div style={{ background: DS.card, borderRadius: DS.radius.lg, border: DS.border, overflow: "hidden" }}>
       {/* Header */}
-      <div className="grid grid-cols-[60px_1fr_1fr] bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-600">
-        <div className="p-3 text-center">Time</div>
+      <div style={{ display: "grid", gridTemplateColumns: "60px 1fr 1fr", background: DS.cream, borderBottom: DS.border }}>
+        <div style={{ padding: 12, textAlign: "center" }}><span className="n" style={{ fontSize: 12, fontWeight: 700, color: DS.inkSoft }}>Time</span></div>
         {allChildren.map((child) => {
           const display = getChildDisplay(child.id, allChildren);
+          const colors = getThemeColor(display.color);
           return (
-            <div key={child.id} className={`p-3 text-center relative`}>
-              <div className={`absolute left-0 top-0 bottom-0 w-1 bg-${display.color}-500`}></div>
-              <span className="text-2xl mr-2">{display.avatar}</span>
-              <span className={`text-${display.color}-700`}>{display.name}</span>
+            <div key={child.id} style={{ padding: 12, textAlign: "center", position: "relative" }}>
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: colors.main }}></div>
+              <span style={{ fontSize: 24, marginRight: 8 }}>{display.avatar}</span>
+              <span className="b" style={{ color: colors.main }}>{display.name}</span>
             </div>
           );
         })}
       </div>
-
+ 
       {/* Body */}
-      <div className="divide-y divide-gray-100">
+      <div style={{ borderTop: DS.border }}>
         {schedule.map((block, blockIndex) => {
           const isNow = currentTime >= block.startTime && currentTime < block.endTime;
           const isPast = currentTime >= block.endTime;
@@ -72,55 +74,54 @@ export const Timeline: React.FC<Props> = ({ schedule, onBlockClick, focusedChild
           const isShortBreak = isBreak && !isLunch && breakDuration <= 10;
 
           return (
-            <div key={block.id} className={`grid grid-cols-[60px_1fr_1fr] group transition-colors ${isNow ? 'bg-blue-50/50' : ''}`}>
+            <div key={block.id} style={{ display: "grid", gridTemplateColumns: "60px 1fr 1fr", background: isNow ? `${getThemeColor('blue').tint}40` : 'transparent', transition: "background 0.2s" }}>
               {/* Time column - hide for short breaks */}
-              <div className={`flex flex-col justify-center items-center border-r border-gray-200 ${isShortBreak ? '' : 'py-1'} ${isNow ? 'bg-blue-100' : ''}`}>
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderRight: DS.border, padding: isShortBreak ? 0 : 4, background: isNow ? getThemeColor('blue').tint : 'transparent' }}>
                 {isShortBreak ? (
-                  isNow && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                  isNow && <div style={{ width: 8, height: 8, borderRadius: "50%", background: getThemeColor('blue').main }} className="float"></div>
                 ) : (
                   <>
-                    <span className="text-[10px] font-medium text-gray-500">{formatTime(block.startTime)}</span>
-                    <span className="text-[10px] text-gray-400">{formatTime(block.endTime)}</span>
+                    <span className="n" style={{ fontSize: 10, fontWeight: 700, color: DS.inkSoft }}>{formatTime(block.startTime)}</span>
+                    <span className="n" style={{ fontSize: 10, color: DS.inkFade }}>{formatTime(block.endTime)}</span>
                   </>
                 )}
               </div>
 
               {isBreak ? (
-                // Break row - spans both columns, hide for short breaks
-                <div className={`col-span-2 ${isShortBreak ? 'h-[40px] py-1' : 'p-3'} bg-amber-50 flex items-center justify-center text-amber-700 font-medium text-sm`}>
+                <div style={{ gridColumn: "span 2", padding: isShortBreak ? "8px" : 12, background: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {isShortBreak ? (
-                    <span className="mr-2 text-base">☕</span>
+                    <span style={{ fontSize: 18, marginRight: 8 }}>☕</span>
                   ) : (
-                    <span className="mr-2 text-base">🍽️</span>
+                    <span style={{ fontSize: 18, marginRight: 8 }}>🍽️</span>
                   )}
-                  {block.label || `${breakDuration} min ${isLunch ? 'Lunch & Free Time' : 'Break'}`}
+                  <span className="n" style={{ fontSize: 14, fontWeight: 700, color: "#B45309" }}>{block.label || `${breakDuration} min ${isLunch ? 'Lunch & Free Time' : 'Break'}`}</span>
                 </div>
               ) : (
-                // Academic blocks - show each child
                 allChildren.map((child) => {
                   const display = getChildDisplay(child.id, allChildren);
+                  const colors = getThemeColor(display.color);
                   const childData = block.children?.[child.id];
                   const isChildNow = isNow && childData?.hasDevice;
 
                   return (
                     <div 
                       key={child.id}
-                      className={`p-3 border-r border-gray-200 last:border-r-0 relative hover:bg-gray-50 transition cursor-pointer ${isPast ? 'opacity-50' : ''} ${isChildNow ? 'bg-blue-50' : ''}`}
+                      style={{ padding: 12, borderRight: DS.border, position: "relative", background: isPast ? "rgba(0,0,0,0.03)" : isChildNow ? getThemeColor('blue').tint : "transparent", opacity: isPast ? 0.5 : 1, cursor: childData ? "pointer" : "default", transition: "background 0.2s" }}
                       onClick={() => childData && onBlockClick(child.id, childData.subjectId, childData.topicId, childData.lessonId, blockIndex)}
                     >
-                      {childData && <div className={`absolute left-0 top-0 bottom-0 w-1 bg-${display.color}-500`}></div>}
+                      {childData && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: colors.main }}></div>}
                       {childData ? (
                         <div>
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="font-bold text-gray-800 text-sm">{childData.subjectName}</span>
-                            <span className={`text-xs ${childData.hasDevice ? 'bg-green-100 text-green-700 px-1.5 py-0.5 rounded' : 'bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded'}`}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+                            <span className="b" style={{ fontSize: 14, color: DS.ink }}>{childData.subjectName}</span>
+                            <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: childData.hasDevice ? "#D1FAE5" : "#F3F4F6", color: childData.hasDevice ? "#047857" : "#6B7280" }}>
                               {childData.hasDevice ? '📱' : '📓'}
                             </span>
                           </div>
-                          <div className="text-xs text-gray-600 line-clamp-2">{childData.lessonTitle}</div>
+                          <span className="n" style={{ fontSize: 12, color: DS.inkSoft, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{childData.lessonTitle}</span>
                         </div>
                       ) : (
-                        <span className="text-gray-300 text-xs italic">Free</span>
+                        <span className="n" style={{ fontSize: 12, color: DS.inkFade, fontStyle: "italic" }}>Free</span>
                       )}
                     </div>
                   );

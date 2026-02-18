@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, memo } from 'react';
 import { Lesson, ChildProfile, Subject } from '../types';
 import { ArrowLeft, CheckCircle, BookOpen, Award } from 'lucide-react';
+import { DS, Shadow, getThemeColor } from './design-system';
 
 interface Props {
   child: ChildProfile;
@@ -21,13 +22,14 @@ const getYouTubeID = (url: string | undefined): string => {
   return match ? match[1] : '';
 };
 
-const getThemeColors = (themeColor: string) => ({
-  bg: `bg-${themeColor}`,
-  bg600: `bg-${themeColor}-600`,
-  bg700: `bg-${themeColor}-700`,
-  bg100: `bg-${themeColor}-100`,
-  text600: `text-${themeColor}-600`,
-});
+const getThemeColors = (themeColor: string) => {
+  const colors = getThemeColor(themeColor);
+  return {
+    bg: colors.main,
+    tint: colors.tint,
+    text: colors.main,
+  };
+};
 
 const OutcomeItem = memo(({ outcome, dotClass }: { outcome: string; dotClass: string }) => (
   <li className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 shadow-sm">
@@ -53,44 +55,89 @@ const LessonPlayer = memo<Props>(({ child, subject, lesson, onBack, onComplete }
   const outcomes = useMemo(() => lesson.outcomes || [], [lesson.outcomes]);
 
   return (
-    <div className="flex flex-col h-screen bg-white relative">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#fff', position: 'relative' }}>
       {showCompleteModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${themeColors.bg100}`}>
-              <Award size={40} className={themeColors.text600} />
+        <div style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <Shadow offset={6} size={3} radius={DS.radius.lg} style={{ maxWidth: 420, width: '100%' }}>
+            <div style={{ position: 'relative', background: DS.card, border: DS.border, borderRadius: DS.radius.lg, padding: 32, textAlign: 'center' }}>
+              <div style={{ width: 80, height: 80, borderRadius: '50%', background: themeColors.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                <Award size={40} style={{ color: themeColors.text }} />
+              </div>
+              <h2 className="b t-h1" style={{ color: DS.ink, marginBottom: 8 }}>Great Job, {child.name}!</h2>
+              <p className="ns t-body" style={{ color: DS.inkSoft, marginBottom: 32 }}>Lesson complete!</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <Shadow offset={3} size={2} radius={DS.radius.md} style={{ display: 'block' }}>
+                  <button
+                    onClick={handleFinish}
+                    style={{
+                      position: 'relative',
+                      background: themeColors.bg,
+                      border: DS.border,
+                      borderRadius: DS.radius.md,
+                      padding: '16px 24px',
+                      fontWeight: 800,
+                      fontSize: 18,
+                      color: '#fff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      width: '100%',
+                    }}
+                  >
+                    <CheckCircle size={24} /> Finish & Save
+                  </button>
+                </Shadow>
+                <button
+                  onClick={() => setShowCompleteModal(false)}
+                  style={{
+                    background: '#F3F4F6',
+                    border: 'none',
+                    borderRadius: DS.radius.md,
+                    padding: '16px 24px',
+                    fontWeight: 800,
+                    fontSize: 16,
+                    color: DS.inkSoft,
+                    cursor: 'pointer',
+                    width: '100%',
+                  }}
+                >
+                  I'm still learning
+                </button>
+              </div>
             </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Great Job, {child.name}!</h2>
-            <p className="text-gray-500 mb-8">Lesson complete!</p>
-            <div className="space-y-3">
-              <button
-                onClick={handleFinish}
-                className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition ${themeColors.bg600} text-white hover:${themeColors.bg700}`}
-              >
-                <CheckCircle size={24} /> Finish & Save
-              </button>
-              <button
-                onClick={() => setShowCompleteModal(false)}
-                className="w-full py-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition"
-              >
-                I'm still learning
-              </button>
-            </div>
-          </div>
+          </Shadow>
         </div>
       )}
 
-      <header className={`${themeColors.bg600} text-white p-4 shadow-md flex items-center justify-between`}>
-        <button onClick={handleExit} className="flex items-center space-x-2 hover:bg-white/20 p-2 rounded-lg transition">
-          <ArrowLeft size={20} />
-          <span>Exit Lesson</span>
-        </button>
-        <div className="text-center">
-          <h1 className="text-lg font-bold">{subject.name}</h1>
-          <p className="text-sm opacity-90">{lesson.title}</p>
+      <header style={{ background: themeColors.bg, color: '#fff', padding: 16, boxShadow: '0 4px 0 rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Shadow offset={2} size={2} radius={DS.radius.md} style={{ display: 'inline-block' }}>
+          <button 
+            onClick={handleExit} 
+            style={{ 
+              position: 'relative', 
+              background: '#fff', 
+              border: '2.5px solid #1A1A2E', 
+              borderRadius: DS.radius.md, 
+              padding: 8, 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 8,
+              color: themeColors.bg,
+            }}
+          >
+            <ArrowLeft size={20} />
+            <span className="n" style={{ fontWeight: 800, fontSize: 14 }}>Exit Lesson</span>
+          </button>
+        </Shadow>
+        <div style={{ textAlign: 'center' }}>
+          <h1 className="n" style={{ fontSize: 18, fontWeight: 800 }}>{subject.name}</h1>
+          <p className="ns" style={{ fontSize: 14, opacity: 0.9 }}>{lesson.title}</p>
         </div>
-        <div className="w-24 text-right flex items-center justify-end space-x-2">
-          <span className="text-2xl">{child.avatar}</span>
+        <div style={{ width: 100, textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+          <span style={{ fontSize: 28 }}>{child.avatar}</span>
         </div>
       </header>
 

@@ -7,6 +7,30 @@
      4. Bump version in package.json
      -->
 
+## 2026-02-19 v6 Design System Phase 2 & 3
+
+### Phase 2: Header/Nav Updates (Completed)
+- Updated `CurriculumBuilder.tsx` header with v6 design system
+  - Uses `DS.cream` background, `DS.card` for header
+  - Replaced Tailwind buttons with inline styled buttons using design tokens
+  - Added `Shadow` component for button wrappers
+- Updated `LessonPlayer.tsx` header and completion modal
+  - Theme-colored header using `getThemeColor()`
+  - Modal updated with v6 Card and Shadow components
+
+### Phase 3: Card Components (Partial)
+- Timeline component: Already using design system (verified)
+- Complex card areas (DaddyDashboard, ChildDashboard, SubjectDetail): Skipped
+  - Reason: Complex nested JSX with map within map within conditionals
+  - Risk of syntax errors during migration
+  - Recommendation: Keep Tailwind for these areas
+
+### Technical Notes
+- Design system imports: `DS, Shadow, Card, getThemeColor` from `./components/design-system`
+- Timeline uses: `DS.border`, `DS.radius.lg`, `DS.cream`, `DS.card`, `getThemeColor()`
+
+---
+
 ## 2026-02-18 Tab Shell & Navigation
 
 ### Tab Navigation

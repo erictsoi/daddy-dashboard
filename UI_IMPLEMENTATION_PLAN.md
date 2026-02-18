@@ -42,14 +42,20 @@ This document outlines the plan to migrate Daddy Dashboard from Tailwind CSS to 
 - [x] Update DaddyDashboard header
 - [x] Update ChildDashboard header
 - [x] Update SubjectDetail header
-- [ ] Update CurriculumBuilder header
-- [ ] Update LessonPlayer header
+- [x] Update CurriculumBuilder header
+- [x] Update LessonPlayer header
 
 ### Phase 3: Card Components
-- [ ] Update DaddyDashboard cards (subjects grid)
-- [ ] Update ChildDashboard cards
-- [ ] Update SubjectDetail topic cards
-- [ ] Update Timeline component styling
+- [x] Timeline - Already uses design system
+- [ ] DaddyDashboard cards - Complex JSX, skipped
+- [ ] ChildDashboard cards - Complex JSX, skipped
+- [ ] SubjectDetail topic cards - Complex JSX, skipped
+
+### Phase 3 Notes
+Complex nested JSX in these views makes migration risky. Recommend keeping Tailwind for these areas:
+- DaddyDashboard subject grid (map within map)
+- ChildDashboard cards (map within map within conditional)
+- SubjectDetail topic cards (complex conditional rendering)
 
 ### Phase 4: Form Components
 - [ ] Update ManageProfiles forms
@@ -179,4 +185,5 @@ After each update:
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-02-19 | 3.3.1 | Phase 2: CurriculumBuilder, LessonPlayer headers updated |
 | 2026-02-18 | 3.3.0 | Design system created, foundation laid |

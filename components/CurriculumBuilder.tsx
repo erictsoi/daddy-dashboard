@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { ArrowLeft, Save, AlertCircle, FileText, CheckCircle, Link, Copy, Youtube, Loader2, ChevronRight } from 'lucide-react';
 import { fetchPlaylistVideos, processYouTubeUrl } from '../utils/youtube';
 import { ParsedRow } from '../types';
+import { DS, Shadow, Card } from './design-system';
 
 const YOUTUBE_REGEX = /(?:youtube\.com|youtu\.be)/i;
 const PLAYLIST_ID_REGEX = /[?&]list=([a-zA-Z0-9_-]+)/;
@@ -240,63 +241,98 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
   }, [isImporting, parsedRows, onImport, onImportComplete]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition">
-              <ArrowLeft size={20} />
-            </button>
+    <div style={{ minHeight: '100vh', background: DS.cream, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: DS.card, borderBottom: DS.border, padding: 16, position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 4px 0 rgba(45,45,45,0.1)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <Shadow offset={2} size={2} radius={DS.radius.md} style={{ display: 'inline-block' }}>
+              <button onClick={onBack} style={{ position: 'relative', background: DS.card, border: DS.border, borderRadius: DS.radius.md, padding: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ArrowLeft size={20} style={{ color: DS.ink }} />
+              </button>
+            </Shadow>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">Curriculum Importer</h1>
-              <p className="text-sm text-gray-500">Step 1: Paste data → Step 2: Parse URLs → Step 3: Expand Playlists → Step 4: Import</p>
+              <h1 className="b t-h2" style={{ color: DS.ink }}>Curriculum Importer</h1>
+              <p className="ns t-small" style={{ color: DS.inkSoft }}>Step 1: Paste data → Step 2: Parse URLs → Step 3: Expand Playlists → Step 4: Import</p>
             </div>
           </div>
-            <div className="flex items-center gap-3">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {isProcessing && (
-              <span className="text-sm text-gray-600 flex items-center gap-2">
-                <Loader2 size={16} className="animate-spin" /> {processingProgress}
+              <span className="ns t-small" style={{ color: DS.inkSoft, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> {processingProgress}
               </span>
             )}
-            <button
-              onClick={processYouTube}
-              disabled={isProcessing || unprocessedYouTube.length === 0}
-              className={`px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition ${
-                unprocessedYouTube.length > 0 && !isProcessing
-                  ? 'bg-red-600 text-white hover:bg-red-700 shadow-md'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
-              title="Convert YouTube URLs to playlist format"
-            >
-              <Youtube size={18} />
-              {unprocessedYouTube.length > 0 ? `Parse ${unprocessedYouTube.length} URLs` : 'URLs Parsed'}
-            </button>
-            <button
-              onClick={expandPlaylists}
-              disabled={playlistRows.length === 0}
-              className={`px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition ${
-                playlistRows.length > 0
-                  ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-md'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
-              title="Convert playlists into individual video lessons"
-            >
-              <Link size={18} />
-              {playlistRows.length > 0 ? `Expand ${playlistRows.length} Playlists` : 'Playlists Expanded'}
-            </button>
-            <button
-              onClick={handleImport}
-              disabled={totalLessons === 0 || isProcessing || isImporting}
-              className={`px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition ${
-                totalLessons > 0 && !isProcessing && !isImporting
-                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
-              title="Save all lessons to curriculum"
-            >
-              <Save size={18} />
-              {isImporting ? 'Importing...' : `Import ${totalLessons} Lessons`}
-            </button>
+            <Shadow offset={2} size={2} radius={DS.radius.pill} style={{ display: 'inline-block', opacity: unprocessedYouTube.length > 0 && !isProcessing ? 1 : 0.5 }}>
+              <button
+                onClick={processYouTube}
+                disabled={isProcessing || unprocessedYouTube.length === 0}
+                style={{
+                  position: 'relative',
+                  background: unprocessedYouTube.length > 0 && !isProcessing ? '#EF4444' : '#E5E7EB',
+                  border: DS.border,
+                  borderRadius: DS.radius.pill,
+                  padding: '8px 16px',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  color: unprocessedYouTube.length > 0 && !isProcessing ? '#fff' : '#9CA3AF',
+                  cursor: unprocessedYouTube.length > 0 && !isProcessing ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+                title="Convert YouTube URLs to playlist format"
+              >
+                <Youtube size={18} />
+                {unprocessedYouTube.length > 0 ? `Parse ${unprocessedYouTube.length} URLs` : 'URLs Parsed'}
+              </button>
+            </Shadow>
+            <Shadow offset={2} size={2} radius={DS.radius.pill} style={{ display: 'inline-block', opacity: playlistRows.length > 0 ? 1 : 0.5 }}>
+              <button
+                onClick={expandPlaylists}
+                disabled={playlistRows.length === 0}
+                style={{
+                  position: 'relative',
+                  background: playlistRows.length > 0 ? '#8B5CF6' : '#E5E7EB',
+                  border: DS.border,
+                  borderRadius: DS.radius.pill,
+                  padding: '8px 16px',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  color: playlistRows.length > 0 ? '#fff' : '#9CA3AF',
+                  cursor: playlistRows.length > 0 ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+                title="Convert playlists into individual video lessons"
+              >
+                <Link size={18} />
+                {playlistRows.length > 0 ? `Expand ${playlistRows.length} Playlists` : 'Playlists Expanded'}
+              </button>
+            </Shadow>
+            <Shadow offset={2} size={2} radius={DS.radius.pill} style={{ display: 'inline-block', opacity: totalLessons > 0 && !isProcessing && !isImporting ? 1 : 0.5 }}>
+              <button
+                onClick={handleImport}
+                disabled={totalLessons === 0 || isProcessing || isImporting}
+                style={{
+                  position: 'relative',
+                  background: totalLessons > 0 && !isProcessing && !isImporting ? '#2563EB' : '#E5E7EB',
+                  border: DS.border,
+                  borderRadius: DS.radius.pill,
+                  padding: '12px 24px',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  color: totalLessons > 0 && !isProcessing && !isImporting ? '#fff' : '#9CA3AF',
+                  cursor: totalLessons > 0 && !isProcessing && !isImporting ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+                title="Save all lessons to curriculum"
+              >
+                <Save size={18} />
+                {isImporting ? 'Importing...' : `Import ${totalLessons} Lessons`}
+              </button>
+            </Shadow>
           </div>
         </div>
       </div>

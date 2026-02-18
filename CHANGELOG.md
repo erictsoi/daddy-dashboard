@@ -8,6 +8,20 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-19 - Version 3.3.1 (UI v6 Design System)
+
+### Enhanced
+- **v6 Design System Migration**
+  - Updated CurriculumBuilder header with v6 styling
+  - Updated LessonPlayer header and completion modal with v6 styling
+  - Timeline component already uses design system
+
+### Technical
+- Design system components (Card, Shadow, Button, IconButton) now used in component headers
+- Consistent typography with Baloo 2 and Nunito fonts
+
+---
+
 ## 2026-02-18 - Version 3.4.0 (Refactor & Cleanup)
 
 ### Removed

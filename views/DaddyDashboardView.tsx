@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ChildProfile, Subject, Topic, Lesson, ViewState } from '../types';
 import { useAuth } from '../src/lib/AuthContext';
+import { DS, GlobalStyles, Texture, Blobs, Deco, Shadow, SolidShadow, Tag, Chip, SectionHead, getThemeColor } from '../components/design-system';
 import {
     Play,
     Settings,
@@ -303,13 +304,16 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 pb-20">
+        <div style={{ minHeight: "100vh", background: DS.cream, position: "relative", overflow: "hidden" }}>
+            <GlobalStyles />
+            <Texture />
+            <Deco color={adminColor ? getThemeColor(adminColor).main : "#2B8ED4"} />
             {/* Header */}
-            <header className="bg-white border-b border-gray-200 p-6 sticky top-0 z-50">
-                <div className="max-w-6xl mx-auto flex justify-between items-center">
+            <header style={{ position: "sticky", top: 0, zIndex: 50, background: `${DS.card}F0`, backdropFilter: "blur(12px)", borderBottom: DS.border }}>
+                <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-800">{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard</h1>
-                        <p className="text-gray-500 text-sm mt-1">HK Homeschool Relocation Plan</p>
+                        <h1 className="b t-h1" style={{ color: DS.ink }}>{adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard</h1>
+                        <p className="n" style={{ color: DS.inkSoft, fontSize: 14, marginTop: 4 }}>HK Homeschool Relocation Plan</p>
                     </div>
 
                     {/* Supabase Status Indicator */}
@@ -332,22 +336,26 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                         </div>
                     )}
 
-                    <div className="flex gap-3 items-center">
-                        <button
-                            onClick={() => handleNavigate({ type: 'CURRICULUM_BUILDER' })}
-                            className="bg-gray-900 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition shadow-lg"
-                        >
-                            <Sparkles size={16} /> Build Curriculum
-                        </button>
+                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                        <Shadow offset={3} radius={DS.radius.md}>
+                            <button
+                                onClick={() => handleNavigate({ type: 'CURRICULUM_BUILDER' })}
+                                style={{ position: "relative", background: DS.ink, color: "#fff", border: DS.border, borderRadius: DS.radius.md, padding: "10px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+                            >
+                                <Sparkles size={16} /> <span className="n" style={{ fontWeight: 700, fontSize: 14 }}>Build Curriculum</span>
+                            </button>
+                        </Shadow>
                         {user && (
                             <>
-                                <button
-                                    onClick={() => exportDataToFile(data, `daddy-dashboard-${new Date().toISOString().split('T')[0]}.json`)}
-                                    className="bg-green-600 text-white p-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition shadow-lg"
-                                    title="Export to Computer"
-                                >
-                                    <Download size={18} />
-                                </button>
+                                <Shadow offset={2} radius={DS.radius.md}>
+                                    <button
+                                        onClick={() => exportDataToFile(data, `daddy-dashboard-${new Date().toISOString().split('T')[0]}.json`)}
+                                        style={{ position: "relative", background: "#10B981", color: "#fff", border: DS.border, borderRadius: DS.radius.md, padding: 10, cursor: "pointer", display: "flex", alignItems: "center" }}
+                                        title="Export to Computer"
+                                    >
+                                        <Download size={18} />
+                                    </button>
+                                </Shadow>
                                 <input
                                     type="file"
                                     accept=".json"
@@ -369,50 +377,38 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                                 />
                                 <label
                                     htmlFor="header-import-file"
-                                    className="bg-blue-600 text-white p-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition shadow-lg cursor-pointer"
+                                    style={{ position: "relative", background: "#2B8ED4", color: "#fff", border: DS.border, borderRadius: DS.radius.md, padding: 10, cursor: "pointer", display: "flex", alignItems: "center" }}
                                     title="Import from Computer"
                                 >
                                     <Upload size={18} />
                                 </label>
-                                <button
-                                    onClick={async () => {
-                                        saveData(data, user);
-                                        showStatus('Saved!', 'success');
-                                    }}
-                                    className="bg-purple-600 text-white p-2 rounded-lg flex items-center gap-2 hover:bg-purple-700 transition shadow-lg"
-                                    title="Save to Cloud"
-                                >
-                                    <Cloud size={18} />
-                                </button>
-                                <div className="relative" ref={profileDropdownRef}>
+                                <Shadow offset={2} radius={DS.radius.md}>
+                                    <button
+                                        onClick={async () => {
+                                            saveData(data, user);
+                                            showStatus('Saved!', 'success');
+                                        }}
+                                        style={{ position: "relative", background: "#8B5CF6", color: "#fff", border: DS.border, borderRadius: DS.radius.md, padding: 10, cursor: "pointer", display: "flex", alignItems: "center" }}
+                                        title="Save to Cloud"
+                                    >
+                                        <Cloud size={18} />
+                                    </button>
+                                </Shadow>
+                                <div style={{ position: "relative" }} ref={profileDropdownRef as any}>
                                     <button
                                         onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                                        className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1 transition"
+                                        style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", borderRadius: DS.radius.md, cursor: "pointer" }}
                                     >
                                         <div
-                                            className="w-10 h-10 rounded-full flex items-center justify-center text-xl"
                                             style={{
-                                                backgroundColor: adminColor === 'blue' ? '#dbeafe' :
-                                                    adminColor === 'indigo' ? '#e0e7ff' :
-                                                        adminColor === 'purple' ? '#f3e8ff' :
-                                                            adminColor === 'pink' ? '#fce7f3' :
-                                                                adminColor === 'rose' ? '#ffe4e6' :
-                                                                    adminColor === 'red' ? '#fee2e2' :
-                                                                        adminColor === 'orange' ? '#ffedd5' :
-                                                                            adminColor === 'amber' ? '#fef3c7' :
-                                                                                adminColor === 'yellow' ? '#fef9c3' :
-                                                                                    adminColor === 'green' ? '#dcfce7' :
-                                                                                        adminColor === 'emerald' ? '#d1fae5' :
-                                                                                            adminColor === 'teal' ? '#ccfbf1' :
-                                                                                                adminColor === 'cyan' ? '#cffafe' :
-                                                                                                    adminColor === 'sky' ? '#e0f2fe' :
-                                                                                                        '#f1f5f9'
+                                                width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+                                                backgroundColor: adminColor ? getThemeColor(adminColor).tint : "#EAF4FC"
                                             }}
                                         >
                                             {adminAvatar}
                                         </div>
-                                        <span className="font-medium text-gray-700 hidden sm:block">{adminName || user?.user_metadata?.full_name || user?.email}</span>
-                                        <svg className={`w-4 h-4 text-gray-500 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <span className="n" style={{ fontWeight: 700, color: DS.ink }}>{adminName || user?.user_metadata?.full_name || user?.email}</span>
+                                        <svg style={{ width: 16, height: 16, color: DS.inkSoft, transition: "transform 0.2s", transform: showProfileDropdown ? "rotate(180deg)" : "rotate(0deg)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                         </svg>
                                     </button>
@@ -679,31 +675,33 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                                     const percent = ygTotal > 0 ? Math.round((ygCompleted / ygTotal) * 100) : 0;
 
                                     return (
-                                        <div key={yg.id} className="relative">
+                                        <div key={yg.id} style={{ position: "relative" }}>
                                             {/* Vertical Line Connector */}
-                                            <div className="absolute left-[-24px] top-12 bottom-0 w-1 bg-gray-200 rounded-full hidden lg:block"></div>
+                                            <div style={{ position: "absolute", left: -24, top: 48, bottom: 0, width: 4, background: `${DS.ink}12`, borderRadius: 100, display: "none" }} className="lg:block"></div>
 
                                             {/* Year Group Header & Progress */}
-                                            <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 rounded-full bg-white text-${child.themeColor}-600 flex items-center justify-center font-bold shadow-sm border border-${child.themeColor}-200`}>
-                                                        {yg.name.replace(/[^0-9]/g, '')}
-                                                    </div>
-                                                    <h3 className="text-2xl font-bold text-gray-800">{yg.name}</h3>
+                                            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 16, marginBottom: 24 }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                                    <Shadow offset={2} radius="50%">
+                                                        <div style={{ width: 40, height: 40, borderRadius: "50%", background: DS.card, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, color: getThemeColor(child.themeColor).main, border: DS.border }}>
+                                                            {yg.name.replace(/[^0-9]/g, '')}
+                                                        </div>
+                                                    </Shadow>
+                                                    <h3 className="b t-h2" style={{ color: DS.ink }}>{yg.name}</h3>
                                                 </div>
 
                                                 {/* Compact Progress Bar for Year */}
-                                                <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200 md:ml-4">
-                                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Curriculum Progress</span>
-                                                    <div className="w-24">
+                                                <Shadow offset={2} radius={DS.radius.pill} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 16px", background: DS.card, marginLeft: "auto" }}>
+                                                    <span className="n" style={{ fontSize: 10, fontWeight: 800, color: DS.inkFade, letterSpacing: 1 }}>PROGRESS</span>
+                                                    <div style={{ width: 80 }}>
                                                         <ProgressBar current={ygCompleted} total={ygTotal} heightClass="h-2" colorClass={`bg-${child.themeColor}-500`} />
                                                     </div>
-                                                    <span className={`text-sm font-bold text-${child.themeColor}-600`}>{percent}%</span>
-                                                </div>
+                                                    <span className="n" style={{ fontSize: 14, fontWeight: 800, color: getThemeColor(child.themeColor).main }}>{percent}%</span>
+                                                </Shadow>
                                             </div>
 
                                             {/* 4-Column Grid of Mini Cards */}
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            <div style={{ display: "grid", gridTemplateColumns: "repeat(1, 1fr)", gap: 16 }} className="sm:grid-cols-2 lg:grid-cols-4">
                                                 {yg.subjects.flatMap(subject =>
                                                     subject.topics.map(topic => {
                                                         const topicLessons = topic.lessons.filter(l => !l.deleted);
@@ -713,12 +711,11 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                                                         const isSelected = selectedSubjects.has(cardId);
                                                         const isEditing = editingSubject?.subjectId === cardId;
 
-                                                        return (
+                                                    return (
                                                             <div
                                                                 key={cardId}
                                                                 onClick={() => showBulkActions ? toggleSubjectSelection(cardId) : handleNavigate({ type: 'SUBJECT_DETAIL', childId: child.id, subjectId: subject.id, origin: 'HOME' })}
-                                                                className={`relative p-3 rounded-xl border shadow-sm bg-white hover:shadow-md transition cursor-pointer group flex flex-col justify-between ${isSelected ? 'border-blue-400 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300'
-                                                                    }`}
+                                                                style={{ position: "relative", padding: 16, borderRadius: DS.radius.lg, background: DS.card, border: isSelected ? `${getThemeColor(child.themeColor).main} 3px solid` : DS.border, cursor: "pointer", display: "flex", flexDirection: "column", justifyContent: "space-between", transition: "all 0.2s", animation: `fadeUp .3s ease-out` }}
                                                             >
                                                                 {showBulkActions && (
                                                                     <div className={`absolute top-2 left-2 w-5 h-5 rounded border-2 flex items-center justify-center z-10 ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300 bg-white'
