@@ -32,6 +32,7 @@
 - Build passes successfully
 - **Code splitting** - Lazy loaded views (DaddyDashboardView, ChildDashboard, ManageProfilesView, ReturningView)
 - **Bundle reduction** - Main bundle reduced from 675KB to 658KB via code splitting
+- **Note** - Inline dead code (~500 lines) remains in App.tsx - extracted views work but inline versions not removed to avoid corruption
 
 ---
 
