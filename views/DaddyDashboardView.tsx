@@ -41,10 +41,17 @@ interface DaddyDashboardViewProps {
     schedule: any[];
     setSchedule: (schedule: any[]) => void;
     generateSchedule: (hours: number) => void;
-    supabaseStatus: { type: 'success' | 'error' | 'info', message: string } | null;
+    dataStatus: { type: 'success' | 'error' | 'info', message: string } | null;
     authDebug: string | null;
     showStatus: (message: string, type: 'success' | 'error' | 'info') => void;
     saveData: (data: ChildProfile[], user: any) => void;
+    user: any;
+    signOut: () => void;
+    onAddChild: () => void;
+    onManageProfiles: () => void;
+    onImportData: () => void;
+    onExportData: () => void;
+    onOpenCurriculum: () => void;
 }
 
 export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
@@ -60,12 +67,19 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
     schedule,
     setSchedule,
     generateSchedule,
-    supabaseStatus,
+    dataStatus,
     authDebug,
     showStatus,
-    saveData
+    saveData,
+    user,
+    signOut,
+    onAddChild,
+    onManageProfiles,
+    onImportData,
+    onExportData,
+    onOpenCurriculum
 }) => {
-    const { user, signOut } = useAuth() || {};
+    // const { user, signOut } = useAuth() || {};
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const profileDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -197,7 +211,7 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                     }).filter((s): s is Subject => s !== null)
                 }))
             }));
-                saveData(newData, user);
+            saveData(newData, user);
             return newData;
         });
 
@@ -241,7 +255,7 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                     })
                 }))
             }));
-                saveData(newData, user);
+            saveData(newData, user);
             return newData;
         });
         setEditingSubject(null);
@@ -271,7 +285,7 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                     }))
                 };
             });
-                saveData(newData, user);
+            saveData(newData, user);
             return newData;
         });
     };
@@ -298,7 +312,7 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                     }))
                 };
             });
-                saveData(newData, user);
+            saveData(newData, user);
             return newData;
         });
     };
@@ -317,15 +331,15 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                     </div>
 
                     {/* Supabase Status Indicator */}
-                    {supabaseStatus && (
-                        <div className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${supabaseStatus.type === 'success' ? 'bg-green-100 text-green-700' :
-                                supabaseStatus.type === 'error' ? 'bg-red-100 text-red-700' :
-                                    'bg-blue-100 text-blue-700'
+                    {dataStatus && (
+                        <div className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${dataStatus.type === 'success' ? 'bg-green-100 text-green-700' :
+                            dataStatus.type === 'error' ? 'bg-red-100 text-red-700' :
+                                'bg-blue-100 text-blue-700'
                             }`}>
-                            {supabaseStatus.type === 'success' && <CheckCircle size={16} />}
-                            {supabaseStatus.type === 'error' && <XCircle size={16} />}
-                            {supabaseStatus.type === 'info' && <Clock size={16} />}
-                            {supabaseStatus.message}
+                            {dataStatus.type === 'success' && <CheckCircle size={16} />}
+                            {dataStatus.type === 'error' && <XCircle size={16} />}
+                            {dataStatus.type === 'info' && <Clock size={16} />}
+                            {dataStatus.message}
                         </div>
                     )}
 
@@ -624,8 +638,8 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                                         <button
                                             onClick={() => showBulkActions ? clearSelection() : setShowBulkActions(true)}
                                             className={`px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2 text-sm shadow-sm border ${showBulkActions
-                                                    ? 'bg-blue-100 text-blue-700 border-blue-300'
-                                                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                                ? 'bg-blue-100 text-blue-700 border-blue-300'
+                                                : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                                                 }`}
                                         >
                                             {showBulkActions ? 'Done' : 'Edit Cards'}
@@ -711,7 +725,7 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                                                         const isSelected = selectedSubjects.has(cardId);
                                                         const isEditing = editingSubject?.subjectId === cardId;
 
-                                                    return (
+                                                        return (
                                                             <div
                                                                 key={cardId}
                                                                 onClick={() => showBulkActions ? toggleSubjectSelection(cardId) : handleNavigate({ type: 'SUBJECT_DETAIL', childId: child.id, subjectId: subject.id, origin: 'HOME' })}
@@ -762,11 +776,11 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                                                                     <>
                                                                         <div className="flex items-center gap-2 mb-2 pr-6">
                                                                             <div className={`w-2 h-2 rounded-full ${subject.color.includes('blue') ? 'bg-blue-500' :
-                                                                                    subject.color.includes('green') ? 'bg-green-500' :
-                                                                                        subject.color.includes('amber') ? 'bg-amber-500' :
-                                                                                            subject.color.includes('rose') ? 'bg-rose-500' :
-                                                                                                subject.color.includes('indigo') ? 'bg-indigo-500' :
-                                                                                                    'bg-gray-400'
+                                                                                subject.color.includes('green') ? 'bg-green-500' :
+                                                                                    subject.color.includes('amber') ? 'bg-amber-500' :
+                                                                                        subject.color.includes('rose') ? 'bg-rose-500' :
+                                                                                            subject.color.includes('indigo') ? 'bg-indigo-500' :
+                                                                                                'bg-gray-400'
                                                                                 }`}></div>
                                                                             <div className="text-xs font-bold text-gray-500 uppercase tracking-wider flex-1 truncate">{subject.category}</div>
                                                                             {topicCompleted === topicTotal && topicTotal > 0 && <CheckCircle size={14} className="text-green-500" />}
@@ -816,8 +830,8 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                                                                                             key={value}
                                                                                             onClick={() => handleUpdateTopicFrequency(child.id, subject.id, topic.id, value)}
                                                                                             className={`px-2 py-0.5 text-[10px] rounded-full border transition-colors ${isSelected
-                                                                                                    ? 'border-gray-500 bg-gray-100 text-gray-700 font-medium'
-                                                                                                    : 'border-gray-300 bg-white text-gray-400 hover:border-gray-400'
+                                                                                                ? 'border-gray-500 bg-gray-100 text-gray-700 font-medium'
+                                                                                                : 'border-gray-300 bg-white text-gray-400 hover:border-gray-400'
                                                                                                 }`}
                                                                                             title={`${label} frequency (${value}x per week)`}
                                                                                         >

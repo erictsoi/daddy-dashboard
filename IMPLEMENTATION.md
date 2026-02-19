@@ -7,6 +7,30 @@
      4. Bump version in package.json
      -->
 
+## 2026-02-19 v3.4.0 - Complete Supabase Removal
+
+### Changes Made
+
+1. **Removed Supabase Dependencies**
+   - Removed `@supabase/ssr` and `@supabase/supabase-js` from package.json
+   - Firebase-only now
+
+2. **Code Cleanup**
+   - Removed `const supabase = null` shim from App.tsx
+   - Renamed `supabaseStatus` → `dataStatus` throughout
+   - Fixed duplicate import issue
+   - Fixed TypeScript errors
+
+3. **Deleted Files**
+   - `supabase_schema.sql` - No longer needed (Firebase uses Firestore)
+
+### Technical Notes
+- All data operations use Firebase Firestore
+- Auth uses Firebase Auth (Google OAuth)
+- No localStorage fallback
+
+---
+
 ## 2026-02-19 v6 Design System Phase 2 & 3
 
 ### Phase 2: Header/Nav Updates (Completed)

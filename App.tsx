@@ -3,20 +3,20 @@ import { ViewState, ChildProfile, YearGroup, Subject, Topic, Lesson, ScheduleBlo
 import { INITIAL_DATA } from './constants';
 import { AuthProvider, useAuth } from './src/lib/AuthContext';
 import { auth as firebaseAuth, googleProvider, signInWithGoogle, logOut as firebaseLogOut } from './src/lib/firebase'
-import { fetchChildren, fetchChildByEmail, fetchChildById, getLocalData, saveLocalData, saveFullCurriculum, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, migrateChildToTopicStructure } from './src/lib/dataService';
-import { usePersistentTimer, formatTime, formatTimeReadable } from './src/lib/useTimer';
+import { fetchChildren, fetchChildByEmail, fetchChildById, getLocalData, saveFullCurriculum, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, migrateChildToTopicStructure } from './src/lib/dataService';
+import { usePersistentTimer } from './src/lib/useTimer';
 import { saveData, generateUuid, exportDataToFile } from './src/lib/helpers';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
 import { Timeline } from './components/Timeline';
 const CurriculumBuilder = lazy(() => import('./components/CurriculumBuilder').then(m => ({ default: m.CurriculumBuilder })));
+const DaddyDashboardView = lazy(() => import('./views/DaddyDashboardView').then(m => ({ default: m.DaddyDashboardView })));
+const ChildDashboard = lazy(() => import('./views/ChildDashboardView').then(m => ({ default: m.ChildDashboard })));
+const ManageProfilesView = lazy(() => import('./views/ManageProfilesView').then(m => ({ default: m.ManageProfilesView })));
+const ReturningView = lazy(() => import('./views/ReturningView').then(m => ({ default: m.ReturningView })));
 import { AdminAvatarEditModal } from './app/AdminAvatarEditModal';
 import { ProfileSwitcher } from './components/ProfileSwitcher';
-import { DaddyDashboardView } from './views/DaddyDashboardView';
 import { SubjectDetail } from './views/SubjectDetailView';
-
-// Firebase shim for backward compatibility (some admin features simplified)
-const supabase = null;
 
 // Helper for grid columns
 const getGridCols = (count: number): string => {
@@ -2611,6 +2611,7 @@ const App: React.FC = () => {
   return (
     <>
       {view.type === 'LANDING' && <LandingView />}
+      {view.type === 'RETURNING' && <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ReturningView childProfile={childProfile} onNavigate={(nav) => setView(nav as ViewState)} /></Suspense>}
       {view.type === 'CURRICULUM_BUILDER' && <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><CurriculumBuilder onBack={() => setView({ type: 'HOME' })} onImport={handleBulkImport} onImportComplete={() => {}} /></Suspense>}
       {view.type === 'SUBJECT_DETAIL' && <SubjectDetail childId={view.childId} subjectId={view.subjectId} origin={view.origin} />}
       {view.type === 'LESSON_PLAYER' && (() => {
@@ -2637,7 +2638,7 @@ const App: React.FC = () => {
         console.error('LessonPlayer: Could not find data', { childId: view.childId, subjectId: view.subjectId, topicId: view.topicId, lessonId: view.lessonId });
         return <div>Error loading lesson - data not found</div>;
       })()}
-      {view.type === 'HOME' && <DaddyDashboardView 
+      {view.type === 'HOME' && <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><DaddyDashboardView 
         data={data}
         setData={setData}
         view={view}
@@ -2650,13 +2651,49 @@ const App: React.FC = () => {
         schedule={schedule}
         setSchedule={setSchedule}
         generateSchedule={generateSchedule}
-        supabaseStatus={supabaseStatus}
+        dataStatus={supabaseStatus}
         authDebug={authDebug}
         showStatus={showStatus}
         saveData={saveData}
-      />}
-      {view.type === 'CHILD_DASHBOARD' && <ChildDashboard childId={view.childId} />}
-      {view.type === 'MANAGE_PROFILES' && <ManageProfilesView />}
+      /></Suspense>}
+      {view.type === 'CHILD_DASHBOARD' && <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ChildDashboard
+        childId={view.childId}
+        data={data}
+        setData={setData}
+        childProfile={childProfile}
+        setChildProfile={setChildProfile}
+        allChildren={data.map(c => ({ id: c.id, name: c.name, avatar: c.avatar, themeColor: c.themeColor }))}
+        user={user}
+        signOut={() => signOut && signOut()}
+        view={view}
+        setView={setView}
+        parentUid={parentUid}
+        adminName={adminName}
+        adminAvatar={adminAvatar}
+        adminColor={adminColor}
+        isDayActive={isDayActive}
+        setIsDayActive={setIsDayActive}
+        schedule={schedule}
+        generateSchedule={generateSchedule}
+      /></Suspense>}
+      {view.type === 'MANAGE_PROFILES' && <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ManageProfilesView
+        data={data}
+        setData={setData}
+        user={user}
+        signOut={() => signOut && signOut()}
+        view={view}
+        setView={setView}
+        saveData={saveData}
+        adminName={adminName}
+        setAdminName={setAdminName}
+        adminAvatar={adminAvatar}
+        setAdminAvatar={setAdminAvatar}
+        adminColor={adminColor}
+        setAdminColor={setAdminColor}
+        onDeleteChild={handleDeleteChild}
+        onAddYearGroup={handleAddYearGroup}
+        onRemoveYearGroup={handleRemoveYearGroup}
+      /></Suspense>}
       
       {showChildManagement && (
         <ChildManagement

@@ -8,6 +8,33 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-19 - Version 3.4.0 (Complete Supabase Removal)
+
+### Removed
+- **Supabase dependencies** - Removed `@supabase/ssr` and `@supabase/supabase-js` from package.json
+- **Supabase code** - Removed all Supabase references from codebase
+- **Supabase schema** - Deleted `supabase_schema.sql`
+
+### Refactored
+- **Status indicator** - Renamed `supabaseStatus` to `dataStatus` throughout
+- **Duplicate import** - Fixed duplicate `DaddyDashboardView` import in App.tsx
+- **Type fix** - Fixed ViewOrigin comparison (`CHILD_DASHBOARD` → `KIDSDASH`)
+- **Function args** - Fixed `hardDeleteSubjectFromFirebase` call with correct arguments
+- **View wiring** - Wired up extracted views:
+  - ChildDashboardView imported with full props
+  - ManageProfilesView imported with full props  
+  - ReturningView imported with props
+  - DaddyDashboardView now used in render switch
+
+### Technical
+- All data now uses Firebase (Firestore + Auth)
+- No localStorage fallback - Firebase-only persistence
+- Build passes successfully
+- **Code splitting** - Lazy loaded views (DaddyDashboardView, ChildDashboard, ManageProfilesView, ReturningView)
+- **Bundle reduction** - Main bundle reduced from 675KB to 658KB via code splitting
+
+---
+
 ## 2026-02-19 - Version 3.3.1 (UI v6 Design System)
 
 ### Enhanced
