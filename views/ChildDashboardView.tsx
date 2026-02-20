@@ -4,6 +4,7 @@ import { migrateChildToTopicStructure } from '../src/lib/dataService';
 import { fetchChildById } from '../src/lib/dataService';
 import { Timeline } from '../components/Timeline';
 import { ProgressBar } from '../components/ProgressBar';
+import { useNavigate } from 'react-router-dom';
 import {
     Calendar,
     Play,
@@ -56,6 +57,7 @@ export const ChildDashboard = ({
     schedule,
     generateSchedule
 }: ChildDashboardProps) => {
+    const navigate = useNavigate();
     let child = data.find(c => c.id === childId);
 
     // Fallback to childProfile if needed, with migration
@@ -91,7 +93,16 @@ export const ChildDashboard = ({
                             <h1 className="text-3xl font-bold">{child.name}'s Space</h1>
                             <p className="text-white/80">Ready to learn today?</p>
                         </div>
-                        <div className="relative" ref={profileDropdownRef}>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => navigate('/')} className="px-3 py-1 bg-white/20 rounded-lg text-sm font-medium hover:bg-white/30 transition">Landing</button>
+                            <button onClick={() => navigate('/returning')} className="px-3 py-1 bg-white/20 rounded-lg text-sm font-medium hover:bg-white/30 transition">Return</button>
+                            <button onClick={() => navigate('/dashboard')} className="px-3 py-1 bg-white/20 rounded-lg text-sm font-medium hover:bg-white/30 transition">Admin</button>
+                            <button onClick={() => navigate('/child/sophia')} className="px-3 py-1 bg-white/20 rounded-lg text-sm font-medium hover:bg-white/30 transition">Sophia</button>
+                            <button onClick={() => navigate('/child/adrian')} className="px-3 py-1 bg-white/20 rounded-lg text-sm font-medium hover:bg-white/30 transition">Adrian</button>
+                            <button onClick={() => navigate('/curriculum')} className="px-3 py-1 bg-white/20 rounded-lg text-sm font-medium hover:bg-white/30 transition">Curriculum</button>
+                            <button onClick={() => navigate('/manage')} className="px-3 py-1 bg-white/20 rounded-lg text-sm font-medium hover:bg-white/30 transition">Manage</button>
+                            </div>
+                            <div className="relative ml-2" ref={profileDropdownRef}>
                             <button
                                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                                 className="text-4xl hover:scale-110 transition cursor-pointer"
@@ -105,7 +116,7 @@ export const ChildDashboard = ({
                                     </div>
                                     {user && !childProfile && (
                                         <button
-                                            onClick={() => { setView({ type: 'ADMIN' }); setShowProfileDropdown(false); }}
+                                            onClick={() => { navigate('/dashboard'); setShowProfileDropdown(false); }}
                                             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
                                         >
                                             <div
@@ -148,10 +159,9 @@ export const ChildDashboard = ({
                                                         const migratedSibling = migrateChildToTopicStructure(siblingData);
                                                         setData([migratedSibling]);
                                                         setChildProfile(migratedSibling);
-                                                        localStorage.setItem('child_profile', JSON.stringify(migratedSibling));
                                                     }
                                                 }
-                                                setView({ type: 'KIDSDASH', childId: c.id });
+                                                navigate(`/child/${c.id}`);
                                                 setShowProfileDropdown(false);
                                             }}
                                             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
@@ -171,7 +181,7 @@ export const ChildDashboard = ({
                                             <div className="border-t border-gray-100 mt-2 pt-2">
                                                 {!childProfile && (
                                                     <button
-                                                        onClick={() => { setView({ type: 'MANAGE_PROFILES' }); setShowProfileDropdown(false); }}
+                                                        onClick={() => { navigate('/manage'); setShowProfileDropdown(false); }}
                                                         className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
                                                     >
                                                         <Edit2 size={16} />
@@ -217,7 +227,7 @@ export const ChildDashboard = ({
                                 childProfiles={data}
                                 focusedChildId={undefined}
                                 onBlockClick={(cId, sId, tId, lId) => {
-                                    setView({ type: 'LESSON', childId: cId, subjectId: sId, topicId: tId, lessonId: lId, origin: 'KIDSDASH' });
+                                    navigate(`/child/${cId}/subject/${sId}/topic/${tId}/lesson/${lId}`);
                                 }}
                             />
                         </div>
@@ -255,7 +265,7 @@ export const ChildDashboard = ({
                                     <div
                                         key={subject.id}
                                         className="p-3 rounded-xl border border-gray-200 shadow-sm bg-white hover:shadow-md hover:border-blue-300 transition cursor-pointer group flex flex-col justify-between"
-                                        onClick={() => setView({ type: 'SUBJECT_DETAIL', childId: child!.id, subjectId: subject.id, origin: 'KIDSDASH' })}
+                                        onClick={() => navigate(`/child/${child!.id}/subject/${subject.id}`)}
                                     >
                                         <div>
                                             <div className="flex items-center gap-2 mb-2">

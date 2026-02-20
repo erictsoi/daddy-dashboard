@@ -8,6 +8,31 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-20 - Version 3.4.1 (Firestore User Settings)
+
+### Added
+- **User settings to Firestore** - Admin profile (name, avatar, color, DOB) now stored in `/users/{uid}/settings/profile`
+- **fetchUserSettings()** - Load user settings from Firestore on login
+- **saveUserSettings()** - Save user settings to Firestore when edited
+
+### Removed
+- **localStorage usage** - Completely removed localStorage for user data:
+  - App.tsx - Admin profile state now loads from Firestore
+  - views/ManageProfilesView.tsx - Uses props instead of localStorage
+  - views/LandingView.tsx - Removed parent email persistence
+  - views/ChildDashboardView.tsx - Removed child profile persistence
+  - src/lib/AuthContext.tsx - Removed INITIAL_DATA on sign out
+
+### Changed
+- **Routes** - Added `/landingview` route for new v6 LandingView
+- **Inline view renamed** - Old `LandingView` renamed to `OldLandingView` to avoid shadowing
+
+### Technical
+- Build passes successfully
+- User settings persist across sessions in Firestore
+
+---
+
 ## 2026-02-19 - Version 3.4.0 (Complete Supabase Removal)
 
 ### Removed

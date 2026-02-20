@@ -315,3 +315,57 @@ export const migrateChildToTopicStructure = (child: ChildProfile): ChildProfile 
     }))
   }
 }
+
+export interface UserSettings {
+  adminName: string
+  adminAvatar: string
+  adminColor: string
+  adminDob: string
+  parentEmail: string
+}
+
+const DEFAULT_SETTINGS: UserSettings = {
+  adminName: '',
+  adminAvatar: '👨‍🏫',
+  adminColor: 'blue',
+  adminDob: '',
+  parentEmail: ''
+}
+
+export const fetchUserSettings = async (userId: string): Promise<UserSettings> => {
+  console.log('fetchUserSettings: loading for userId', userId)
+  try {
+    const settingsRef = doc(db, 'users', userId, 'settings', 'profile')
+    const snapshot = await getDoc(settingsRef)
+    
+    if (snapshot.exists()) {
+      const data = snapshot.data()
+      console.log('fetchUserSettings: found settings', data)
+      return {
+        ...DEFAULT_SETTINGS,
+        ...data
+      }
+    }
+    
+    console.log('fetchUserSettings: no settings found, using defaults')
+    return DEFAULT_SETTINGS
+  } catch (error) {
+    console.error('fetchUserSettings error:', error)
+    return DEFAULT_SETTINGS
+  }
+}
+
+export const saveUserSettings = async (userId: string, settings: Partial<UserSettings>): Promise<void> => {
+  console.log('saveUserSettings: saving for userId', userId, settings)
+  try {
+    const settingsRef = doc(db, 'users', userId, 'settings', 'profile')
+    await setDoc(settingsRef, {
+      ...settings,
+      updatedAt: new Date().toISOString()
+    }, { merge: true })
+    console.log('saveUserSettings: complete')
+  } catch (error) {
+    console.error('saveUserSettings error:', error)
+    throw error
+  }
+}

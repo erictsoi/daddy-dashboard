@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChildProfile } from '../types';
-import { DS, GlobalStyles, Texture, Deco, Shadow, SolidShadow, Tag, getThemeColor } from '../components/design-system';
+import { DS, GlobalStyles, Texture, Deco, Shadow, SolidShadow, Tag } from '../components/design-system';
+import { useNavigate } from 'react-router-dom';
 
 interface LandingViewProps {
   data: ChildProfile[];
@@ -27,11 +28,21 @@ export const LandingView: React.FC<LandingViewProps> = ({
   signOut,
   setView,
 }) => {
+  const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const allProfiles = data.map(c => ({ ...c, isDaddy: false }));
-  const total = allProfiles.length;
-  const activeColor = getThemeColor(allProfiles[activeIndex % total]?.themeColor || 'blue').main;
+  // 6 Default profiles from daddy_dashboard_v6_fixed.jsx
+  const PROFILES = [
+    { id: "amara", name: "Amara", year: "Year 1", age: "5–6", color: "#FF6B6B", tint: "#FFF0F0", emoji: "🦋", interests: ["Animals", "Drawing", "Singing", "Nature"] },
+    { id: "marcus", name: "Marcus", year: "Year 3", age: "7–8", color: "#4CAF8A", tint: "#EDFAF4", emoji: "🦖", interests: ["Dinosaurs", "Football", "Building", "Comics"] },
+    { id: "sophia", name: "Sophia", year: "Year 5", age: "9–10", color: "#9B6DD6", tint: "#F3EEFF", emoji: "🎨", interests: ["Art", "Dance", "Music", "Sports"] },
+    { id: "kai", name: "Kai", year: "Year 7", age: "11–12", color: "#F5A623", tint: "#FFF8EC", emoji: "🛹", interests: ["Gaming", "Skateboarding", "History", "Film"] },
+    { id: "adrian", name: "Adrian", year: "Year 9", age: "13–14", color: "#2B8ED4", tint: "#EAF4FC", emoji: "🏀", interests: ["Design", "Maths", "Science", "Basketball"] },
+    { id: "rohan", name: "Rohan", year: "Year 11", age: "15–16", color: "#E8507A", tint: "#FFF0F5", emoji: "📸", interests: ["Coding", "Photography", "Film", "Economics"] },
+  ];
+
+  const total = PROFILES.length;
+  const p = PROFILES[activeIndex];
 
   // Keyboard navigation
   useEffect(() => {
@@ -41,67 +52,18 @@ export const LandingView: React.FC<LandingViewProps> = ({
       } else if (e.key === 'ArrowRight') {
         setActiveIndex(a => (a + 1) % total);
       } else if (e.key === 'Enter') {
-        const profile = allProfiles[activeIndex % total];
-        if (profile) {
-          setView({ type: 'CHILD_DASHBOARD', childId: profile.id });
-        }
+        navigate(`/child/${p.id}`);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [total, activeIndex, allProfiles, setView]);
+  }, [total, activeIndex, p, setView]);
 
-  const childProfile = null; // Would be passed as prop in full refactor
-
-  // Show loading if data is loading
-  if (loading || !data || data.length === 0) {
+  // Show loading if auth is still loading
+  if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: DS.cream, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="b t-h1" style={{ color: DS.ink }}>Loading...</div>
-      </div>
-    );
-  }
-
-  if (childProfile) {
-    const childColors = getThemeColor(childProfile.themeColor);
-    return (
-      <div style={{ minHeight: "100vh", background: DS.cream, position: "relative", overflow: "hidden" }}>
-        <GlobalStyles />
-        <Texture />
-        <Deco color={childColors.main} />
-        
-        <div style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: "20px" }}>
-          <Shadow offset={6} size={3} radius={DS.radius.lg} style={{ maxWidth: 420, width: "100%" }}>
-            <div style={{ position: "relative", background: childColors.tint, border: DS.border, borderRadius: DS.radius.lg, padding: "40px 32px", textAlign: "center" }}>
-              <div style={{ position: "absolute", top: -20, left: "50%", transform: "translateX(-50%)" }}>
-                <Shadow offset={3} size={2.5} radius="50%">
-                  <div style={{ position: "relative", width: 100, height: 100, background: DS.card, border: DS.border, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48 }}>{childProfile.avatar}</div>
-                </Shadow>
-              </div>
-              <div style={{ marginTop: 70, marginBottom: 8 }}>
-                <Tag label={`Year ${childProfile.yearGroups[0]?.name?.replace('Year ', '') || ''}`} color={childColors.main} dark />
-              </div>
-              <h1 className="b t-h1" style={{ color: DS.ink, marginBottom: 8 }}>{childProfile.name}'s Space</h1>
-              <p className="n" style={{ color: DS.inkSoft, fontSize: 16, marginBottom: 32 }}>Ready to learn today?</p>
-              
-              <Shadow offset={4} size={3} radius={DS.radius.pill} style={{display:"inline-block"}}>
-                <button 
-                  onClick={() => setView({ type: 'CHILD_DASHBOARD', childId: childProfile.id })}
-                  className="b"
-                  style={{ position: "relative", background: childColors.main, color: "#fff", fontWeight: 800, fontSize: 18, padding: "14px 40px", borderRadius: DS.radius.pill, border: DS.border, cursor: "pointer", transition: "transform .2s" }}
-                  onMouseEnter={e => e.currentTarget.style.transform = "translate(-2px,-2px)"}
-                  onMouseLeave={e => e.currentTarget.style.transform = "none"}
-                >
-                  Let's Learn! 🚀
-                </button>
-              </Shadow>
-              
-              <div style={{ marginTop: 24 }}>
-                <button onClick={() => signOut?.()} className="n t-small" style={{ color: DS.inkFade, cursor: "pointer", background: "none", border: "none" }}>Sign out</button>
-              </div>
-            </div>
-          </Shadow>
-        </div>
       </div>
     );
   }
@@ -110,20 +72,31 @@ export const LandingView: React.FC<LandingViewProps> = ({
     <div style={{ minHeight: "100vh", background: DS.cream, position: "relative", overflow: "hidden" }}>
       <GlobalStyles />
       <Texture />
-      <Deco color={activeColor} />
+      <Deco color={p.color} />
 
       {/* NAV */}
       <nav style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 40px", borderBottom: DS.border, background: `${DS.card}F0`, backdropFilter: "blur(14px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Shadow offset={3} size={2.5} radius={12}>
-            <div style={{ position: "relative", width: 40, height: 40, background: activeColor, border: DS.border, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🎓</div>
+            <div style={{ position: "relative", width: 40, height: 40, background: p.color, border: DS.border, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🎓</div>
           </Shadow>
           <span className="b t-h2" style={{ color: DS.ink }}>DADDY DASHBOARD</span>
         </div>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+          {/* Debug Nav */}
+          <div style={{ display: "flex", gap: 6, marginRight: 16, paddingRight: 16, borderRight: "2px solid #ddd" }}>
+            <button onClick={() => navigate('/')} className="n t-small" style={{ color: DS.ink, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Landing</button>
+            <button onClick={() => navigate('/returning')} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Return</button>
+            <button onClick={() => navigate('/dashboard')} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Admin</button>
+            <button onClick={() => navigate('/child/sophia')} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Sophia</button>
+            <button onClick={() => navigate('/child/adrian')} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Adrian</button>
+            <button onClick={() => navigate('/curriculum')} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Curriculum</button>
+            <button onClick={() => navigate('/manage')} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Manage</button>
+          </div>
           {user ? (
             <>
-              <button onClick={() => setView({ type: 'HOME' })} className="n t-small" style={{ color: DS.ink, cursor: "pointer", fontWeight: 700, background: "none", border: "none" }}>Dashboard</button>
+              <button onClick={() => navigate('/dashboard')} className="n t-small" style={{ color: DS.ink, cursor: "pointer", fontWeight: 700, background: "none", border: "none" }}>Dashboard</button>
+              <button onClick={() => navigate('/manage')} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "none" }}>Manage</button>
               <button onClick={() => signOut?.()} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "none" }}>Sign out</button>
             </>
           ) : (
@@ -145,21 +118,22 @@ export const LandingView: React.FC<LandingViewProps> = ({
       </nav>
 
       {/* HERO */}
-      <div style={{ position: "relative", zIndex: 5, textAlign: "center", padding: "20px 40px 8px" }}>
+      <div style={{ position: "relative", zIndex: 5, textAlign: "center", padding: "44px 40px 8px" }}>
         <h1 className="b t-hero" style={{ color: DS.ink, marginBottom: 8 }}>Who's ready for an</h1>
-        <div style={{ position: "relative", background: activeColor, border: DS.border, borderRadius: DS.radius.md, padding: "4px 32px", marginBottom: 8, display: "inline-block", boxShadow: "6px 6px 0 rgba(45,45,45,0.2)" }}>
-          <span className="b" style={{ fontSize: 56, fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>ADVENTURE?</span>
-        </div>
-        <p className="n" style={{ fontSize: 17, fontWeight: 700, color: DS.inkSoft, marginTop: 8, marginBottom: 16 }}>Pick your hero to start your learning mission!</p>
+        <Shadow offset={5} size={3} radius={DS.radius.md} style={{ display: "inline-block" }}>
+          <div style={{ position: "relative", background: p.color, border: DS.border, borderRadius: DS.radius.md, padding: "4px 32px", marginBottom: 12, transition: "background .35s" }}>
+            <span className="b" style={{ fontSize: 56, fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>ADVENTURE?</span>
+          </div>
+        </Shadow>
+        <p className="n" style={{ fontSize: 17, fontWeight: 700, color: DS.inkSoft, marginTop: 12, marginBottom: 32 }}>Pick your hero to start your learning mission!</p>
       </div>
 
       {/* PROFILE CARDS CAROUSEL - CASCADE STYLE */}
       <div style={{ position: "relative", zIndex: 5, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 60px", marginBottom: 16 }}>
         {/* Carousel Container */}
         <div style={{ position: "relative", height: 320, width: "100%", maxWidth: 900, perspective: "1000px" }}>
-          {allProfiles.map((profile, i) => {
+          {PROFILES.map((profile, i) => {
             const isActive = i === activeIndex % total;
-            const colors = getThemeColor(profile.themeColor);
             
             // Calculate distance from active
             const off = ((i - (activeIndex % total)) + total) % total;
@@ -181,10 +155,10 @@ export const LandingView: React.FC<LandingViewProps> = ({
             
             return (
               <div
-                key={profile.id || i}
+                key={profile.id}
                 onClick={() => {
                   if (isA) {
-                    setView({ type: 'HOME' });
+                    navigate('/dashboard');
                   } else {
                     setActiveIndex(i);
                   }
@@ -206,7 +180,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                     position: "relative", 
                     width: 200, 
                     height: 280, 
-                    background: isA ? colors.main : colors.tint, 
+                    background: isA ? profile.color : profile.tint, 
                     border: DS.border, 
                     borderRadius: DS.radius.lg, 
                     padding: "20px 16px", 
@@ -220,14 +194,14 @@ export const LandingView: React.FC<LandingViewProps> = ({
                       </div>
                     )}
                     <div style={{ background: "rgba(255,255,255,.3)", border: DS.border, borderRadius: DS.radius.md, padding: 8, marginBottom: 10, textAlign: "center" }}>
-                      <div style={{ fontSize: 48, lineHeight: 1 }}>{profile.avatar}</div>
+                      <div style={{ fontSize: 48, lineHeight: 1 }}>{profile.emoji}</div>
                     </div>
-                    <div style={{ display: "inline-block", background: isA ? "rgba(255,255,255,.2)" : colors.tint, border: `2px solid ${isA ? "rgba(255,255,255,.5)" : colors.main}`, borderRadius: DS.radius.pill, padding: "2px 10px" }}>
-                      <span className="n t-label" style={{ color: isA ? "#fff" : colors.main, fontSize: 9 }}>{profile.yearGroups?.[0]?.name || 'Student'}</span>
+                    <div style={{ display: "inline-block", background: isA ? "rgba(255,255,255,.2)" : profile.tint, border: `2px solid ${isA ? "rgba(255,255,255,.5)" : profile.color}`, borderRadius: DS.radius.pill, padding: "2px 10px" }}>
+                      <span className="n t-label" style={{ color: isA ? "#fff" : profile.color, fontSize: 9 }}>{profile.year}</span>
                     </div>
                     <div className="b" style={{ fontSize: 28, fontWeight: 800, color: isA ? "#fff" : DS.ink, marginTop:8, marginBottom: 8 }}>{profile.name}</div>
                     <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                      {(profile.interests || ['Learning', 'Fun', 'Growth']).slice(0, 3).map(int => (
+                      {profile.interests.slice(0, 3).map(int => (
                         <span key={int} style={{ background: isA ? "rgba(255,255,255,.3)" : "rgba(0,0,0,.06)", border: `1.5px solid ${isA ? "rgba(255,255,255,.5)" : DS.ink}`, borderRadius: DS.radius.pill, padding: "1px 8px", fontSize: 8, fontWeight: 800, color: isA ? "#fff" : DS.ink, fontFamily: "Nunito,sans-serif" }}>{int.toUpperCase()}</span>
                       ))}
                     </div>
@@ -255,8 +229,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
             transition: "opacity 0.3s",
             zIndex: 20,
           }}
-          onMouseEnter={e => e.currentTarget.style.opacity = 1}
-          onMouseLeave={e => e.currentTarget.style.opacity = 0.4}
+          onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+          onMouseLeave={e => e.currentTarget.style.opacity = "0.4"}
         >
           ‹
         </button>
@@ -277,8 +251,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
             transition: "opacity 0.3s",
             zIndex: 20,
           }}
-          onMouseEnter={e => e.currentTarget.style.opacity = 1}
-          onMouseLeave={e => e.currentTarget.style.opacity = 0.4}
+          onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+          onMouseLeave={e => e.currentTarget.style.opacity = "0.4"}
         >
           ›
         </button>
@@ -286,20 +260,31 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
       {/* CTA */}
       <div style={{ position: "relative", zIndex: 5, textAlign: "center", padding: "0 40px 40px" }}>
-        <p style={{ fontSize: 17, color: DS.inkFade, marginBottom: 20 }}>Choose the profile closest to your child</p>
+        <p className="b" style={{ fontSize: 20, fontWeight: 700, color: DS.ink, marginBottom: 6 }}>
+          "Welcome back,{" "}
+          <span style={{ background: p.color, color: "#fff", padding: "1px 12px", borderRadius: DS.radius.sm, border: DS.border }}>{p.name}</span>!
+          {" "}Ready to learn something amazing?"
+        </p>
+        <p className="n t-small" style={{ color: DS.inkFade, marginBottom: 26 }}>Choose the profile closest to your child</p>
+        <Shadow offset={4} size={3} radius={DS.radius.pill} style={{ display: "inline-block" }}>
           <button className="b"
             onClick={() => {
-              setView({ type: 'HOME' });
+              navigate('/dashboard');
             }}
             onMouseEnter={e => e.currentTarget.style.transform = "translate(-2px,-2px)"}
             onMouseLeave={e => e.currentTarget.style.transform = "none"}
-            style={{ position: "relative", background: activeColor, color: "#fff", fontWeight: 800, fontSize: 20, padding: "16px 52px", borderRadius: DS.radius.pill, border: DS.border, cursor: "pointer", transition: "transform .2s", boxShadow: "8px 8px 0 #1a1a2e" }}>
+            style={{ position: "relative", background: p.color, color: "#fff", fontWeight: 800, fontSize: 20, padding: "16px 52px", borderRadius: DS.radius.pill, border: DS.border, cursor: "pointer", transition: "transform .2s" }}>
             START LEARNING 🚀
           </button>
+        </Shadow>
+        <div style={{ marginTop: 12 }}>
+          <span className="n t-small" style={{ color: DS.inkFade }}>Not you? </span>
+          <span className="n t-small" style={{ color: p.color, fontWeight: 800, cursor: "pointer", borderBottom: `2.5px solid ${p.color}` }}>Switch Hero</span>
+        </div>
       </div>
 
       {/* Guest Mode Notice */}
-      {!user && data.length === 0 && (
+      {!user && (
         <div style={{ position: "relative", zIndex: 5, textAlign: "center", padding: "0 40px 52px" }}>
           <Shadow offset={3} size={2.5} radius={DS.radius.md}>
             <div style={{ position: "relative", background: DS.card, border: DS.border, borderRadius: DS.radius.md, padding: "24px 32px", textAlign: "left", display: "inline-block", maxWidth: 480, width: "100%" }}>
@@ -308,6 +293,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
               <div style={{ display: "flex", gap: 8 }}>
                 <input
                   type="email"
+                  id="parent-email"
+                  name="parentEmail"
                   value={parentEmailInput}
                   onChange={(e) => setParentEmailInput(e.target.value)}
                   placeholder="parent@email.com"
@@ -317,7 +304,6 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 <Shadow offset={2} size={2} radius={DS.radius.sm}>
                   <button
                     onClick={() => {
-                      localStorage.setItem('parent_email', parentEmailInput);
                       signInWithGoogle?.();
                     }}
                     disabled={!parentEmailInput || loading}

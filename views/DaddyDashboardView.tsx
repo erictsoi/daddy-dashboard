@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ChildProfile, Subject, Topic, Lesson, ViewState } from '../types';
 import { useAuth } from '../src/lib/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { DS, GlobalStyles, Texture, Blobs, Deco, Shadow, SolidShadow, Tag, Chip, SectionHead, getThemeColor } from '../components/design-system';
 import {
     Play,
@@ -79,7 +80,9 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
     onExportData,
     onOpenCurriculum
 }) => {
+    const navigate = useNavigate();
     // const { user, signOut } = useAuth() || {};
+    const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const profileDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -95,7 +98,21 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
     } | null>(null);
 
     const handleNavigate = (newView: ViewState) => {
-        setView(newView);
+        if (newView.type === 'CHILD_DASHBOARD') {
+            navigate(`/child/${newView.childId}`);
+        } else if (newView.type === 'SUBJECT_DETAIL') {
+            navigate(`/child/${newView.childId}/subject/${newView.subjectId}`);
+        } else if (newView.type === 'LESSON') {
+            navigate(`/child/${newView.childId}/subject/${newView.subjectId}/topic/${newView.topicId}/lesson/${newView.lessonId}`);
+        } else if (newView.type === 'HOME') {
+            navigate('/dashboard');
+        } else if (newView.type === 'MANAGE_PROFILES') {
+            navigate('/manage');
+        } else if (newView.type === 'CURRICULUM_BUILDER') {
+            navigate('/curriculum');
+        } else {
+            setView(newView);
+        }
     };
 
     const toggleSubjectSelection = (subjectId: string) => {
@@ -322,6 +339,16 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
             <GlobalStyles />
             <Texture />
             <Deco color={adminColor ? getThemeColor(adminColor).main : "#2B8ED4"} />
+            {/* Debug Nav */}
+            <div style={{ position: "fixed", bottom: 20, left: 20, zIndex: 1000, display: "flex", gap: 6, background: "rgba(255,255,255,0.9)", padding: 8, borderRadius: 8, boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }}>
+                <button onClick={() => navigate('/')} className="n t-small" style={{ color: DS.ink, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Landing</button>
+                <button onClick={() => navigate('/returning')} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Return</button>
+                <button onClick={() => navigate('/dashboard')} className="n t-small" style={{ color: DS.ink, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Admin</button>
+                <button onClick={() => navigate('/child/sophia')} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Sophia</button>
+                <button onClick={() => navigate('/child/adrian')} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Adrian</button>
+                <button onClick={() => navigate('/curriculum')} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Curriculum</button>
+                <button onClick={() => navigate('/manage')} className="n t-small" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "1px solid #ccc", padding: "4px 8px", borderRadius: 4 }}>Manage</button>
+            </div>
             {/* Header */}
             <header style={{ position: "sticky", top: 0, zIndex: 50, background: `${DS.card}F0`, backdropFilter: "blur(12px)", borderBottom: DS.border }}>
                 <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -432,7 +459,7 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                                                 <p className="font-medium text-sm text-gray-500">Switch Profile</p>
                                             </div>
                                             <button
-                                                onClick={() => { setView({ type: 'HOME' }); setShowProfileDropdown(false); }}
+                                                onClick={() => { navigate('/dashboard'); setShowProfileDropdown(false); }}
                                                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
                                             >
                                                 <div
@@ -465,7 +492,7 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                                             {data.map(c => (
                                                 <button
                                                     key={c.id}
-                                                    onClick={() => { setView({ type: 'CHILD_DASHBOARD', childId: c.id }); setShowProfileDropdown(false); }}
+                                                    onClick={() => { navigate(`/child/${c.id}`); setShowProfileDropdown(false); }}
                                                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
                                                 >
                                                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-${c.themeColor}-100`}>
@@ -486,7 +513,7 @@ export const DaddyDashboardView: React.FC<DaddyDashboardViewProps> = ({
                                                     Account
                                                 </button>
                                                 <button
-                                                    onClick={() => { setView({ type: 'MANAGE_PROFILES' }); setShowProfileDropdown(false); }}
+                                                    onClick={() => { navigate('/manage'); setShowProfileDropdown(false); }}
                                                     className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
                                                 >
                                                     <Edit2 size={16} />

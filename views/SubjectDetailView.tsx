@@ -1,5 +1,7 @@
 import React from 'react';
 import { ChildProfile, Subject, Topic, Lesson, ViewOrigin } from '../types';
+import { DS, GlobalStyles, Texture, Blobs, Deco, Shadow, getThemeColor } from '../components/design-system';
+import { useNavigate } from 'react-router-dom';
 import { PlayCircle, CheckCircle, Clock, RotateCcw, Trash2, Play, ChevronRight } from 'lucide-react';
 import { ProgressBar } from '../components/ProgressBar';
 
@@ -38,18 +40,19 @@ export const SubjectDetail: React.FC<SubjectDetailProps> = ({
   onSoftDeleteLesson,
   onUpdateTopicFrequency,
 }) => {
+  const navigate = useNavigate();
   const child = data.find(c => c.id === childId);
   const yearGroup = child?.yearGroups.find(y => y.subjects.some(s => s.id === subjectId));
   const subject = yearGroup?.subjects.find(s => s.id === subjectId);
   
   if (!child || !subject) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Subject Not Found</h2>
+      <div style={{ minHeight: "100vh", background: DS.cream, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <h2 className="b t-h2" style={{ color: DS.ink, marginBottom: 8 }}>Subject Not Found</h2>
           <button
-            onClick={() => setView({ type: 'ADMIN' })}
-            className="text-blue-600 hover:underline"
+            onClick={() => navigate('/dashboard')}
+            style={{ color: getThemeColor('blue').main, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
           >
             Back to Dashboard
           </button>
@@ -60,7 +63,7 @@ export const SubjectDetail: React.FC<SubjectDetailProps> = ({
 
   const handleBack = () => {
     if (origin === 'KIDSDASH') {
-      setView({ type: 'KIDSDASH', childId });
+      navigate(`/child/${childId}`);
     } else {
       setView({ type: 'ADMIN' });
     }
@@ -113,33 +116,69 @@ export const SubjectDetail: React.FC<SubjectDetailProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div style={{ minHeight: "100vh", background: DS.cream, position: "relative", overflow: "hidden" }}>
+      <GlobalStyles />
+      <Texture />
+      <Deco color={child ? getThemeColor(child.themeColor).main : DS.ink} />
+      <header style={{ position: "sticky", top: 0, zIndex: 50, background: `${DS.card}F0`, backdropFilter: "blur(12px)", borderBottom: DS.border }}>
+        <div style={{ maxWidth: 1000, margin: "0 auto", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <button
               onClick={handleBack}
-              className="p-2 hover:bg-gray-100 rounded-lg transition"
+              style={{ padding: 8, borderRadius: DS.radius.sm, background: "none", border: "none", cursor: "pointer" }}
             >
-              <ChevronRight className="rotate-180" size={24} />
+              <ChevronRight style={{ transform: "rotate(180deg)" }} size={24} color={DS.ink} />
             </button>
             <div>
-              <p className="text-sm text-gray-500">{child.name} • {yearGroup?.name}</p>
-              <h1 className="text-2xl font-bold text-gray-800">{subject.name}</h1>
+              <p className="n" style={{ fontSize: 12, color: DS.inkSoft }}>{child.name} • {yearGroup?.name}</p>
+              <h1 className="b t-h2" style={{ color: DS.ink }}>{subject.name}</h1>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button
-              onClick={handleAddTopic}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2"
+              onClick={() => navigate('/')}
+              style={{ padding: "8px 12px", background: DS.cream, border: DS.border, borderRadius: DS.radius.sm, cursor: "pointer", color: DS.inkSoft, fontWeight: 700, fontSize: 12 }}
             >
-              <Play size={18} /> Add Topic
+              Landing
             </button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              style={{ padding: "8px 12px", background: DS.cream, border: DS.border, borderRadius: DS.radius.sm, cursor: "pointer", color: DS.inkSoft, fontWeight: 700, fontSize: 12 }}
+            >
+              Admin
+            </button>
+            <button
+              onClick={() => navigate('/child/sophia')}
+              style={{ padding: "8px 12px", background: DS.cream, border: DS.border, borderRadius: DS.radius.sm, cursor: "pointer", color: DS.inkSoft, fontWeight: 700, fontSize: 12 }}
+            >
+              Sophia
+            </button>
+            <button
+              onClick={() => navigate('/child/adrian')}
+              style={{ padding: "8px 12px", background: DS.cream, border: DS.border, borderRadius: DS.radius.sm, cursor: "pointer", color: DS.inkSoft, fontWeight: 700, fontSize: 12 }}
+            >
+              Adrian
+            </button>
+            <button
+              onClick={() => navigate(`/child/${childId}/subject/${subjectId}`)}
+              style={{ padding: "8px 12px", background: DS.cream, border: DS.border, borderRadius: DS.radius.sm, cursor: "pointer", color: DS.inkSoft, fontWeight: 700, fontSize: 12 }}
+            >
+              Lesson
+            </button>
+            <Shadow offset={2} radius={DS.radius.md}>
+              <button
+                onClick={handleAddTopic}
+                style={{ position: "relative", background: getThemeColor(child?.themeColor || 'blue').main, color: "#fff", border: DS.border, borderRadius: DS.radius.md, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+              >
+                <Play size={18} />
+                <span className="n" style={{ fontWeight: 700, fontSize: 13 }}>Add Topic</span>
+              </button>
+            </Shadow>
           </div>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "32px 24px" }}>
         {subject.topics.map(topic => {
           const completedLessons = topic.lessons.filter(l => l.completed && !l.deleted).length;
           const totalLessons = topic.lessons.filter(l => !l.deleted).length;

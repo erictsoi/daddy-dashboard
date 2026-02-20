@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ViewState, ChildProfile, YearGroup } from '../types';
 import { User } from 'firebase/auth';
+import { DS, Shadow, SectionHead, Texture, Deco, getThemeColor } from '../components/design-system';
+import { useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
     UserPlus,
@@ -22,6 +24,8 @@ interface ManageProfilesViewProps {
     setAdminAvatar: (avatar: string) => void;
     adminColor: string;
     setAdminColor: (color: string) => void;
+    adminDob: string;
+    setAdminDob: (dob: string) => void;
     onDeleteChild: (id: string) => void;
     onAddYearGroup: (childId: string, name: string) => void;
     onRemoveYearGroup: (childId: string, ygId: string) => void;
@@ -41,21 +45,24 @@ export const ManageProfilesView = ({
     setAdminAvatar,
     adminColor,
     setAdminColor,
+    adminDob,
+    setAdminDob,
     onDeleteChild,
     onAddYearGroup,
     onRemoveYearGroup
 }: ManageProfilesViewProps) => {
 
+    const navigate = useNavigate();
     const [isAdding, setIsAdding] = useState(false);
     const [editingChildId, setEditingChildId] = useState<string | null>(null);
     const [editingYearGroups, setEditingYearGroups] = useState<string | null>(null);
     const [editingAdmin, setEditingAdmin] = useState(false);
 
-    // Admin edit states
-    const [adminDob, setAdminDob] = useState(() => localStorage.getItem('admin_dob') || '');
-    const [newAdminName, setNewAdminName] = useState(() => localStorage.getItem('admin_name') || '');
-    const [newAdminAvatar, setNewAdminAvatar] = useState(adminAvatar);
-    const [newAdminColor, setNewAdminColor] = useState(() => localStorage.getItem('admin_color') || 'blue');
+    // Admin edit states - use props as initial values
+    const [editAdminDob, setEditAdminDob] = useState(adminDob);
+    const [editAdminName, setEditAdminName] = useState(adminName);
+    const [editAdminAvatar, setEditAdminAvatar] = useState(adminAvatar);
+    const [editAdminColor, setEditAdminColor] = useState(adminColor);
     const [adminAvatarPage, setAdminAvatarPage] = useState(0);
 
     // Kid edit states
@@ -88,13 +95,10 @@ export const ManageProfilesView = ({
     ];
 
     const handleSaveAdmin = () => {
-        localStorage.setItem('admin_dob', adminDob);
-        localStorage.setItem('admin_color', newAdminColor);
-        localStorage.setItem('admin_name', newAdminName);
-        setAdminAvatar(newAdminAvatar);
-        setAdminColor(newAdminColor);
-        setAdminName(newAdminName);
-        localStorage.setItem('admin_avatar', newAdminAvatar);
+        setAdminAvatar(editAdminAvatar);
+        setAdminColor(editAdminColor);
+        setAdminName(editAdminName);
+        setAdminDob(editAdminDob);
         setEditingAdmin(false);
     };
 
@@ -182,19 +186,35 @@ export const ManageProfilesView = ({
     const totalPages = Math.ceil(AVATARS.length / AVATARS_PER_PAGE);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div style={{ minHeight: "100vh", background: DS.cream, position: "relative", overflow: "hidden" }}>
+            <Texture />
+            <Deco color={DS.ink} />
             {/* Header */}
-            <header className="bg-white border-b border-gray-200 px-6 py-4">
-                <div className="max-w-6xl mx-auto flex items-center justify-between">
-                    <button
-                        onClick={() => setView({ type: 'ADMIN' })}
-                        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium"
-                    >
-                        <ArrowLeft size={20} />
-                        Back to Dashboard
-                    </button>
-                    <h1 className="text-xl font-bold text-gray-800">Manage Profiles</h1>
-                    <div className="w-24"></div>
+            <header style={{ background: `${DS.card}F0`, backdropFilter: "blur(12px)", borderBottom: DS.border, padding: "16px 24px", position: "relative", zIndex: 10 }}>
+                <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <button
+                            onClick={() => navigate('/')}
+                            style={{ padding: "6px 10px", background: DS.cream, border: DS.border, borderRadius: DS.radius.sm, cursor: "pointer", color: DS.inkSoft, fontWeight: 700, fontSize: 11 }}
+                        >
+                            Landing
+                        </button>
+                        <button
+                            onClick={() => navigate('/dashboard')}
+                            style={{ display: "flex", alignItems: "center", gap: 8, color: DS.inkSoft, cursor: "pointer", fontWeight: 600, background: "none", border: "none" }}
+                        >
+                            <ArrowLeft size={20} />
+                            Back
+                        </button>
+                        <button
+                            onClick={() => navigate('/child/sophia/subject/demo/topic/demo/lesson/demo')}
+                            style={{ padding: "6px 10px", background: DS.cream, border: DS.border, borderRadius: DS.radius.sm, cursor: "pointer", color: DS.inkSoft, fontWeight: 700, fontSize: 11 }}
+                        >
+                            Lesson
+                        </button>
+                    </div>
+                    <h1 className="b" style={{ fontSize: 22, fontWeight: 800, color: DS.ink }}>Manage Profiles</h1>
+                    <div style={{ width: 100 }}></div>
                 </div>
             </header>
 
@@ -208,7 +228,7 @@ export const ManageProfilesView = ({
                                 <div
                                     className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
                                     style={{
-                                        backgroundColor: THEME_COLORS.find(c => c.class === newAdminColor)?.bg || '#f3f4f6'
+                                        backgroundColor: THEME_COLORS.find(c => c.class === editAdminColor)?.bg || '#f3f4f6'
                                     }}
                                 >
                                     {adminAvatar}
@@ -221,10 +241,10 @@ export const ManageProfilesView = ({
                             <button
                                 onClick={() => {
                                     setEditingAdmin(!editingAdmin);
-                                    setNewAdminAvatar(adminAvatar);
-                                    setNewAdminColor(localStorage.getItem('admin_color') || 'blue');
-                                    setAdminDob(localStorage.getItem('admin_dob') || '');
-                                    setNewAdminName(localStorage.getItem('admin_name') || '');
+                                    setEditAdminAvatar(adminAvatar);
+                                    setEditAdminColor(adminColor);
+                                    setEditAdminDob(adminDob);
+                                    setEditAdminName(adminName);
                                 }}
                                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition"
                             >
@@ -243,8 +263,8 @@ export const ManageProfilesView = ({
                                             {AVATARS.slice(adminAvatarPage * AVATARS_PER_PAGE, (adminAvatarPage + 1) * AVATARS_PER_PAGE).map((a) => (
                                                 <button
                                                     key={a}
-                                                    onClick={() => setNewAdminAvatar(a)}
-                                                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition ${newAdminAvatar === a
+                                                    onClick={() => setEditAdminAvatar(a)}
+                                                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition ${editAdminAvatar === a
                                                             ? 'bg-blue-100 ring-2 ring-blue-500'
                                                             : 'hover:bg-gray-100'
                                                         }`}
@@ -283,8 +303,8 @@ export const ManageProfilesView = ({
                                             {THEME_COLORS.map((color) => (
                                                 <button
                                                     key={color.class}
-                                                    onClick={() => setNewAdminColor(color.class)}
-                                                    className={`w-10 h-10 rounded-lg transition ${newAdminColor === color.class ? 'ring-2 ring-offset-2 ring-gray-400' : ''
+                                                    onClick={() => setEditAdminColor(color.class)}
+                                                    className={`w-10 h-10 rounded-lg transition ${editAdminColor === color.class ? 'ring-2 ring-offset-2 ring-gray-400' : ''
                                                         }`}
                                                     style={{ backgroundColor: color.bg }}
                                                     title={color.name}
@@ -298,8 +318,8 @@ export const ManageProfilesView = ({
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
                                         <input
                                             type="text"
-                                            value={newAdminName}
-                                            onChange={(e) => setNewAdminName(e.target.value)}
+                                            value={editAdminName}
+                                            onChange={(e) => setEditAdminName(e.target.value)}
                                             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                             placeholder="Enter your name"
                                         />
@@ -321,8 +341,8 @@ export const ManageProfilesView = ({
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth (optional)</label>
                                         <input
                                             type="date"
-                                            value={adminDob}
-                                            onChange={(e) => setAdminDob(e.target.value)}
+                                            value={editAdminDob}
+                                            onChange={(e) => setEditAdminDob(e.target.value)}
                                             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                         />
                                     </div>

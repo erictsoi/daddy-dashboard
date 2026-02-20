@@ -397,6 +397,8 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
                 </h2>
                 <input
                   type="url"
+                  id="playlist-url"
+                  name="playlistUrl"
                   className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   placeholder="https://www.youtube.com/playlist?list=..."
                   value={playlistUrl}
@@ -425,6 +427,8 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
                   <p className="text-xs font-medium text-gray-600">Default Values (applied to all videos)</p>
                   <input
                     type="text"
+                    id="default-child"
+                    name="defaultChild"
                     className="w-full p-2 text-sm border border-gray-300 rounded-lg"
                     placeholder="Child Name (e.g., Sophia)"
                     value={defaultChild}
@@ -432,6 +436,8 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
                   />
                   <input
                     type="text"
+                    id="default-year"
+                    name="defaultYear"
                     className="w-full p-2 text-sm border border-gray-300 rounded-lg"
                     placeholder="Year Group (e.g., Year 5)"
                     value={defaultYear}
@@ -439,6 +445,8 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
                   />
                   <input
                     type="text"
+                    id="default-subject"
+                    name="defaultSubject"
                     className="w-full p-2 text-sm border border-gray-300 rounded-lg"
                     placeholder="Subject (e.g., English)"
                     value={defaultSubject}
@@ -446,6 +454,8 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
                   />
                   <input
                     type="text"
+                    id="default-topic"
+                    name="defaultTopic"
                     className="w-full p-2 text-sm border border-gray-300 rounded-lg"
                     placeholder="Topic (e.g., Reading Comprehension)"
                     value={defaultSubcategory}

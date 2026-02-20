@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
 import { ViewState, ChildProfile, YearGroup, Subject, Topic, Lesson, ScheduleBlock, ViewOrigin, ParsedRow } from './types';
 import { INITIAL_DATA } from './constants';
 import { AuthProvider, useAuth } from './src/lib/AuthContext';
 import { auth as firebaseAuth, googleProvider, signInWithGoogle, logOut as firebaseLogOut } from './src/lib/firebase'
-import { fetchChildren, fetchChildByEmail, fetchChildById, getLocalData, saveFullCurriculum, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, migrateChildToTopicStructure } from './src/lib/dataService';
+import { fetchChildren, fetchChildByEmail, fetchChildById, getLocalData, saveFullCurriculum, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, migrateChildToTopicStructure, fetchUserSettings, saveUserSettings, UserSettings } from './src/lib/dataService';
 import { usePersistentTimer } from './src/lib/useTimer';
 import { saveData, generateUuid, exportDataToFile } from './src/lib/helpers';
 import { ProgressBar } from './components/ProgressBar';
@@ -17,6 +18,7 @@ const ReturningView = lazy(() => import('./views/ReturningView').then(m => ({ de
 import { AdminAvatarEditModal } from './app/AdminAvatarEditModal';
 import { ProfileSwitcher } from './components/ProfileSwitcher';
 import { SubjectDetail } from './views/SubjectDetailView';
+import { LandingView } from './views/LandingView';
 
 // Helper for grid columns
 const getGridCols = (count: number): string => {
@@ -139,7 +141,7 @@ import {
 } from 'lucide-react';
 
 const App: React.FC = () => {
-  const { user, loading: authLoading } = useAuth() || {};
+  const { user, loading: authLoading, signOut } = useAuth() || {};
   const [view, setView] = useState<ViewState>({ type: 'LANDING' });
   const [data, setData] = useState<ChildProfile[]>([]);
   
@@ -153,34 +155,20 @@ const App: React.FC = () => {
   const totalCards = 1 + data.length; // Daddy + kids
   const gridCols = getGridCols(totalCards);
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
-  const [allChildren, setAllChildren] = useState<{id: string, name: string, avatar: string, themeColor: string, yearGroups?: any[]}[]>(() => {
-    const saved = localStorage.getItem('all_children');
-    const parsed = saved ? JSON.parse(saved) : [];
-    console.log('Loaded allChildren from localStorage:', parsed.length);
-    return parsed;
-  });
+  const [allChildren, setAllChildren] = useState<{id: string, name: string, avatar: string, themeColor: string, yearGroups?: any[]}[]>([]);
   const [loading, setLoading] = useState(true);
   const [showChildManagement, setShowChildManagement] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editingChildId, setEditingChildId] = useState<string | null>(null);
   
-  // Admin profile state
-  const [adminAvatar, setAdminAvatar] = useState(() => {
-    return localStorage.getItem('admin_avatar') || '👨‍🏫';
-  });
-  const [adminColor, setAdminColor] = useState(() => {
-    return localStorage.getItem('admin_color') || 'blue';
-  });
-  const [adminName, setAdminName] = useState(() => {
-    return localStorage.getItem('admin_name') || '';
-  });
+  // Admin profile state (loaded from Firestore)
+  const [adminAvatar, setAdminAvatar] = useState('👨‍🏫');
+  const [adminColor, setAdminColor] = useState('blue');
+  const [adminName, setAdminName] = useState('');
+  const [adminDob, setAdminDob] = useState('');
   const [showEditAdmin, setShowEditAdmin] = useState(false);
-  const [parentEmailInput, setParentEmailInput] = useState(() => {
-    return localStorage.getItem('parent_email') || '';
-  });
-  const [parentUid, setParentUid] = useState<string>(() => {
-    return localStorage.getItem('parent_uid') || '';
-  });
+  const [parentEmailInput, setParentEmailInput] = useState('');
+  const [parentUid, setParentUid] = useState('');
   
   // Firebase status indicator
   const [supabaseStatus, setSupabaseStatus] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
@@ -234,11 +222,20 @@ const App: React.FC = () => {
       setLoading(true);
       try {
         if (user) {
+          // Load user settings from Firestore
+          try {
+            const settings = await fetchUserSettings(user.uid);
+            setAdminName(settings.adminName);
+            setAdminAvatar(settings.adminAvatar);
+            setAdminColor(settings.adminColor);
+            setAdminDob(settings.adminDob);
+            setParentEmailInput(settings.parentEmail);
+          } catch (e) {
+            console.log('No settings found, using defaults');
+          }
+          
           // Check if user is a child by matching email
           try {
-            // Get parent's email from localStorage input by kid
-            const storedParentEmail = localStorage.getItem('parent_email');
-            
             // Try to fetch child by email - this looks up the linked account
             const childResult = await fetchChildByEmail(user.email || '');
             if (childResult.child && childResult.child.length > 0) {
@@ -248,7 +245,6 @@ const App: React.FC = () => {
               // Store parent UID for profile switching
               if (childResult.parentUid) {
                 setParentUid(childResult.parentUid);
-                localStorage.setItem('parent_uid', childResult.parentUid);
               }
               
               // Update allChildren with FULL data for dual schedule
@@ -256,7 +252,6 @@ const App: React.FC = () => {
                 console.log('Storing allChildren with full curriculum:', childResult.allChildren.length);
                 // Store full child profiles (with curriculum) for dual schedule
                 setAllChildren(childResult.allChildren);
-                localStorage.setItem('all_children', JSON.stringify(childResult.allChildren));
                 
                 // Also set data to all children for dual schedule display
                 setData(childResult.allChildren);
@@ -267,13 +262,6 @@ const App: React.FC = () => {
               isFetchingRef.current = false;
               setLoading(false);
               return;
-            }
-            
-            // If linked account not found but we have parent email, try fetching from parent's Firebase
-            if (storedParentEmail) {
-              // We can't directly query by email in Firebase without knowing the UID
-              // For now, show the child profile selector based on allChildren from localStorage
-              console.log('No linked account, using localStorage children list');
             }
           } catch (e) {
             console.log('Not a child account, checking for admin data');
@@ -288,14 +276,13 @@ const App: React.FC = () => {
           if (childrenData.length > 0) {
             setData(childrenData);
           } else {
-            // No children in Supabase - start fresh (don't sync from localStorage for logged-in users)
-            console.log('No children found in Supabase - using empty state');
+            console.log('No children found - starting fresh');
             setData([]);
           }
         } else {
-          console.log('No user, loading localStorage data');
+          console.log('No user, loading empty state');
           setChildProfile(null);
-          setData(getLocalData());
+          setData([]);
         }
       } catch (err) {
         console.error('Error loading data:', err);
@@ -316,7 +303,6 @@ const App: React.FC = () => {
     // If no user signed in, clear childProfile
     if (!user) {
       setChildProfile(null);
-      localStorage.removeItem('child_profile');
       return;
     }
     
@@ -331,15 +317,13 @@ const App: React.FC = () => {
     if (matchedChild) {
       console.log('Auto-detected child sign-in:', matchedChild.name);
       setChildProfile(matchedChild);
-      localStorage.setItem('child_profile', JSON.stringify(matchedChild));
-      setView({ type: 'CHILD_DASHBOARD', childId: matchedChild.id });
+      navigate(`/child/${matchedChild.id}`);
     } else if (childProfile && userEmail) {
       // Verify current childProfile still matches signed-in user
       const currentChildEmail = childProfile.googleEmail?.toLowerCase() || '';
       if (currentChildEmail !== userEmail) {
         // User changed - clear child profile
         setChildProfile(null);
-        localStorage.removeItem('child_profile');
       }
     }
   }, [user, data, authLoading, loading]);
@@ -356,7 +340,6 @@ const App: React.FC = () => {
         themeColor: c.themeColor
       }));
       setAllChildren(childrenList);
-      localStorage.setItem('all_children', JSON.stringify(childrenList));
     }
   }, [data]);
 
@@ -725,7 +708,7 @@ const App: React.FC = () => {
     
             saveData(newData, user);
     
-    setView({ type: 'HOME' });
+    navigate('/dashboard');
   };
 
   const handleDeleteSubject = async (childId: string, subjectId: string) => {
@@ -929,8 +912,9 @@ const App: React.FC = () => {
 
   // --- Components for Views ---
 
-  const LandingView = () => {
+  const OldLandingView = () => {
     const { user, signInWithGoogle, signOut, loading } = useAuth() || {};
+    const navigate = useNavigate();
 
     if (childProfile) {
       return (
@@ -949,9 +933,9 @@ const App: React.FC = () => {
             <h1 className="text-4xl font-bold text-gray-800 mb-2">{childProfile.name}'s Space</h1>
             <p className="text-gray-500">Ready to learn today?</p>
           </div>
-          
+           
           <button
-            onClick={() => setView({ type: 'CHILD_DASHBOARD', childId: childProfile.id })}
+            onClick={() => navigate(`/child/${childProfile.id}`)}
             className={`bg-${childProfile.themeColor}-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-${childProfile.themeColor}-700 hover:scale-105 transition-all flex items-center gap-3 mb-8`}
           >
             <Play size={24} fill="currentColor"/> Let's Learn!
@@ -978,7 +962,7 @@ const App: React.FC = () => {
               {user ? (
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setView({ type: 'MANAGE_PROFILES' })}
+                    onClick={() => navigate('/manage')}
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                   >
                     <Settings size={18} />
@@ -1038,7 +1022,7 @@ const App: React.FC = () => {
               {data.map(child => (
                   <div key={child.id} className="relative group w-full max-w-xs">
                     <button
-                        onClick={() => setView({ type: 'CHILD_DASHBOARD', childId: child.id })}
+                        onClick={() => navigate(`/child/${child.id}`)}
                         className={`w-full bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 flex flex-col items-center gap-6 border-b-[8px] border-${child.themeColor}-500`}
                     >
                         <div className={`w-32 h-32 rounded-full bg-${child.themeColor}-50 flex items-center justify-center text-6xl group-hover:bg-${child.themeColor}-100 transition`}>
@@ -1075,6 +1059,8 @@ const App: React.FC = () => {
                 <div className="flex gap-2">
                   <input
                     type="email"
+                    id="parent-email"
+                    name="parentEmail"
                     value={parentEmailInput}
                     onChange={(e) => setParentEmailInput(e.target.value)}
                     placeholder="parent@email.com"
@@ -1083,7 +1069,6 @@ const App: React.FC = () => {
                   />
                   <button
                     onClick={() => {
-                      localStorage.setItem('parent_email', parentEmailInput);
                       signInWithGoogle?.();
                     }}
                     disabled={!parentEmailInput || loading}
@@ -1328,9 +1313,9 @@ const App: React.FC = () => {
                 <div className="max-w-4xl mx-auto">
                     <button onClick={() => {
                         if (origin === 'HOME') {
-                            setView({ type: 'HOME' });
+                            navigate('/dashboard');
                         } else {
-                            setView({ type: 'CHILD_DASHBOARD', childId });
+                            navigate(`/child/${childId}`);
                         }
                     }} className="flex items-center gap-2 hover:opacity-80 mb-4 transition">
                         <ArrowLeft size={20}/> Back to {isReadOnly ? `${child.name}'s Space` : `${adminName || user?.user_metadata?.full_name || user?.email || 'Daddy'} Dashboard`}
@@ -1388,7 +1373,7 @@ const App: React.FC = () => {
                             {allChildren.filter(c => c.id !== childProfile?.id).map(c => (
                                 <button
                                     key={c.id}
-                                    onClick={() => { setView({ type: 'CHILD_DASHBOARD', childId: c.id }); setShowProfileDropdown(false); }}
+                                    onClick={() => { navigate(`/child/${c.id}`); setShowProfileDropdown(false); }}
                                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
                                 >
                                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-${c.themeColor}-100`}>
@@ -1404,7 +1389,7 @@ const App: React.FC = () => {
                                         <>
                                             <div className="border-t border-gray-100 mt-2 pt-2">
                                                 <button
-                                                    onClick={() => { setView({ type: 'MANAGE_PROFILES' }); setShowProfileDropdown(false); }}
+                                                    onClick={() => { navigate('/manage'); setShowProfileDropdown(false); }}
                                                     className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
                                                 >
                                                     <Edit2 size={16} />
@@ -1822,7 +1807,6 @@ const App: React.FC = () => {
                                           const migratedSibling = migrateChildToTopicStructure(siblingData);
                                           setData([migratedSibling]);
                                           setChildProfile(migratedSibling);
-                                          localStorage.setItem('child_profile', JSON.stringify(migratedSibling));
                                         }
                                       }
                                       setView({ type: 'CHILD_DASHBOARD', childId: c.id });
@@ -1845,7 +1829,7 @@ const App: React.FC = () => {
                                     <div className="border-t border-gray-100 mt-2 pt-2">
                                         {!childProfile && (
                                             <button
-                                                onClick={() => { setView({ type: 'MANAGE_PROFILES' }); setShowProfileDropdown(false); }}
+                                                onClick={() => { navigate('/manage'); setShowProfileDropdown(false); }}
                                                 className="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition text-left text-sm"
                                             >
                                                 <Edit2 size={16} />
@@ -1891,7 +1875,7 @@ const App: React.FC = () => {
                         childProfiles={data}
                         focusedChildId={undefined}
                         onBlockClick={(cId, sId, tId, lId) => {
-                            setView({ type: 'LESSON_PLAYER', childId: cId, subjectId: sId, topicId: tId, lessonId: lId, origin: 'CHILD_DASHBOARD' });
+                            navigate(`/child/${cId}/subject/${sId}/topic/${tId}/lesson/${lId}`);
                         }}
                     />
                 </div>
@@ -1929,7 +1913,7 @@ const App: React.FC = () => {
                     <div 
                       key={subject.id} 
                       className="p-3 rounded-xl border border-gray-200 shadow-sm bg-white hover:shadow-md hover:border-blue-300 transition cursor-pointer group flex flex-col justify-between"
-                      onClick={() => setView({ type: 'SUBJECT_DETAIL', childId: child.id, subjectId: subject.id, origin: 'CHILD_DASHBOARD' })}
+                      onClick={() => navigate(`/child/${child.id}/subject/${subject.id}`)}
                     >
                       <div>
                           <div className="flex items-center gap-2 mb-2">
@@ -1980,10 +1964,10 @@ const App: React.FC = () => {
     const [editingAdmin, setEditingAdmin] = useState(false);
     
     // Admin edit states
-    const [adminDob, setAdminDob] = useState(() => localStorage.getItem('admin_dob') || '');
-    const [newAdminName, setNewAdminName] = useState(() => localStorage.getItem('admin_name') || '');
+    const [editAdminDob, setEditAdminDob] = useState(adminDob);
+    const [editAdminName, setEditAdminName] = useState(adminName);
     const [newAdminAvatar, setNewAdminAvatar] = useState(adminAvatar);
-    const [newAdminColor, setNewAdminColor] = useState(() => localStorage.getItem('admin_color') || 'blue');
+    const [editAdminColor, setEditAdminColor] = useState(adminColor);
     const [adminAvatarPage, setAdminAvatarPage] = useState(0);
     
     // Kid edit states
@@ -2015,14 +1999,20 @@ const App: React.FC = () => {
       { name: 'Slate', class: 'slate', bg: '#f1f5f9', text: '#475569' },
     ];
 
-    const handleSaveAdmin = () => {
-      localStorage.setItem('admin_dob', adminDob);
-      localStorage.setItem('admin_color', newAdminColor);
-      localStorage.setItem('admin_name', newAdminName);
+    const handleSaveAdmin = async () => {
       setAdminAvatar(newAdminAvatar);
-      setAdminColor(newAdminColor);
-      setAdminName(newAdminName);
-      localStorage.setItem('admin_avatar', newAdminAvatar);
+      setAdminColor(editAdminColor);
+      setAdminName(editAdminName);
+      setAdminDob(editAdminDob);
+      
+      if (user?.uid) {
+        await saveUserSettings(user.uid, {
+          adminDob: editAdminDob,
+          adminColor: editAdminColor,
+          adminName: editAdminName,
+          adminAvatar: newAdminAvatar
+        });
+      }
       setEditingAdmin(false);
     };
 
@@ -2136,13 +2126,13 @@ const App: React.FC = () => {
                   <div 
                     className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
                     style={{ 
-                      backgroundColor: THEME_COLORS.find(c => c.class === newAdminColor)?.bg || '#f3f4f6'
+                      backgroundColor: THEME_COLORS.find(c => c.class === editAdminColor)?.bg || '#f3f4f6'
                     }}
                   >
                     {adminAvatar}
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800">{adminName || adminName || user?.user_metadata?.full_name || user?.email || 'Admin'}</h3>
+                    <h3 className="font-bold text-gray-800">{adminName || user?.user_metadata?.full_name || user?.email || 'Admin'}</h3>
                     <p className="text-sm text-gray-500">Account Administrator</p>
                   </div>
                 </div>
@@ -2150,9 +2140,9 @@ const App: React.FC = () => {
                   onClick={() => {
                     setEditingAdmin(!editingAdmin);
                     setNewAdminAvatar(adminAvatar);
-                    setNewAdminColor(localStorage.getItem('admin_color') || 'blue');
-                    setAdminDob(localStorage.getItem('admin_dob') || '');
-                    setNewAdminName(localStorage.getItem('admin_name') || '');
+                    setEditAdminColor(adminColor);
+                    setEditAdminDob(adminDob);
+                    setEditAdminName(adminName);
                   }}
                   className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition"
                 >
@@ -2212,9 +2202,9 @@ const App: React.FC = () => {
                         {THEME_COLORS.map((color) => (
                           <button
                             key={color.class}
-                            onClick={() => setNewAdminColor(color.class)}
+                            onClick={() => setEditAdminColor(color.class)}
                             className={`w-10 h-10 rounded-lg transition ${
-                              newAdminColor === color.class ? 'ring-2 ring-offset-2 ring-gray-400' : ''
+                              editAdminColor === color.class ? 'ring-2 ring-offset-2 ring-gray-400' : ''
                             }`}
                             style={{ backgroundColor: color.bg }}
                             title={color.name}
@@ -2228,8 +2218,8 @@ const App: React.FC = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
                       <input
                         type="text"
-                        value={newAdminName}
-                        onChange={(e) => setNewAdminName(e.target.value)}
+                        value={editAdminName}
+                        onChange={(e) => setEditAdminName(e.target.value)}
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                         placeholder="Enter your name"
                       />
@@ -2251,8 +2241,8 @@ const App: React.FC = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth (optional)</label>
                       <input
                         type="date"
-                        value={adminDob}
-                        onChange={(e) => setAdminDob(e.target.value)}
+                        value={editAdminDob}
+                        onChange={(e) => setEditAdminDob(e.target.value)}
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                       />
                     </div>
@@ -2606,39 +2596,77 @@ const App: React.FC = () => {
     );
   };
 
+  // --- URL Routing ---
+  const navigate = useNavigate();
+  const urlParams = useParams();
+  const initialized = useRef(false);
+
+  // Sync URL to view state on mount only
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
+    const path = window.location.pathname;
+    console.log('[Router] Initial URL:', path);
+
+    // Parse URL and set view state
+    if (path === '/' || path === '') {
+      setView({ type: 'LANDING' });
+    } else if (path === '/returning' || path === '/returningview') {
+      setView({ type: 'RETURNING' });
+    } else if (path === '/dashboard' || path === '/admin' || path === '/admindash') {
+      setView({ type: 'HOME' });
+    } else if (path === '/curriculum') {
+      setView({ type: 'CURRICULUM_BUILDER' });
+    } else if (path === '/manage') {
+      setView({ type: 'MANAGE_PROFILES' });
+    } else if (path.startsWith('/child/') && urlParams.childId) {
+      const subjectId = urlParams.subjectId;
+      const topicId = urlParams.topicId;
+      const lessonId = urlParams.lessonId;
+
+      if (lessonId && topicId && subjectId) {
+        setView({ type: 'LESSON_PLAYER', childId: urlParams.childId, subjectId, topicId, lessonId, origin: 'KIDSDASH' });
+      } else if (subjectId) {
+        setView({ type: 'SUBJECT_DETAIL', childId: urlParams.childId, subjectId, origin: 'KIDSDASH' });
+      } else {
+        setView({ type: 'CHILD_DASHBOARD', childId: urlParams.childId });
+      }
+    }
+  }, []); // Run once on mount
+
   // --- Main Render Switch ---
 
   return (
     <>
-      {view.type === 'LANDING' && <LandingView />}
-      {view.type === 'RETURNING' && <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ReturningView childProfile={childProfile} onNavigate={(nav) => setView(nav as ViewState)} /></Suspense>}
-      {view.type === 'CURRICULUM_BUILDER' && <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><CurriculumBuilder onBack={() => setView({ type: 'HOME' })} onImport={handleBulkImport} onImportComplete={() => {}} /></Suspense>}
-      {view.type === 'SUBJECT_DETAIL' && <SubjectDetail childId={view.childId} subjectId={view.subjectId} origin={view.origin} />}
-      {view.type === 'LESSON_PLAYER' && (() => {
-        const child = data.find(c => c.id === view.childId);
-        const yearGroup = child?.yearGroups.find(yg => yg.subjects.some(s => s.topics.some(t => t.id === view.topicId)));
-        const subject = yearGroup?.subjects.find(s => s.topics.some(t => t.id === view.topicId));
-        const topic = subject?.topics.find(t => t.id === view.topicId);
-        const lesson = topic?.lessons.find(l => l.id === view.lessonId);
-
-        console.log('[LessonPlayer] Loading:', { childId: view.childId, topicId: view.topicId, lessonId: view.lessonId, lesson });
-
-        if (child && subject && topic && lesson) {
-          return (
-            <LessonPlayer 
-              child={child} 
-              subject={subject}
-              topicId={topic.id}
-              lesson={lesson} 
-              onBack={() => setView({ type: 'SUBJECT_DETAIL', childId: view.childId, subjectId: subject.id, origin: view.origin })}
-              onComplete={(id, time) => handleCompleteLesson(child.id, subject.id, topic.id, id, time)}
-            />
-          );
-        }
-        console.error('LessonPlayer: Could not find data', { childId: view.childId, subjectId: view.subjectId, topicId: view.topicId, lessonId: view.lessonId });
-        return <div>Error loading lesson - data not found</div>;
-      })()}
-      {view.type === 'HOME' && <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><DaddyDashboardView 
+    <Routes>
+      <Route path="/landingview" element={view.type === 'LANDING' ? <LandingView
+        data={data}
+        user={user}
+        loading={authLoading}
+        adminAvatar={adminAvatar}
+        adminName={adminName}
+        parentEmailInput={parentEmailInput}
+        setParentEmailInput={setParentEmailInput}
+        signInWithGoogle={signInWithGoogle}
+        signOut={signOut}
+        setView={setView}
+      /> : <Navigate to="/landingview" replace />} />
+      <Route path="/" element={view.type === 'LANDING' ? <LandingView
+        data={data}
+        user={user}
+        loading={authLoading}
+        adminAvatar={adminAvatar}
+        adminName={adminName}
+        parentEmailInput={parentEmailInput}
+        setParentEmailInput={setParentEmailInput}
+        signInWithGoogle={signInWithGoogle}
+        signOut={signOut}
+        setView={setView}
+      /> : <Navigate to="/" replace />} />
+      <Route path="/returningview" element={view.type === 'RETURNING' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ReturningView childProfile={childProfile} data={data} onNavigate={(nav) => { setView(nav as ViewState); if (nav.type === 'HOME') navigate('/dashboard'); else if (nav.type === 'LANDING') navigate('/'); }} /></Suspense> : <Navigate to="/returningview" replace />} />
+      <Route path="/returning" element={view.type === 'RETURNING' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ReturningView childProfile={childProfile} data={data} onNavigate={(nav) => { setView(nav as ViewState); if (nav.type === 'HOME') navigate('/dashboard'); else if (nav.type === 'LANDING') navigate('/'); }} /></Suspense> : <Navigate to="/returning" replace />} />
+      <Route path="/dashboard" element={view.type === 'HOME' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><DaddyDashboardView 
         data={data}
         setData={setData}
         view={view}
@@ -2655,8 +2683,65 @@ const App: React.FC = () => {
         authDebug={authDebug}
         showStatus={showStatus}
         saveData={saveData}
-      /></Suspense>}
-      {view.type === 'CHILD_DASHBOARD' && <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ChildDashboard
+      /></Suspense> : <Navigate to="/dashboard" replace />} />
+      <Route path="/admindash" element={view.type === 'HOME' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><DaddyDashboardView 
+        data={data}
+        setData={setData}
+        view={view}
+        setView={setView}
+        adminName={adminName}
+        adminAvatar={adminAvatar}
+        adminColor={adminColor}
+        isDayActive={isDayActive}
+        setIsDayActive={setIsDayActive}
+        schedule={schedule}
+        setSchedule={setSchedule}
+        generateSchedule={generateSchedule}
+        dataStatus={supabaseStatus}
+        authDebug={authDebug}
+        showStatus={showStatus}
+        saveData={saveData}
+      /></Suspense> : <Navigate to="/admindash" replace />} />
+      <Route path="/admin" element={view.type === 'HOME' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><DaddyDashboardView 
+        data={data}
+        setData={setData}
+        view={view}
+        setView={setView}
+        adminName={adminName}
+        adminAvatar={adminAvatar}
+        adminColor={adminColor}
+        isDayActive={isDayActive}
+        setIsDayActive={setIsDayActive}
+        schedule={schedule}
+        setSchedule={setSchedule}
+        generateSchedule={generateSchedule}
+        dataStatus={supabaseStatus}
+        authDebug={authDebug}
+        showStatus={showStatus}
+        saveData={saveData}
+      /></Suspense> : <Navigate to="/admin" replace />} />
+      <Route path="/curriculum" element={view.type === 'CURRICULUM_BUILDER' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><CurriculumBuilder onBack={() => navigate('/dashboard')} onImport={handleBulkImport} onImportComplete={() => {}} /></Suspense> : <Navigate to="/curriculum" replace />} />
+      <Route path="/manage" element={view.type === 'MANAGE_PROFILES' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ManageProfilesView
+        data={data}
+        setData={setData}
+        user={user}
+        signOut={() => signOut && signOut()}
+        view={view}
+        setView={setView}
+        saveData={saveData}
+        adminName={adminName}
+        setAdminName={setAdminName}
+        adminAvatar={adminAvatar}
+        setAdminAvatar={setAdminAvatar}
+        adminColor={adminColor}
+        setAdminColor={setAdminColor}
+        adminDob={adminDob}
+        setAdminDob={setAdminDob}
+        onDeleteChild={handleDeleteChild}
+        onAddYearGroup={handleAddYearGroup}
+        onRemoveYearGroup={handleRemoveYearGroup}
+      /></Suspense> : <Navigate to="/manage" replace />} />
+      <Route path="/kiddash" element={view.type === 'CHILD_DASHBOARD' && view.childId ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ChildDashboard
         childId={view.childId}
         data={data}
         setData={setData}
@@ -2675,27 +2760,78 @@ const App: React.FC = () => {
         setIsDayActive={setIsDayActive}
         schedule={schedule}
         generateSchedule={generateSchedule}
-      /></Suspense>}
-      {view.type === 'MANAGE_PROFILES' && <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ManageProfilesView
+      /></Suspense> : <Navigate to="/kiddash" replace />} />
+      <Route path="/child/:childId" element={view.type === 'CHILD_DASHBOARD' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ChildDashboard
+        childId={view.childId}
         data={data}
         setData={setData}
+        childProfile={childProfile}
+        setChildProfile={setChildProfile}
+        allChildren={data.map(c => ({ id: c.id, name: c.name, avatar: c.avatar, themeColor: c.themeColor }))}
         user={user}
         signOut={() => signOut && signOut()}
         view={view}
         setView={setView}
-        saveData={saveData}
+        parentUid={parentUid}
         adminName={adminName}
-        setAdminName={setAdminName}
         adminAvatar={adminAvatar}
-        setAdminAvatar={setAdminAvatar}
         adminColor={adminColor}
-        setAdminColor={setAdminColor}
-        onDeleteChild={handleDeleteChild}
-        onAddYearGroup={handleAddYearGroup}
-        onRemoveYearGroup={handleRemoveYearGroup}
-      /></Suspense>}
-      
-      {showChildManagement && (
+        isDayActive={isDayActive}
+        setIsDayActive={setIsDayActive}
+        schedule={schedule}
+        generateSchedule={generateSchedule}
+      /></Suspense> : <Navigate to={`/child/${urlParams.childId || ''}`} replace />} />
+      <Route path="/child/:childId/subject/:subjectId" element={view.type === 'SUBJECT_DETAIL' ? <SubjectDetail childId={view.childId} subjectId={view.subjectId} origin={view.origin} /> : <Navigate to={`/child/${urlParams.childId}/subject/${urlParams.subjectId}`} replace />} />
+      <Route path="/lessondash" element={view.type === 'LESSON_PLAYER' && view.childId ? (() => {
+        const child = data.find(c => c.id === view.childId);
+        const yearGroup = child?.yearGroups.find(yg => yg.subjects.some(s => s.topics.some(t => t.id === view.topicId)));
+        const subject = yearGroup?.subjects.find(s => s.topics.some(t => t.id === view.topicId));
+        const topic = subject?.topics.find(t => t.id === view.topicId);
+        const lesson = topic?.lessons.find(l => l.id === view.lessonId);
+
+        if (child && subject && topic && lesson) {
+          return (
+            <LessonPlayer 
+              child={child} 
+              subject={subject}
+              topicId={topic.id}
+              lesson={lesson} 
+              onBack={() => { setView({ type: 'SUBJECT_DETAIL', childId: view.childId, subjectId: subject.id, origin: view.origin }); navigate(`/child/${view.childId}/subject/${subject.id}`); }}
+              onComplete={(id, time) => handleCompleteLesson(child.id, subject.id, topic.id, id, time)}
+            />
+          );
+        }
+        return <div>Error loading lesson - data not found</div>;
+      })() : <Navigate to="/lessondash" replace />} />
+      <Route path="/child/:childId/subject/:subjectId/topic/:topicId/lesson/:lessonId" element={view.type === 'LESSON_PLAYER' ? (() => {
+        const child = data.find(c => c.id === view.childId);
+        const yearGroup = child?.yearGroups.find(yg => yg.subjects.some(s => s.topics.some(t => t.id === view.topicId)));
+        const subject = yearGroup?.subjects.find(s => s.topics.some(t => t.id === view.topicId));
+        const topic = subject?.topics.find(t => t.id === view.topicId);
+        const lesson = topic?.lessons.find(l => l.id === view.lessonId);
+
+        console.log('[LessonPlayer] Loading:', { childId: view.childId, topicId: view.topicId, lessonId: view.lessonId, lesson });
+
+        if (child && subject && topic && lesson) {
+          return (
+            <LessonPlayer 
+              child={child} 
+              subject={subject}
+              topicId={topic.id}
+              lesson={lesson} 
+              onBack={() => { setView({ type: 'SUBJECT_DETAIL', childId: view.childId, subjectId: subject.id, origin: view.origin }); navigate(`/child/${view.childId}/subject/${subject.id}`); }}
+              onComplete={(id, time) => handleCompleteLesson(child.id, subject.id, topic.id, id, time)}
+            />
+          );
+        }
+        console.error('LessonPlayer: Could not find data', { childId: view.childId, subjectId: view.subjectId, topicId: view.topicId, lessonId: view.lessonId });
+        return <div>Error loading lesson - data not found</div>;
+      })() : <Navigate to={`/child/${urlParams.childId}/subject/${urlParams.subjectId}/topic/${urlParams.topicId}/lesson/${urlParams.lessonId}`} replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+
+    {/* Modals - outside of Routes */}
+    {showChildManagement && (
         <ChildManagement
           children={data}
           onAddChild={handleAddChild}
@@ -2725,9 +2861,11 @@ const App: React.FC = () => {
       {showEditAdmin && (
         <AdminAvatarEditModal
           currentAvatar={adminAvatar}
-          onSave={(avatar) => {
+          onSave={async (avatar) => {
             setAdminAvatar(avatar);
-            localStorage.setItem('admin_avatar', avatar);
+            if (user?.uid) {
+              await saveUserSettings(user.uid, { adminAvatar: avatar });
+            }
             setShowEditAdmin(false);
           }}
           onClose={() => setShowEditAdmin(false)}

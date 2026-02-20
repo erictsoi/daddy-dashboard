@@ -47,7 +47,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await firebaseSignOut(auth)
       setUserRole('guest')
-      localStorage.setItem('daddy_dashboard_data', JSON.stringify(INITIAL_DATA))
       window.location.reload()
     } catch (error) {
       console.error('Error signing out:', error)
