@@ -2639,44 +2639,19 @@ const App: React.FC = () => {
   return (
     <>
     <Routes>
-      <Route path="/landingview" element={view.type === 'LANDING' ? <LandingView
-        data={data}
-        user={user}
-        loading={authLoading}
-        adminAvatar={adminAvatar}
-        adminName={adminName}
-        parentEmailInput={parentEmailInput}
-        setParentEmailInput={setParentEmailInput}
-        signInWithGoogle={signInWithGoogle}
-        signOut={signOut}
-        setView={setView}
-      /> : <Navigate to="/landingview" replace />} />
-      <Route path="/" element={view.type === 'LANDING' ? <LandingView
-        data={data}
-        user={user}
-        loading={authLoading}
-        adminAvatar={adminAvatar}
-        adminName={adminName}
-        parentEmailInput={parentEmailInput}
-        setParentEmailInput={setParentEmailInput}
-        signInWithGoogle={signInWithGoogle}
-        signOut={signOut}
-        setView={setView}
-      /> : <Navigate to="/" replace />} />
-      <Route path="/returningview" element={view.type === 'RETURNING' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ReturningView childProfile={childProfile} data={data} onNavigate={(nav) => { setView(nav as ViewState); if (nav.type === 'HOME') navigate('/dashboard'); else if (nav.type === 'LANDING') navigate('/'); }} /></Suspense> : <Navigate to="/returningview" replace />} />
-      <Route path="/returning" element={view.type === 'RETURNING' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ReturningView childProfile={childProfile} data={data} onNavigate={(nav) => { 
+      <Route path="/landingview" element={<LandingView />} />
+      <Route path="/" element={<LandingView />} />
+      <Route path="/returningview" element={<ReturningView childProfile={childProfile} data={data} onNavigate={(nav) => { 
         if (nav.type === 'KIDSDASH') { 
-          setView({ type: 'CHILD_DASHBOARD', childId: nav.childId });
           window.location.href = '/kiddash?child=' + nav.childId; 
         } else if (nav.type === 'HOME') { 
-          window.location.href = '/dashboard'; 
+          window.location.href = '/admindash'; 
         } else if (nav.type === 'LANDING') { 
           window.location.href = '/'; 
         } else if (nav.type === 'ADMIN') { 
           window.location.href = '/admindash'; 
         }
-      }} /></Suspense> : <Navigate to="/returning" replace />} />
-      <Route path="/dashboard" element={<Navigate to="/admindash" replace />} />
+      }} />} />
       <Route path="/admindash" element={<AdminDash />} />
       <Route path="/lessonview" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><LessonView childId={new URLSearchParams(window.location.search).get('child') || 'sophia'} lessonId={new URLSearchParams(window.location.search).get('lesson') || ''} /></Suspense>} />
       <Route path="/admin" element={<Navigate to="/admindash" replace />} />
