@@ -319,7 +319,13 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
                     {subjects.map((s, i) => {
                         const isActive = sel === i;
                         return (
-                            <Shadow key={i} offset={isActive ? 4 : 2} size={2} radius={DS.radius.lg} className={`card-${i}`}>
+                            <Shadow 
+                                key={i} 
+                                offset={isActive ? 4 : 2} 
+                                size={2} 
+                                radius={DS.radius.lg} 
+                                className={`card-${i}`}
+                            >
                                 <div 
                                     onClick={() => {
                                         if (s.lessonId) {
@@ -332,13 +338,8 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
                                         border: `3px solid ${isActive ? DS.ink : "#C4BBAF"}`, 
                                         borderRadius: DS.radius.lg, 
                                         padding: "16px 14px", 
-                                        cursor: "pointer", 
-                                        transform: isActive ? "translateY(-3px)" : "none", 
-                                        marginTop: isActive ? -3 : 0,
-                                        transition: "all .2s" 
+                                        cursor: "pointer"
                                     }}
-                                    onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor = DS.ink; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.marginTop = "-2px" } }}
-                                    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.borderColor = "#C4BBAF"; e.currentTarget.style.transform = "none"; e.currentTarget.style.marginTop = "0" } }}
                                 >
                                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
                                         <div style={{ width: 40, height: 40, background: `${s.color}20`, border: `2px solid ${s.color}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{s.icon}</div>

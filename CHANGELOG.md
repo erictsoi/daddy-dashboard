@@ -8,6 +8,12 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-21 - Version 3.7.1 (Benday Shadow Fixes)
+
+### Changed
+- **ReturningView** - Added custom Shadow component with Benday dot effect
+- **Hover animations** - Shadow now moves in tandem with card during hover
+
 ## 2026-02-21 - Version 3.7.0 (UI Styling Updates)
 
 ### Changed

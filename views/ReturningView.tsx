@@ -2,8 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { ChildProfile, ViewOrigin } from '../types';
 import { useAuth } from '../src/lib/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { DS, Shadow, getThemeColor } from '../components/design-system';
+import { DS, getThemeColor } from '../components/design-system';
 import { getDummyProfiles } from '../src/data/dummyData';
+
+const BendayShadow = ({ offset = 3, size = 2.5 }: { offset?: number; size?: number }) => (
+  <div style={{
+    position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset,
+    zIndex: -1, pointerEvents: "none",
+    backgroundImage: `radial-gradient(circle, #3D2B1F ${size}px, transparent ${size}px)`,
+    backgroundSize: `${size * 2.2}px ${size * 2.2}px`,
+    borderRadius: "inherit", opacity: 0.35,
+  }} />
+);
+
+const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties }> = ({ children, offset = 3, size = 2.5, radius, style = {} }) => (
+  <div style={{ position: "relative", borderRadius: radius, ...style }}>
+    <BendayShadow offset={offset} size={size} />
+    {children}
+  </div>
+);
 
 interface ReturningViewProps {
   childProfile: ChildProfile | null;
@@ -96,43 +113,47 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
       <div style={{ position: "relative", zIndex: 5, padding: "0 40px 52px" }}>
         <div style={{ display: "flex", justifyContent: "center", gap: 24, flexWrap: "wrap", marginTop: 32 }}>
           {PROFILES.map((profile) => (
-            <button
-              key={profile.id}
-              onClick={(e) => {
-                e.preventDefault();
-                console.log('Clicked profile:', profile.id, profile.name, profile.isAdmin);
-                if (profile.isAdmin) {
-                  window.location.href = '/admindash';
-                } else {
-                  window.location.href = '/kiddash?child=' + profile.id;
-                }
-              }}
-              style={{ 
-                position: "relative", 
-                width: 180, 
-                height: 220,
-                background: profile.color, 
-                border: DS.border, 
-                borderRadius: DS.radius.lg, 
-                padding: "24px 16px",
-                textAlign: "center",
-                cursor: "pointer",
-                transition: "transform .2s"
-              }}
+            <div 
+              key={profile.id} 
+              style={{ transition: "transform .2s" }}
               onMouseEnter={e => e.currentTarget.style.transform = "translate(-4px,-4px)"}
-              onMouseLeave={e => e.currentTarget.style.transform = "none"}
+              onMouseLeave={e => e.currentTarget.style.transform = "translate(0,0)"}
             >
-              <div style={{ background: "rgba(255,255,255,.3)", border: DS.border, borderRadius: DS.radius.md, padding: 12, marginBottom: 12 }}>
-                <div style={{ fontSize: 48, lineHeight: 1 }}>{profile.emoji}</div>
-              </div>
-              {profile.year && (
-                <div style={{ display: "inline-block", background: "rgba(255,255,255,.2)", border: "2px solid rgba(255,255,255,.5)", borderRadius: DS.radius.pill, padding: "2px 10px", marginBottom: 6 }}>
-                  <span style={{ color: "#fff", fontSize: 10, fontWeight: 800 }}>{profile.year.toUpperCase()}</span>
-                </div>
-              )}
-              <div className="b" style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>{profile.name}</div>
-              <p style={{ color: "rgba(255,255,255,.8)", fontSize: 12 }}>{profile.isAdmin ? 'Dashboard & Admin' : 'Student Access'}</p>
-            </button>
+              <Shadow offset={3} size={2.5} radius={DS.radius.lg}>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (profile.isAdmin) {
+                      window.location.href = '/admindash';
+                    } else {
+                      window.location.href = '/kiddash?child=' + profile.id;
+                    }
+                  }}
+                  style={{ 
+                    position: "relative", 
+                    width: 180, 
+                    height: 220,
+                    background: profile.color, 
+                    border: DS.border, 
+                    borderRadius: DS.radius.lg, 
+                    padding: "24px 16px",
+                    textAlign: "center",
+                    cursor: "pointer"
+                  }}
+                >
+                  <div style={{ background: "rgba(255,255,255,.3)", border: DS.border, borderRadius: DS.radius.md, padding: 12, marginBottom: 12 }}>
+                    <div style={{ fontSize: 48, lineHeight: 1 }}>{profile.emoji}</div>
+                  </div>
+                  {profile.year && (
+                    <div style={{ display: "inline-block", background: "rgba(255,255,255,.2)", border: "2px solid rgba(255,255,255,.5)", borderRadius: DS.radius.pill, padding: "2px 10px", marginBottom: 6 }}>
+                      <span style={{ color: "#fff", fontSize: 10, fontWeight: 800 }}>{profile.year.toUpperCase()}</span>
+                    </div>
+                  )}
+                  <div className="b" style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>{profile.name}</div>
+                  <p style={{ color: "rgba(255,255,255,.8)", fontSize: 12 }}>{profile.isAdmin ? 'Dashboard & Admin' : 'Student Access'}</p>
+                </button>
+              </Shadow>
+            </div>
           ))}
         </div>
       </div>
