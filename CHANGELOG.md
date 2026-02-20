@@ -8,6 +8,21 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-21 - Version 3.7.0 (UI Styling Updates)
+
+### Changed
+- **KidDash** - Full refactor to match KidsDashboard.jsx design spec
+  - Added Texture, Blobs, Deco background components
+  - Added Chip and SectionHead components
+  - Schedule cards with Shadow wrapper, colored backgrounds by status
+  - Subject cards in 4-column grid with fadeUp animations
+  - Direct navigation to lesson view on card click (removed GO! button)
+  - Float animation on active schedule card (Science)
+  - Fixed LUNCH card to match other card proportions (148x148)
+  - Added paddingTop to schedule container to prevent hover clipping
+- **AdminDash** - Updated kid cards to 180x220 with theme colors
+- **ReturningView** - Updated profile cards to 180x220
+
 ## 2026-02-21 - Version 3.6.0 (LessonView & KidDash Updates)
 
 ### Added

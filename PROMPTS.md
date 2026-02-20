@@ -8,6 +8,23 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-21 - UI Styling Updates
+
+**User Request:**
+> make kidsdash follow the styling in KidsDashboard.jsx
+> the hover animation makes it clip under the span that is above in the page
+> remove the active state of this card... i want to show the active card with the animation applied to... this is a bouncing animation that shows the active state
+> make all of these cards... 180x220
+
+**Session Actions:**
+- Refactored KidDash.tsx to match KidsDashboard.jsx design spec
+- Added Texture, Blobs, Deco background components
+- Added Chip and SectionHead components with animations
+- Updated schedule cards with Shadow wrapper, float animation on active card
+- Subject cards navigate directly to lesson view on click (removed GO! button)
+- Fixed LUNCH card proportions (148x148) and hover clipping
+- Updated AdminDash and ReturningView cards to 180x220 with theme colors
+
 ## 2026-02-21 - LessonView & KidDash Updates
 
 **User Request:**

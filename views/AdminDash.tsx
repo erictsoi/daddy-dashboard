@@ -182,59 +182,35 @@ export const AdminDash: React.FC = () => {
         </div>
 
         {/* KIDS CARDS */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 18 }}>
           {kids.map(({ profile: pr, schedule, done, total, streak }, ki) => (
-            <Shadow key={pr.id} offset={3} size={2.5} radius={DS.radius.lg} style={{ animation: `fadeUp .32s ${ki * .08}s ease-out both` }}>
-              <div style={{ position: "relative", background: DS.card, border: DS.border, borderRadius: DS.radius.lg, padding: 26 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-                  <Shadow offset={2} size={1.5} radius={13}>
-                    <div style={{ position: "relative", width: 46, height: 46, borderRadius: 13, background: pr.tint, border: DS.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{pr.emoji}</div>
-                  </Shadow>
-                  <div style={{ flex: 1 }}>
-                    <div className="b t-h2" style={{ color: DS.ink }}>{pr.name}</div>
-                    <div className="n t-label" style={{ color: pr.color }}>{pr.year}</div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div className="b" style={{ fontSize: 22, fontWeight: 800, color: pr.color }}>{done}/{total}</div>
-                    <div className="n t-label" style={{ color: DS.inkFade }}>done today</div>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div style={{ height: 7, background: "#EDE8E0", borderRadius: 100, marginBottom: 18, overflow: "hidden", border: "1.5px solid #1A1A2E" }}>
-                  <div style={{ height: "100%", width: `${(done / total) * 100}%`, background: pr.color, borderRadius: 100, transition: "width .6s" }} />
-                </div>
-
-                {/* Schedule */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                  {schedule.map((item, i) =>
-                    item.status === "lunch"
-                      ? <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
-                          <div style={{ flex: 1, height: 1, background: "#EDE8E0" }} />
-                          <span className="n t-label" style={{ color: DS.inkFade }}>LUNCH 12–1PM</span>
-                          <div style={{ flex: 1, height: 1, background: "#EDE8E0" }} />
-                        </div>
-                      : <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", borderRadius: DS.radius.sm, background: item.status === "active" ? pr.tint : "transparent", border: item.status === "active" ? `1.5px solid ${pr.color}` : "1.5px solid transparent" }}>
-                          <div style={{ width: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <Dot status={item.status} color={pr.color} />
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div className="n t-small" style={{ fontWeight: 700, color: item.status === "done" ? DS.inkFade : DS.ink, textDecoration: item.status === "done" ? "line-through" : "none" }}>{item.subject}</div>
-                            <div className="n t-label" style={{ color: DS.inkFade }}>{item.topic}</div>
-                          </div>
-                          {item.status === "active" && <span className="n t-label" style={{ color: pr.color, background: `${pr.color}18`, padding: "2px 8px", borderRadius: DS.radius.pill }}>NOW</span>}
-                          {item.status === "stretch" && <span className="n t-label" style={{ color: DS.inkFade }}>bonus</span>}
-                        </div>
-                  )}
-                </div>
-
-                {/* Streak */}
-                <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid #EDE8E0`, display: "flex", alignItems: "center", gap: 6 }}>
-                  <span>🔥</span>
-                  <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 700 }}>{streak} day streak</span>
-                </div>
+            <button 
+              key={pr.id}
+              onClick={() => window.location.href = `/kiddash?child=${pr.id}`}
+              style={{ 
+                position: "relative", 
+                width: 180, 
+                height: 220, 
+                background: pr.color, 
+                border: DS.border, 
+                borderRadius: DS.radius.lg, 
+                padding: "24px 16px", 
+                textAlign: "center", 
+                cursor: "pointer", 
+                transition: "transform 0.2s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "none"}
+            >
+              <div style={{ background: "rgba(255, 255, 255, 0.3)", border: DS.border, borderRadius: 16, padding: 12, marginBottom: 12 }}>
+                <div style={{ fontSize: 48, lineHeight: 1 }}>{pr.emoji}</div>
               </div>
-            </Shadow>
+              <div style={{ display: "inline-block", background: "rgba(255, 255, 255, 0.2)", border: "2px solid rgba(255, 255, 255, 0.5)", borderRadius: 100, padding: "2px 10px", marginBottom: 6 }}>
+                <span style={{ color: "#fff", fontSize: 10, fontWeight: 800 }}>{pr.year?.toUpperCase()}</span>
+              </div>
+              <div className="b" style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>{pr.name}</div>
+              <p style={{ color: "rgba(255, 255, 255, 0.8)", fontSize: 12 }}>Student Access</p>
+            </button>
           ))}
         </div>
       </div>

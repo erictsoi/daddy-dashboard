@@ -41,52 +41,30 @@ const createDummyChild = (profile: typeof DUMMY_PROFILES[0]): ChildProfile => {
         id: `yg-${profile.id}-1`,
         name: profile.year,
         subjects: [
-          {
-            id: `sub-${profile.id}-maths`,
-            name: "Maths",
-            category: "Maths",
-            color: colorName,
-            topics: [
-              {
-                id: `topic-${profile.id}-1`,
-                name: "Core Topics",
-                lessons: [
-                  { id: `les-${profile.id}-1`, title: "Introduction", videoUrl: "", completed: false, outcomes: [] },
-                  { id: `les-${profile.id}-2`, title: "Practice Problems", videoUrl: "", completed: false, outcomes: [] },
-                ]
-              }
-            ]
-          },
-          {
-            id: `sub-${profile.id}-english`,
-            name: "English",
-            category: "English",
-            color: colorName,
-            topics: [
-              {
-                id: `topic-${profile.id}-2`,
-                name: "Reading & Writing",
-                lessons: [
-                  { id: `les-${profile.id}-3`, title: "Comprehension", videoUrl: "", completed: false, outcomes: [] },
-                ]
-              }
-            ]
-          },
-          {
-            id: `sub-${profile.id}-science`,
-            name: "Science",
-            category: "Science",
-            color: colorName,
-            topics: [
-              {
-                id: `topic-${profile.id}-3`,
-                name: "Science Topics",
-                lessons: [
-                  { id: `les-${profile.id}-4`, title: " Experiments", videoUrl: "", completed: false, outcomes: [] },
-                ]
-              }
-            ]
-          }
+          { id: `sub-${profile.id}-maths`, name: "Maths", category: "Maths", color: colorName,
+            topics: [{ id: `topic-${profile.id}-1`, name: "Fractions", lessons: [{ id: `les-${profile.id}-1`, title: "Introduction to Fractions", videoUrl: "", completed: true, outcomes: [] }] }] },
+          { id: `sub-${profile.id}-english`, name: "English", category: "English", color: colorName,
+            topics: [{ id: `topic-${profile.id}-2`, name: "Creative Writing", lessons: [{ id: `les-${profile.id}-2`, title: "Story Writing", videoUrl: "", completed: true, outcomes: [] }] }] },
+          { id: `sub-${profile.id}-science`, name: "Science", category: "Science", color: colorName,
+            topics: [{ id: `topic-${profile.id}-3`, name: "Ecosystems", lessons: [{ id: `les-${profile.id}-3`, title: "What is an Ecosystem?", videoUrl: "", completed: false, outcomes: [] }] }] },
+          { id: `sub-${profile.id}-art`, name: "Art", category: "Art", color: colorName,
+            topics: [{ id: `topic-${profile.id}-4`, name: "Watercolour", lessons: [{ id: `les-${profile.id}-4`, title: "Watercolour Basics", videoUrl: "", completed: false, outcomes: [] }] }] },
+          { id: `sub-${profile.id}-music`, name: "Music", category: "Music", color: colorName,
+            topics: [{ id: `topic-${profile.id}-5`, name: "Rhythm & Beat", lessons: [{ id: `les-${profile.id}-5`, title: "Rhythm Basics", videoUrl: "", completed: false, outcomes: [] }] }] },
+          { id: `sub-${profile.id}-pe`, name: "PE", category: "PE", color: colorName,
+            topics: [{ id: `topic-${profile.id}-6`, name: "Gymnastics", lessons: [{ id: `les-${profile.id}-6`, title: "Gymnastics Moves", videoUrl: "", completed: false, outcomes: [] }] }] },
+          { id: `sub-${profile.id}-history`, name: "History", category: "History", color: colorName,
+            topics: [{ id: `topic-${profile.id}-7`, name: "Ancient Egypt", lessons: [{ id: `les-${profile.id}-7`, title: "Ancient Egypt Intro", videoUrl: "", completed: false, outcomes: [] }] }] },
+          { id: `sub-${profile.id}-geography`, name: "Geography", category: "Geography", color: colorName,
+            topics: [{ id: `topic-${profile.id}-8`, name: "Weather Systems", lessons: [{ id: `les-${profile.id}-8`, title: "Weather Basics", videoUrl: "", completed: false, outcomes: [] }] }] },
+          { id: `sub-${profile.id}-drama`, name: "Drama", category: "Drama", color: colorName,
+            topics: [{ id: `topic-${profile.id}-9`, name: "Improvisation", lessons: [{ id: `les-${profile.id}-9`, title: "Improv Games", videoUrl: "", completed: false, outcomes: [] }] }] },
+          { id: `sub-${profile.id}-tech`, name: "Technology", category: "Design", color: colorName,
+            topics: [{ id: `topic-${profile.id}-10`, name: "Intro to Coding", lessons: [{ id: `les-${profile.id}-10`, title: "Coding Basics", videoUrl: "", completed: false, outcomes: [] }] }] },
+          { id: `sub-${profile.id}-lang`, name: "Languages", category: "Languages", color: colorName,
+            topics: [{ id: `topic-${profile.id}-11`, name: "French Basics", lessons: [{ id: `les-${profile.id}-11`, title: "French Greetings", videoUrl: "", completed: false, outcomes: [] }] }] },
+          { id: `sub-${profile.id}-pshe`, name: "PSHE", category: "PSHE", color: colorName,
+            topics: [{ id: `topic-${profile.id}-12`, name: "Wellbeing", lessons: [{ id: `les-${profile.id}-12`, title: "Wellbeing Basics", videoUrl: "", completed: false, outcomes: [] }] }] },
         ]
       }
     ]

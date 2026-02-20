@@ -109,7 +109,8 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
               }}
               style={{ 
                 position: "relative", 
-                width: 200, 
+                width: 180, 
+                height: 220,
                 background: profile.color, 
                 border: DS.border, 
                 borderRadius: DS.radius.lg, 
