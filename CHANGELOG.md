@@ -8,6 +8,17 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-21 - Version 3.6.0 (LessonView & KidDash Updates)
+
+### Added
+- **LessonView collapsible sidebar** - Stretches full height, contains About, Learning Outcomes, Playlist
+- **Video player** - Dark theme with 16/9 aspect ratio, progress bar, simulate video end button
+- **Complete button** - Below video, unlocks when video ends
+- **KidDash header** - Cream/glassmorphism header with logo, streak badge, profile avatar
+
+### Changed
+- **KidDash subject cards** - Progress chip with colored background, icon in colored rounded square
+
 ## 2026-02-20 - Version 3.5.0 (V6 UI Views)
 
 ### Added

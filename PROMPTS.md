@@ -8,6 +8,31 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-21 - LessonView & KidDash Updates
+
+**User Request:**
+> lesson view to have a collapsable sidebar
+> the sidebar doesnt go all the way to bottom of the screen
+> the fractional numbers to be in a chip within each subject card
+> subject icon within a rounded corner square
+> in lessonview, this element is beneath the video element
+> video to follow the proportions in the following
+> to be left aligned
+> text to be 10px
+> push to github
+> update logs
+
+**Session Actions:**
+- Added collapsible sidebar to LessonView with About, Learning Outcomes, Playlist
+- Fixed sidebar to stretch full height (calc(100vh - 60px))
+- Added progress chip (colored pill) to KidDash subject cards
+- Added rounded square container with colored border around subject icons
+- Added video player with dark theme, 16/9 aspect ratio, progress bar
+- Added "Finish the video first" button below video (left aligned)
+- Fixed Playlist label font size to 10px
+
+---
+
 ## 2026-02-20 - V6 UI Views Migration
 
 **User Request:**
