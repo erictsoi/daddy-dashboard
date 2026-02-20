@@ -3,6 +3,7 @@ import { ChildProfile, ViewOrigin } from '../types';
 import { useAuth } from '../src/lib/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { DS, Shadow, getThemeColor } from '../components/design-system';
+import { getDummyProfiles } from '../src/data/dummyData';
 
 interface ReturningViewProps {
   childProfile: ChildProfile | null;
@@ -15,25 +16,19 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
   const { user, signOut, loading } = useAuth() || {};
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const DEMO_CHILDREN = [
-    { id: "sophia", name: "Sophia", year: "Year 5", color: "#9B6DD6", emoji: "🎨" },
-    { id: "adrian", name: "Adrian", year: "Year 9", color: "#2B8ED4", emoji: "🏀" },
-    { id: "emma", name: "Emma", year: "Year 3", color: "#4CAF50", emoji: "📚" },
-  ];
-
-  const children = data.length > 0 ? data : DEMO_CHILDREN;
+  const DEMO_PROFILES = getDummyProfiles();
 
   const PROFILES = [
     { id: "admin", name: "Daddy", year: "Admin", age: "", color: "#1A1A2E", tint: "#E8E8E8", emoji: "👨", interests: ["Dashboard", "Settings"], isAdmin: true },
-    ...children.map((child: any) => ({
+    ...DEMO_PROFILES.map(child => ({
       id: child.id,
       name: child.name,
-      year: child.yearGroups?.[0]?.name || child.year || 'Student',
-      age: "",
-      color: child.themeColor === 'indigo' ? '#6366F1' : child.themeColor === 'rose' ? '#F43F5E' : child.color || '#4CAF50',
-      tint: '#F5F5F5',
-      emoji: child.avatar || child.emoji,
-      interests: [],
+      year: child.year,
+      age: child.age,
+      color: child.color,
+      tint: child.tint,
+      emoji: child.emoji,
+      interests: child.interests,
       isAdmin: false,
     })),
   ];
@@ -81,9 +76,9 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
           <span className="b" style={{ fontSize: 22, fontWeight: 800, color: DS.ink }}>DADDY DASHBOARD</span>
         </div>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-          <button onClick={() => onNavigate({ type: 'LANDING' })} className="n" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "none" }}>Landing</button>
-          <button onClick={() => onNavigate({ type: 'ADMIN' })} className="n" style={{ color: DS.ink, cursor: "pointer", fontWeight: 700, background: "none", border: "none" }}>Dashboard</button>
-          <button onClick={() => { signOut?.(); onNavigate({ type: 'LANDING' }); }} className="n" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "none" }}>Sign out</button>
+          <button onClick={() => window.location.href = '/landingview'} className="n" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "none" }}>Landing</button>
+          <button onClick={() => window.location.href = '/admindash'} className="n" style={{ color: DS.ink, cursor: "pointer", fontWeight: 700, background: "none", border: "none" }}>Dashboard</button>
+          <button onClick={() => { signOut?.(); window.location.href = '/landingview'; }} className="n" style={{ color: DS.inkSoft, cursor: "pointer", fontWeight: 700, background: "none", border: "none" }}>Sign out</button>
         </div>
       </nav>
 
@@ -103,7 +98,15 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
           {PROFILES.map((profile) => (
             <button
               key={profile.id}
-              onClick={() => profile.isAdmin ? onNavigate({ type: 'ADMIN' }) : onNavigate({ type: 'KIDSDASH', childId: profile.id })}
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('Clicked profile:', profile.id, profile.name, profile.isAdmin);
+                if (profile.isAdmin) {
+                  window.location.href = '/admindash';
+                } else {
+                  window.location.href = '/kiddash?child=' + profile.id;
+                }
+              }}
               style={{ 
                 position: "relative", 
                 width: 200, 

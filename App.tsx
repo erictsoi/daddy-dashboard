@@ -11,14 +11,13 @@ import { ProgressBar } from './components/ProgressBar';
 import { LessonPlayer } from './components/LessonPlayer';
 import { Timeline } from './components/Timeline';
 const CurriculumBuilder = lazy(() => import('./components/CurriculumBuilder').then(m => ({ default: m.CurriculumBuilder })));
-const DaddyDashboardView = lazy(() => import('./views/DaddyDashboardView').then(m => ({ default: m.DaddyDashboardView })));
-const ChildDashboard = lazy(() => import('./views/ChildDashboardView').then(m => ({ default: m.ChildDashboard })));
-const ManageProfilesView = lazy(() => import('./views/ManageProfilesView').then(m => ({ default: m.ManageProfilesView })));
+const AdminDash = lazy(() => import('./views/AdminDash').then(m => ({ default: m.AdminDash })));
+const KidDash = lazy(() => import('./views/KidDash').then(m => ({ default: m.KidDash })));
+const LessonView = lazy(() => import('./views/LessonView').then(m => ({ default: m.LessonView })));
 const ReturningView = lazy(() => import('./views/ReturningView').then(m => ({ default: m.ReturningView })));
-import { AdminAvatarEditModal } from './app/AdminAvatarEditModal';
-import { ProfileSwitcher } from './components/ProfileSwitcher';
-import { SubjectDetail } from './views/SubjectDetailView';
 import { LandingView } from './views/LandingView';
+
+import { AdminAvatarEditModal } from './app/AdminAvatarEditModal';
 
 // Helper for grid columns
 const getGridCols = (count: number): string => {
@@ -2665,168 +2664,25 @@ const App: React.FC = () => {
         setView={setView}
       /> : <Navigate to="/" replace />} />
       <Route path="/returningview" element={view.type === 'RETURNING' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ReturningView childProfile={childProfile} data={data} onNavigate={(nav) => { setView(nav as ViewState); if (nav.type === 'HOME') navigate('/dashboard'); else if (nav.type === 'LANDING') navigate('/'); }} /></Suspense> : <Navigate to="/returningview" replace />} />
-      <Route path="/returning" element={view.type === 'RETURNING' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ReturningView childProfile={childProfile} data={data} onNavigate={(nav) => { setView(nav as ViewState); if (nav.type === 'HOME') navigate('/dashboard'); else if (nav.type === 'LANDING') navigate('/'); }} /></Suspense> : <Navigate to="/returning" replace />} />
-      <Route path="/dashboard" element={view.type === 'HOME' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><DaddyDashboardView 
-        data={data}
-        setData={setData}
-        view={view}
-        setView={setView}
-        adminName={adminName}
-        adminAvatar={adminAvatar}
-        adminColor={adminColor}
-        isDayActive={isDayActive}
-        setIsDayActive={setIsDayActive}
-        schedule={schedule}
-        setSchedule={setSchedule}
-        generateSchedule={generateSchedule}
-        dataStatus={supabaseStatus}
-        authDebug={authDebug}
-        showStatus={showStatus}
-        saveData={saveData}
-      /></Suspense> : <Navigate to="/dashboard" replace />} />
-      <Route path="/admindash" element={view.type === 'HOME' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><DaddyDashboardView 
-        data={data}
-        setData={setData}
-        view={view}
-        setView={setView}
-        adminName={adminName}
-        adminAvatar={adminAvatar}
-        adminColor={adminColor}
-        isDayActive={isDayActive}
-        setIsDayActive={setIsDayActive}
-        schedule={schedule}
-        setSchedule={setSchedule}
-        generateSchedule={generateSchedule}
-        dataStatus={supabaseStatus}
-        authDebug={authDebug}
-        showStatus={showStatus}
-        saveData={saveData}
-      /></Suspense> : <Navigate to="/admindash" replace />} />
-      <Route path="/admin" element={view.type === 'HOME' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><DaddyDashboardView 
-        data={data}
-        setData={setData}
-        view={view}
-        setView={setView}
-        adminName={adminName}
-        adminAvatar={adminAvatar}
-        adminColor={adminColor}
-        isDayActive={isDayActive}
-        setIsDayActive={setIsDayActive}
-        schedule={schedule}
-        setSchedule={setSchedule}
-        generateSchedule={generateSchedule}
-        dataStatus={supabaseStatus}
-        authDebug={authDebug}
-        showStatus={showStatus}
-        saveData={saveData}
-      /></Suspense> : <Navigate to="/admin" replace />} />
-      <Route path="/curriculum" element={view.type === 'CURRICULUM_BUILDER' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><CurriculumBuilder onBack={() => navigate('/dashboard')} onImport={handleBulkImport} onImportComplete={() => {}} /></Suspense> : <Navigate to="/curriculum" replace />} />
-      <Route path="/manage" element={view.type === 'MANAGE_PROFILES' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ManageProfilesView
-        data={data}
-        setData={setData}
-        user={user}
-        signOut={() => signOut && signOut()}
-        view={view}
-        setView={setView}
-        saveData={saveData}
-        adminName={adminName}
-        setAdminName={setAdminName}
-        adminAvatar={adminAvatar}
-        setAdminAvatar={setAdminAvatar}
-        adminColor={adminColor}
-        setAdminColor={setAdminColor}
-        adminDob={adminDob}
-        setAdminDob={setAdminDob}
-        onDeleteChild={handleDeleteChild}
-        onAddYearGroup={handleAddYearGroup}
-        onRemoveYearGroup={handleRemoveYearGroup}
-      /></Suspense> : <Navigate to="/manage" replace />} />
-      <Route path="/kiddash" element={view.type === 'CHILD_DASHBOARD' && view.childId ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ChildDashboard
-        childId={view.childId}
-        data={data}
-        setData={setData}
-        childProfile={childProfile}
-        setChildProfile={setChildProfile}
-        allChildren={data.map(c => ({ id: c.id, name: c.name, avatar: c.avatar, themeColor: c.themeColor }))}
-        user={user}
-        signOut={() => signOut && signOut()}
-        view={view}
-        setView={setView}
-        parentUid={parentUid}
-        adminName={adminName}
-        adminAvatar={adminAvatar}
-        adminColor={adminColor}
-        isDayActive={isDayActive}
-        setIsDayActive={setIsDayActive}
-        schedule={schedule}
-        generateSchedule={generateSchedule}
-      /></Suspense> : <Navigate to="/kiddash" replace />} />
-      <Route path="/child/:childId" element={view.type === 'CHILD_DASHBOARD' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ChildDashboard
-        childId={view.childId}
-        data={data}
-        setData={setData}
-        childProfile={childProfile}
-        setChildProfile={setChildProfile}
-        allChildren={data.map(c => ({ id: c.id, name: c.name, avatar: c.avatar, themeColor: c.themeColor }))}
-        user={user}
-        signOut={() => signOut && signOut()}
-        view={view}
-        setView={setView}
-        parentUid={parentUid}
-        adminName={adminName}
-        adminAvatar={adminAvatar}
-        adminColor={adminColor}
-        isDayActive={isDayActive}
-        setIsDayActive={setIsDayActive}
-        schedule={schedule}
-        generateSchedule={generateSchedule}
-      /></Suspense> : <Navigate to={`/child/${urlParams.childId || ''}`} replace />} />
-      <Route path="/child/:childId/subject/:subjectId" element={view.type === 'SUBJECT_DETAIL' ? <SubjectDetail childId={view.childId} subjectId={view.subjectId} origin={view.origin} /> : <Navigate to={`/child/${urlParams.childId}/subject/${urlParams.subjectId}`} replace />} />
-      <Route path="/lessondash" element={view.type === 'LESSON_PLAYER' && view.childId ? (() => {
-        const child = data.find(c => c.id === view.childId);
-        const yearGroup = child?.yearGroups.find(yg => yg.subjects.some(s => s.topics.some(t => t.id === view.topicId)));
-        const subject = yearGroup?.subjects.find(s => s.topics.some(t => t.id === view.topicId));
-        const topic = subject?.topics.find(t => t.id === view.topicId);
-        const lesson = topic?.lessons.find(l => l.id === view.lessonId);
-
-        if (child && subject && topic && lesson) {
-          return (
-            <LessonPlayer 
-              child={child} 
-              subject={subject}
-              topicId={topic.id}
-              lesson={lesson} 
-              onBack={() => { setView({ type: 'SUBJECT_DETAIL', childId: view.childId, subjectId: subject.id, origin: view.origin }); navigate(`/child/${view.childId}/subject/${subject.id}`); }}
-              onComplete={(id, time) => handleCompleteLesson(child.id, subject.id, topic.id, id, time)}
-            />
-          );
+      <Route path="/returning" element={view.type === 'RETURNING' ? <Suspense fallback={<div className="p-8 text-center">Loading...</div>}><ReturningView childProfile={childProfile} data={data} onNavigate={(nav) => { 
+        if (nav.type === 'KIDSDASH') { 
+          setView({ type: 'CHILD_DASHBOARD', childId: nav.childId });
+          window.location.href = '/kiddash?child=' + nav.childId; 
+        } else if (nav.type === 'HOME') { 
+          window.location.href = '/dashboard'; 
+        } else if (nav.type === 'LANDING') { 
+          window.location.href = '/'; 
+        } else if (nav.type === 'ADMIN') { 
+          window.location.href = '/admindash'; 
         }
-        return <div>Error loading lesson - data not found</div>;
-      })() : <Navigate to="/lessondash" replace />} />
-      <Route path="/child/:childId/subject/:subjectId/topic/:topicId/lesson/:lessonId" element={view.type === 'LESSON_PLAYER' ? (() => {
-        const child = data.find(c => c.id === view.childId);
-        const yearGroup = child?.yearGroups.find(yg => yg.subjects.some(s => s.topics.some(t => t.id === view.topicId)));
-        const subject = yearGroup?.subjects.find(s => s.topics.some(t => t.id === view.topicId));
-        const topic = subject?.topics.find(t => t.id === view.topicId);
-        const lesson = topic?.lessons.find(l => l.id === view.lessonId);
-
-        console.log('[LessonPlayer] Loading:', { childId: view.childId, topicId: view.topicId, lessonId: view.lessonId, lesson });
-
-        if (child && subject && topic && lesson) {
-          return (
-            <LessonPlayer 
-              child={child} 
-              subject={subject}
-              topicId={topic.id}
-              lesson={lesson} 
-              onBack={() => { setView({ type: 'SUBJECT_DETAIL', childId: view.childId, subjectId: subject.id, origin: view.origin }); navigate(`/child/${view.childId}/subject/${subject.id}`); }}
-              onComplete={(id, time) => handleCompleteLesson(child.id, subject.id, topic.id, id, time)}
-            />
-          );
-        }
-        console.error('LessonPlayer: Could not find data', { childId: view.childId, subjectId: view.subjectId, topicId: view.topicId, lessonId: view.lessonId });
-        return <div>Error loading lesson - data not found</div>;
-      })() : <Navigate to={`/child/${urlParams.childId}/subject/${urlParams.subjectId}/topic/${urlParams.topicId}/lesson/${urlParams.lessonId}`} replace />} />
+      }} /></Suspense> : <Navigate to="/returning" replace />} />
+      <Route path="/dashboard" element={<Navigate to="/admindash" replace />} />
+      <Route path="/admindash" element={<AdminDash />} />
+      <Route path="/lessonview" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><LessonView childId={new URLSearchParams(window.location.search).get('child') || 'sophia'} lessonId={new URLSearchParams(window.location.search).get('lesson') || ''} /></Suspense>} />
+      <Route path="/admin" element={<Navigate to="/admindash" replace />} />
+      <Route path="/curriculum" element={<Navigate to="/admindash" replace />} />
+      <Route path="/manage" element={<Navigate to="/admindash" replace />} />
+      <Route path="/kiddash" element={<KidDash childId={new URLSearchParams(window.location.search).get('child') || 'sophia'} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
 
