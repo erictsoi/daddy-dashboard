@@ -8,6 +8,40 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-20 - Version 3.5.0 (V6 UI Views)
+
+### Added
+- **New v6 UI views** - Created standalone views matching designs in `claude views/` folder:
+  - `views/LandingView.tsx` - Landing page with carousel, animated hero, CTA
+  - `views/AdminDash.tsx` - Admin dashboard with sidebar, kid cards, schedule
+  - `views/KidDash.tsx` - Kid dashboard with subjects linking to lessons
+  - `views/LessonView.tsx` - Lesson player page
+  - `views/ReturningView.tsx` - Profile picker with direct navigation
+- **Dummy data** - Created `src/data/dummyData.ts` with 6 kids (Amara, Marcus, Sophia, Kai, Adrian, Rohan)
+
+### Changed
+- **Routes** - Simplified to use v6 views directly:
+  - `/`, `/landingview` → LandingView
+  - `/returningview` → ReturningView (profile picker)
+  - `/kiddash?child=sophia` → KidDash
+  - `/admindash` → AdminDash
+  - `/lessonview?child=sophia&lesson=les-1` → LessonView
+- **Old routes redirect** - `/dashboard`, `/admin`, `/curriculum`, `/manage` → `/admindash`
+
+### Removed
+- **Deleted views** - Removed old Tailwind-based views:
+  - views/DaddyDashboardView.tsx
+  - views/ChildDashboardView.tsx
+  - views/ManageProfilesView.tsx
+  - views/SubjectDetailView.tsx
+  - views/AdminDashboardDemo.tsx
+  - views/ChildDashboardDemo.tsx
+  - views/LessonDemo.tsx
+- **localStorage code** - Removed localStorage usage from App.tsx, LandingView
+
+### Technical
+- All styling inline (no Tailwind) - design system object + inline styles + GlobalStyles component
+
 ## 2026-02-20 - Version 3.4.1 (Firestore User Settings)
 
 ### Added

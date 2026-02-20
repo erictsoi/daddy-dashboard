@@ -8,6 +8,35 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-20 - V6 UI Views Migration
+
+**User Request:**
+> What did we do so far?
+> continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed
+> C:\Users\user\Documents\daddy-dashboard\views\AdminDash.tsx this view to follow the look stated in C:\Users\user\Documents\daddy-dashboard\claude views\AdminDashboard.jsx
+> http://localhost:3000/landingview to follow C:\Users\user\Documents\daddy-dashboard\claude views\LandingPage.jsx
+> ok done
+> ok admin dash flashes up for a second, then nothing
+> push to git
+> then cleanup the codebase
+> the views within the views folder, are they inline code or does the code and styling in another place?
+> update logs
+
+**Session Actions:**
+- Created v6 views matching designs in `claude views/` folder
+- LandingView: carousel, animated hero, CTA button
+- AdminDash: sidebar with kid links, schedule cards, progress bars
+- KidDash: subjects grid linking to lessons
+- LessonView: video player with lesson details
+- Fixed routing issues causing admin dash to flash and redirect
+- Simplified routes to use v6 views directly
+- Deleted old Tailwind-based view files
+- Committed changes to git
+
+**Result:** All 5 core views implemented with inline styling (no Tailwind). Routes working correctly.
+
+---
+
 ## 2026-02-19 - v6 Design System Phase 2 & 3
 
 **User Request:**
