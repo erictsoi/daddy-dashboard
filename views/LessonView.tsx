@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { getDummyChild } from '../src/data/dummyData';
 
 interface LessonViewProps {
@@ -12,26 +12,91 @@ const DS = {
     ink: "#1A1A2E",
     inkSoft: "#6B6580",
     inkFade: "#B0A8C0",
+    dotBrown: "#3D2B1F",
     border: "2.5px solid #1A1A2E",
     borderThick: "3px solid #1A1A2E",
     radius: { sm: 10, md: 16, lg: 22, pill: 100 },
 };
 
+const GlobalStyles = () => (
+    <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { font-family: 'Nunito Sans', sans-serif; background: #FAF6F0; color: #1A1A2E; }
+        .b  { font-family: 'Baloo 2', cursive; }
+        .n  { font-family: 'Nunito', sans-serif; }
+        .ns { font-family: 'Nunito Sans', sans-serif; }
+        .t-h2    { font-size: 22px; font-weight: 800; line-height: 1.2; }
+        .t-body  { font-size: 14px; font-weight: 500; line-height: 1.65; }
+        .t-small { font-size: 12px; font-weight: 600; line-height: 1.5; }
+        .t-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+        @keyframes pop { from{transform:scale(.88);opacity:0} to{transform:scale(1);opacity:1} }
+        @keyframes slide { from{transform:translateX(24px);opacity:0} to{transform:translateX(0);opacity:1} }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        .pop { animation: pop .3s cubic-bezier(.34,1.56,.64,1) forwards; }
+        .slide { animation: slide .28s ease-out forwards; }
+        .fadeIn { animation: fadeIn .2s ease-out forwards; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #EDE8E0; }
+        ::-webkit-scrollbar-thumb { background: #C4BBAF; border-radius: 3px; }
+    `}</style>
+);
+
+const BendayShadow = ({ offset = 3, size = 2.5 }: { offset?: number; size?: number }) => (
+    <div style={{
+        position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset,
+        zIndex: -1, pointerEvents: "none",
+        backgroundImage: `radial-gradient(circle, ${DS.dotBrown} ${size}px, transparent ${size}px)`,
+        backgroundSize: `${size * 2.2}px ${size * 2.2}px`,
+        borderRadius: "inherit", opacity: 0.35,
+    }} />
+);
+
+const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties }> = ({ children, offset = 3, size = 2.5, radius, style = {} }) => (
+    <div style={{ position: "relative", borderRadius: radius, ...style }}>
+        <BendayShadow offset={offset} size={size} />
+        {children}
+    </div>
+);
+
+const Texture = () => (
+    <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
+        backgroundImage: `radial-gradient(circle, #1A1A2E08 1px, transparent 1px)`,
+        backgroundSize: "20px 20px"
+    }} />
+);
+
+const Blobs = ({ color }: { color: string }) => (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+        <div style={{ position: "absolute", top: "-12%", right: "-4%", width: 380, height: 380, borderRadius: "50%", background: color, opacity: .06, filter: "blur(64px)" }} />
+        <div style={{ position: "absolute", bottom: "-5%", left: "-8%", width: 300, height: 300, borderRadius: "50%", background: color, opacity: .04, filter: "blur(52px)" }} />
+    </div>
+);
+
 export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => {
+    const [sidebarOpen, setSidebarOpen] = useState(true);
     const child = getDummyChild(childId);
+    
+    const playlist = [
+        { title: "What is an Ecosystem?", duration: "7:20", completed: true, active: false },
+        { title: "Producers, Consumers & Decomposers", duration: "9:15", completed: true, active: false },
+        { title: "Food Chains Explained", duration: "11:40", completed: false, active: true },
+        { title: "Food Webs & Energy Flow", duration: "8:30", completed: false, active: false },
+        { title: "Ecosystems Under Threat", duration: "12:10", completed: false, active: false },
+    ];
     
     if (!child) {
         return (
             <div style={{ 
                 minHeight: "100vh", 
-                background: DS.cream, 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center",
-                fontFamily: "'Nunito Sans', sans-serif",
-                color: DS.ink
+                background: DS.cream,
+                position: "relative",
+                overflow: "hidden"
             }}>
-                <h1>Child not found: {childId}</h1>
+                <GlobalStyles />
+                <Texture />
+                <h1 style={{ position: "relative", zIndex: 10, padding: 40 }}>Child not found: {childId}</h1>
             </div>
         );
     }
@@ -62,17 +127,16 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
         return (
             <div style={{ 
                 minHeight: "100vh", 
-                background: DS.cream, 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center",
-                fontFamily: "'Nunito Sans', sans-serif",
-                color: DS.ink
+                background: DS.cream,
+                position: "relative",
+                overflow: "hidden"
             }}>
-                <div style={{ textAlign: 'center' }}>
+                <GlobalStyles />
+                <Texture />
+                <div style={{ position: "relative", zIndex: 10, textAlign: 'center', padding: 40 }}>
                     <h1>Lesson not found: {lessonId}</h1>
-                    <a href={`/kiddash?child=${childId}`} style={{ color: themeColor, fontWeight: 700 }}>← Back to Dashboard</a>
-                </div>
+                    <a href={`/kiddash?child=${childId}`} style={{ color: themeColor, fontWeight: 700 }}></a>
+               ← Back to Dashboard </div>
             </div>
         );
     }
@@ -83,119 +147,293 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
         <div style={{ 
             minHeight: "100vh", 
             background: DS.cream,
-            fontFamily: "'Nunito Sans', sans-serif",
-            color: DS.ink
+            position: "relative",
+            overflow: "hidden"
         }}>
-            {/* Header */}
+            <GlobalStyles />
+            <Texture />
+            <Blobs color={themeColor} />
+
+            {/* Header - Full Width */}
             <div style={{ 
-                background: themeColor, 
-                padding: "20px 24px",
-                borderBottom: DS.borderThick
+                position: "relative", 
+                zIndex: 10, 
+                background: `${DS.card}F5`, 
+                backdropFilter: "blur(14px)", 
+                borderBottom: DS.border,
+                padding: "12px 24px", 
+                display: "flex", 
+                alignItems: "center", 
+                gap: 14,
+                flexShrink: 0
             }}>
-                <div style={{ maxWidth: 1200, margin: "0 auto", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <a href={`/kiddash?child=${childId}`} style={{ 
-                        color: "#fff", 
-                        textDecoration: "none",
-                        fontWeight: 700,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8
-                    }}>
-                        ← Back to {child.name}'s Space
-                    </a>
-                    <div style={{ color: "#fff", fontWeight: 600 }}>
-                        {subjectName} • {topicName}
-                    </div>
+                <Shadow offset={2} size={2} radius={DS.radius.pill}>
+                    <button 
+                        className="b"
+                        onClick={() => window.location.href = `/kiddash?child=${childId}`}
+                        style={{ 
+                            position: "relative", 
+                            display: "flex", 
+                            alignItems: "center", 
+                            gap: 8, 
+                            background: `${themeColor}15`, 
+                            border: DS.border, 
+                            borderRadius: DS.radius.pill, 
+                            padding: "8px 18px", 
+                            cursor: "pointer", 
+                            fontWeight: 800, 
+                            fontSize: 14, 
+                            color: DS.ink, 
+                            transition: "transform 0.15s"
+                        }}
+                    >
+                        ← Dashboard
+                    </button>
+                </Shadow>
+                <div style={{ flex: 1 }}>
+                    <div className="n t-label" style={{ color: themeColor }}>{subjectName} · {topicName}</div>
+                    <div className="b t-h2" style={{ color: DS.ink }}>{lesson.title}</div>
                 </div>
+                
+                {/* Timer */}
+                <Shadow offset={3} size={2.5} radius={DS.radius.md}>
+                    <div style={{ 
+                        position: "relative", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: 10, 
+                        background: themeColor, 
+                        border: DS.border, 
+                        borderRadius: DS.radius.md, 
+                        padding: "10px 16px"
+                    }}>
+                        <div>
+                            <div className="b" style={{ fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1 }}>18:15</div>
+                            <div className="n t-label" style={{ color: "rgba(255,255,255,0.65)" }}>elapsed</div>
+                        </div>
+                        <div style={{ display: "flex", gap: 5 }}>
+                            <button style={{ width: 32, height: 32, borderRadius: 10, border: "2px solid rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer", fontSize: 13 }}>⏸</button>
+                            <button style={{ width: 32, height: 32, borderRadius: 10, border: "2px solid rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer", fontSize: 9, fontWeight: 900 }}>+10</button>
+                        </div>
+                    </div>
+                </Shadow>
+
+                {/* Info Button */}
+                <Shadow offset={2} size={2} radius={DS.radius.sm}>
+                    <button 
+                        style={{ 
+                            position: "relative", 
+                            width: 40, 
+                            height: 40, 
+                            borderRadius: DS.radius.sm, 
+                            border: DS.border, 
+                            background: themeColor, 
+                            color: "#fff", 
+                            cursor: "pointer", 
+                            fontSize: 16, 
+                            fontWeight: 800,
+                            flexShrink: 0 
+                        }}
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                    >
+                        {sidebarOpen ? "✕" : "ℹ"}
+                    </button>
+                </Shadow>
             </div>
 
-            {/* Content */}
-            <div style={{ maxWidth: 1000, margin: "0 auto", padding: "32px 24px" }}>
+            {/* Main Content Area with Sidebar */}
+            <div style={{ position: "relative", zIndex: 10, display: "flex", height: "calc(100vh - 60px)" }}>
+                {/* Content */}
+                <div style={{ flex: 1, padding: "24px", overflow: "auto" }}>
                 {/* Video Player */}
-                <div style={{ 
-                    background: DS.card, 
-                    border: DS.border, 
-                    borderRadius: DS.radius.lg, 
-                    overflow: "hidden",
-                    marginBottom: 24
-                }}>
-                    {videoId ? (
-                        <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+                <div className="pop" style={{ maxWidth: 900, margin: "0 auto" }}>
+                    <div style={{ 
+                        position: "relative", 
+                        background: "#0F0D2A", 
+                        border: DS.border, 
+                        borderRadius: DS.radius.lg, 
+                        aspectRatio: "16 / 9",
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center", 
+                        overflow: "hidden",
+                        flexShrink: 0
+                    }}>
+                        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(135deg, ${themeColor}28, transparent)` }}></div>
+                        
+                        {videoId ? (
                             <iframe 
-                                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
+                                style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
                                 src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
                                 title={lesson.title}
                                 frameBorder="0"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                 allowFullScreen
                             />
-                        </div>
-                    ) : (
-                        <div style={{ 
-                            padding: "80px 40px", 
-                            textAlign: "center",
-                            background: "#f5f5f5"
-                        }}>
-                            <div style={{ fontSize: 48, marginBottom: 16 }}>🎬</div>
-                            <div style={{ color: DS.inkSoft, fontWeight: 600 }}>No video available</div>
-                        </div>
-                    )}
-                </div>
+                        ) : (
+                            <div style={{ textAlign: "center", zIndex: 1 }}>
+                                <div style={{ fontSize: 50, marginBottom: 10 }}>▶</div>
+                                <div className="n t-body" style={{ color: "#fff", opacity: 0.8 }}>YouTube Video Player</div>
+                                <div className="n t-label" style={{ color: "rgba(255,255,255,0.4)", marginTop: 4 }}>{lesson.title} · 11:40</div>
+                            </div>
+                        )}
 
-                {/* Lesson Info */}
-                <div style={{ 
-                    background: DS.card, 
-                    border: DS.border, 
-                    borderRadius: DS.radius.lg, 
-                    padding: 24
-                }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                        <div>
-                            <h1 style={{ fontSize: 28, fontWeight: 800, fontFamily: "'Baloo 2', cursive", margin: 0 }}>
-                                {lesson.title}
-                            </h1>
-                            <p style={{ color: DS.inkSoft, marginTop: 4 }}>{subjectName} • {topicName}</p>
+                        {/* Progress bar */}
+                        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 5, background: "rgba(255,255,255,0.15)" }}>
+                            <div style={{ width: "42%", height: "100%", background: themeColor }}></div>
                         </div>
-                        <button style={{
-                            background: lesson.completed ? "#4CAF50" : themeColor,
-                            color: "#fff",
-                            border: DS.border,
-                            borderRadius: DS.radius.sm,
-                            padding: "12px 24px",
-                            fontWeight: 700,
-                            fontSize: 14,
-                            cursor: "pointer",
-                            boxShadow: "4px 4px 0 #1A1A2E"
-                        }}>
-                            {lesson.completed ? "✓ Completed" : "Mark Complete"}
+
+                        {/* Simulate video end button */}
+                        <button 
+                            style={{ 
+                                position: "absolute", 
+                                bottom: 14, 
+                                right: 14, 
+                                background: "rgba(255,255,255,0.15)", 
+                                border: "2px solid rgba(255,255,255,0.35)", 
+                                color: "#fff", 
+                                padding: "6px 16px", 
+                                borderRadius: 100, 
+                                fontSize: 11, 
+                                cursor: "pointer", 
+                                fontWeight: 800,
+                                backdropFilter: "blur(6px)"
+                            }}
+                        >
+                            Simulate video end ▸
                         </button>
                     </div>
+                </div>
 
-                    {/* Learning Outcomes */}
-                    <div style={{ 
-                        background: DS.cream, 
-                        borderRadius: DS.radius.md, 
-                        padding: 20,
-                        marginTop: 20
-                    }}>
-                        <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-                            🎯 Learning Outcomes
-                        </h3>
-                        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                            <li style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 0", borderBottom: "1px solid #eee" }}>
-                                <span style={{ color: themeColor, fontWeight: 900 }}>•</span>
-                                <span style={{ color: DS.inkSoft }}>Understand the key concepts from this lesson</span>
-                            </li>
-                            <li style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 0", borderBottom: "1px solid #eee" }}>
-                                <span style={{ color: themeColor, fontWeight: 900 }}>•</span>
-                                <span style={{ color: DS.inkSoft }}>Apply knowledge to solve practice problems</span>
-                            </li>
-                            <li style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 0" }}>
-                                <span style={{ color: themeColor, fontWeight: 900 }}>•</span>
-                                <span style={{ color: DS.inkSoft }}>Build confidence in this subject area</span>
-                            </li>
-                        </ul>
+                {/* Complete Button */}
+                <div style={{ maxWidth: 900, margin: "16px 0 0" }}>
+                    <div>
+                        <Shadow offset={3} size={2.5} radius={DS.radius.pill}>
+                            <button 
+                                disabled
+                                className="b"
+                                style={{ 
+                                    position: "relative", 
+                                    padding: "14px 40px", 
+                                    borderRadius: DS.radius.pill, 
+                                    border: "2.5px solid #C4BBAF", 
+                                    background: "#EDE8E0", 
+                                    color: DS.inkFade, 
+                                    fontSize: 18, 
+                                    fontWeight: 800, 
+                                    cursor: "not-allowed",
+                                    transition: "transform 0.2s"
+                                }}
+                            >
+                                Finish the video first 👀
+                            </button>
+                        </Shadow>
+                        <p className="n t-small" style={{ color: themeColor, marginTop: 6, fontWeight: 700 }}>
+                            Button unlocks when the video ends
+                        </p>
                     </div>
+                </div>
+
+                </div>
+
+                {/* Collapsible Sidebar */}
+                
+                {/* Sidebar */}
+                <div style={{
+                    position: "relative",
+                    width: sidebarOpen ? 285 : 0,
+                    overflow: "hidden",
+                    transition: "width .3s ease",
+                    flexShrink: 0
+                }}>
+                    {sidebarOpen && (
+                        <div style={{
+                            width: 285,
+                            height: "100%",
+                            background: DS.card,
+                            borderLeft: DS.border,
+                            padding: 20,
+                            overflow: "auto",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 18
+                        }}>
+                            {/* About */}
+                            <div>
+                                <div className="n t-label" style={{ color: themeColor, marginBottom: 7 }}>About this lesson</div>
+                                <p className="ns t-body" style={{ color: DS.inkSoft }}>
+                                    Discover how energy moves through ecosystems via food chains — from producers right up to apex predators.
+                                </p>
+                            </div>
+
+                            {/* Learning Outcomes */}
+                            <div>
+                                <div className="n t-label" style={{ color: themeColor, marginBottom: 7 }}>Learning outcomes</div>
+                                {[
+                                    "Understand producer & consumer roles",
+                                    "Trace energy through a food chain",
+                                    "Identify apex predators",
+                                    "Explain what happens when a link breaks"
+                                ].map((outcome, i) => (
+                                    <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 7 }}>
+                                        <span style={{ color: themeColor, fontWeight: 900, fontSize: 13, lineHeight: 1.5, flexShrink: 0 }}>→</span>
+                                        <span className="ns t-small" style={{ color: DS.inkSoft, lineHeight: 1.6 }}>{outcome}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Playlist */}
+                            <div>
+                                <div className="n t-label" style={{ color: themeColor, marginBottom: 7, fontSize: 10 }}>Playlist · 3/5</div>
+                                {playlist.map((item, i) => (
+                                    <div 
+                                        key={i}
+                                        onClick={() => item.active ? {} : window.location.reload()}
+                                        style={{ 
+                                            display: "flex", 
+                                            alignItems: "center", 
+                                            gap: 8, 
+                                            padding: "7px 0",
+                                            borderBottom: i < playlist.length - 1 ? "1px solid #F3EEFF" : "none",
+                                            cursor: "pointer"
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: 18,
+                                            height: 18,
+                                            borderRadius: 5,
+                                            flexShrink: 0,
+                                            background: item.completed ? "#E8F8F0" : item.active ? "#F3EEFF" : "#F8F5F0",
+                                            border: `1.5px solid ${item.completed ? "#4CAF8A" : item.active ? themeColor : "#C4BBAF"}`,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            fontSize: 9
+                                        }}>
+                                            {item.completed ? (
+                                                <span style={{ color: "#4CAF8A", fontWeight: 900 }}>✓</span>
+                                            ) : item.active ? (
+                                                <span style={{ color: themeColor }}>▶</span>
+                                            ) : null}
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div 
+                                                className="n t-small" 
+                                                style={{ 
+                                                    fontWeight: item.active ? 700 : 500, 
+                                                    color: item.completed ? DS.inkFade : DS.ink,
+                                                    textDecoration: item.completed ? "line-through" : "none"
+                                                }}
+                                            >
+                                                {item.title}
+                                            </div>
+                                        </div>
+                                        <div className="n t-label" style={{ color: DS.inkFade }}>{item.duration}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
