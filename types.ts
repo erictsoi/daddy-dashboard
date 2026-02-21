@@ -31,7 +31,6 @@ export interface Subject {
   category: string;
   color: string;
   youtubeUrl?: string;  // Legacy field, now stored in topics
-  frequencyMode?: 'balanced' | 'stem' | 'arts';
 }
 
 export interface YearGroup {
