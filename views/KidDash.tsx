@@ -43,6 +43,10 @@ const GlobalStyles = () => (
         .card-9  { animation: fadeUp .28s .27s ease-out both; }
         .card-10 { animation: fadeUp .28s .30s ease-out both; }
         .card-11 { animation: fadeUp .28s .33s ease-out both; }
+        .subject-card { transition: transform 0.15s ease; }
+        .subject-card:hover { transform: translate(-2px, -2px) !important; }
+        .subject-card-inner { transition: border-color 0.15s; }
+        .subject-card:hover .subject-card-inner { border-color: #1A1A2E !important; }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: #EDE8E0; }
         ::-webkit-scrollbar-thumb { background: #C4BBAF; border-radius: 3px; }
@@ -319,43 +323,48 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
                     {subjects.map((s, i) => {
                         const isActive = sel === i;
                         return (
-                            <Shadow 
-                                key={i} 
-                                offset={isActive ? 4 : 2} 
-                                size={2} 
-                                radius={DS.radius.lg} 
-                                className={`card-${i}`}
+                            <div 
+                                key={i}
+                                className={`card-${i} subject-card`}
+                                style={{ 
+                                    position: "relative", 
+                                    borderRadius: DS.radius.lg,
+                                    transition: "transform 0.15s",
+                                    cursor: "pointer"
+                                }}
                             >
-                                <div 
-                                    onClick={() => {
-                                        if (s.lessonId) {
-                                            window.location.href = `/lessonview?child=${childId}&lesson=${s.lessonId}`;
-                                        }
-                                    }}
-                                    style={{ 
-                                        position: "relative", 
-                                        background: DS.card, 
-                                        border: `3px solid ${isActive ? DS.ink : "#C4BBAF"}`, 
-                                        borderRadius: DS.radius.lg, 
-                                        padding: "16px 14px", 
-                                        cursor: "pointer"
-                                    }}
-                                >
-                                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
-                                        <div style={{ width: 40, height: 40, background: `${s.color}20`, border: `2px solid ${s.color}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{s.icon}</div>
-                                        <Shadow offset={1} size={1} radius={DS.radius.pill}>
-                                            <div style={{ position: "relative", background: isActive ? DS.ink : s.color, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 8px" }}>
-                                                <span className="n t-label" style={{ color: "#fff" }}>{s.progress}/{s.total}</span>
-                                            </div>
-                                        </Shadow>
+                                <Shadow offset={isActive ? 4 : 2} size={2} radius={DS.radius.lg}>
+                                    <div 
+                                        className="subject-card-inner"
+                                        onClick={() => {
+                                            if (s.lessonId) {
+                                                window.location.href = `/lessonview?child=${childId}&lesson=${s.lessonId}`;
+                                            }
+                                        }}
+                                        style={{ 
+                                            position: "relative", 
+                                            background: DS.card, 
+                                            border: `3px solid ${isActive ? DS.ink : "#C4BBAF"}`, 
+                                            borderRadius: DS.radius.lg, 
+                                            padding: "16px 14px"
+                                        }}
+                                    >
+                                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
+                                            <div style={{ width: 40, height: 40, background: `${s.color}20`, border: `2px solid ${s.color}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{s.icon}</div>
+                                            <Shadow offset={3} size={1} radius={DS.radius.pill}>
+                                                <div style={{ position: "relative", background: isActive ? DS.ink : s.color, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 8px" }}>
+                                                    <span className="n t-label" style={{ color: "#fff" }}>{s.progress}/{s.total}</span>
+                                                </div>
+                                            </Shadow>
+                                        </div>
+                                        <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{s.name}</div>
+                                        <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 10, fontWeight: 600 }}>{s.topic}</div>
+                                        <div style={{ height: 7, background: "#EDE8E0", borderRadius: 100, overflow: "hidden", border: `1.5px solid ${DS.ink}` }}>
+                                            <div style={{ height: "100%", width: `${(s.progress / s.total) * 100}%`, background: s.color, borderRadius: 100 }} />
+                                        </div>
                                     </div>
-                                    <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{s.name}</div>
-                                    <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 10, fontWeight: 600 }}>{s.topic}</div>
-                                    <div style={{ height: 7, background: "#EDE8E0", borderRadius: 100, overflow: "hidden", border: `1.5px solid ${DS.ink}` }}>
-                                        <div style={{ height: "100%", width: `${(s.progress / s.total) * 100}%`, background: s.color, borderRadius: 100 }} />
-                                    </div>
-                                </div>
-                            </Shadow>
+                                </Shadow>
+                            </div>
                         );
                     })}
                 </div>

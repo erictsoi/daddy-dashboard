@@ -8,6 +8,18 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-21 - Version 3.7.2 (Hover & Header Updates)
+
+### Changed
+- **KidDash** - Subject cards now have hover animation with border fade to black
+- **KidDash** - Badge shadow offset increased from 1 to 3
+- **LessonView** - Header height reduced to ~67px to match KidDash header
+- **LessonView** - Scaled down Dashboard button, Timer, and Info button to fit narrower header
+
+### Fixed
+- **KidDash** - Hover animation now uses CSS instead of inline React handlers (more reliable)
+- **LessonView** - Shadow offset reduced on "Who is learning today" chip
+
 ## 2026-02-21 - Version 3.7.1 (Benday Shadow Fixes)
 
 ### Changed

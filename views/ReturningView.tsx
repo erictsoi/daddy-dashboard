@@ -102,7 +102,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
       {/* HERO */}
       <div style={{ position: "relative", zIndex: 5, textAlign: "center", padding: "44px 40px 8px" }}>
         <h1 className="b" style={{ fontSize: 56, fontWeight: 800, color: DS.ink, marginBottom: 8 }}>Welcome back!</h1>
-        <Shadow offset={5} size={3} radius={DS.radius.md} style={{display:"inline-block"}}>
+        <Shadow offset={3} size={2} radius={DS.radius.md} style={{display:"inline-block"}}>
           <div style={{ position: "relative", background: p.color, border: DS.border, borderRadius: DS.radius.md, padding: "4px 32px", marginBottom: 12, transition: "background .35s" }}>
             <span className="b" style={{ fontSize: 56, fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>Who is learning today?</span>
           </div>

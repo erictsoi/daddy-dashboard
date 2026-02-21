@@ -161,84 +161,95 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
                 background: `${DS.card}F5`, 
                 backdropFilter: "blur(14px)", 
                 borderBottom: DS.border,
-                padding: "12px 24px", 
+                padding: "8px 20px", 
                 display: "flex", 
                 alignItems: "center", 
-                gap: 14,
-                flexShrink: 0
+                gap: 12,
+                flexShrink: 0,
+                height: 67
             }}>
-                <Shadow offset={2} size={2} radius={DS.radius.pill}>
-                    <button 
-                        className="b"
-                        onClick={() => window.location.href = `/kiddash?child=${childId}`}
-                        style={{ 
-                            position: "relative", 
-                            display: "flex", 
-                            alignItems: "center", 
-                            gap: 8, 
-                            background: `${themeColor}15`, 
-                            border: DS.border, 
-                            borderRadius: DS.radius.pill, 
-                            padding: "8px 18px", 
-                            cursor: "pointer", 
-                            fontWeight: 800, 
-                            fontSize: 14, 
-                            color: DS.ink, 
-                            transition: "transform 0.15s"
-                        }}
-                    >
-                        ← Dashboard
-                    </button>
-                </Shadow>
+                <div 
+                    style={{ position: "relative", borderRadius: DS.radius.pill, transition: "transform 0.15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = "translate(-2px,-2px)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "translate(0,0)"; }}
+                >
+                    <Shadow offset={1} size={1} radius={DS.radius.pill}>
+                        <button 
+                            className="b"
+                            onClick={() => window.location.href = `/kiddash?child=${childId}`}
+                            style={{ 
+                                position: "relative", 
+                                display: "flex", 
+                                alignItems: "center", 
+                                gap: 6, 
+                                background: themeColor, 
+                                border: DS.border, 
+                                borderRadius: DS.radius.pill, 
+                                padding: "6px 14px", 
+                                cursor: "pointer", 
+                                fontWeight: 800, 
+                                fontSize: 13, 
+                                color: "#fff"
+                            }}
+                        >
+                            ← Dashboard
+                        </button>
+                    </Shadow>
+                </div>
                 <div style={{ flex: 1 }}>
-                    <div className="n t-label" style={{ color: themeColor }}>{subjectName} · {topicName}</div>
-                    <div className="b t-h2" style={{ color: DS.ink }}>{lesson.title}</div>
+                    <div className="n t-label" style={{ color: themeColor, fontSize: 9 }}>{subjectName} · {topicName}</div>
+                    <div className="b t-h2" style={{ color: DS.ink, fontSize: 18 }}>{lesson.title}</div>
                 </div>
                 
                 {/* Timer */}
-                <Shadow offset={3} size={2.5} radius={DS.radius.md}>
+                <Shadow offset={2} size={2} radius={DS.radius.md}>
                     <div style={{ 
                         position: "relative", 
                         display: "flex", 
                         alignItems: "center", 
-                        gap: 10, 
+                        gap: 8, 
                         background: themeColor, 
                         border: DS.border, 
                         borderRadius: DS.radius.md, 
-                        padding: "10px 16px"
+                        padding: "6px 12px"
                     }}>
                         <div>
-                            <div className="b" style={{ fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1 }}>18:15</div>
-                            <div className="n t-label" style={{ color: "rgba(255,255,255,0.65)" }}>elapsed</div>
+                            <div className="b" style={{ fontSize: 18, fontWeight: 800, color: "#fff", lineHeight: 1 }}>18:15</div>
+                            <div className="n t-label" style={{ color: "rgba(255,255,255,0.65)", fontSize: 8 }}>elapsed</div>
                         </div>
-                        <div style={{ display: "flex", gap: 5 }}>
-                            <button style={{ width: 32, height: 32, borderRadius: 10, border: "2px solid rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer", fontSize: 13 }}>⏸</button>
-                            <button style={{ width: 32, height: 32, borderRadius: 10, border: "2px solid rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer", fontSize: 9, fontWeight: 900 }}>+10</button>
+                        <div style={{ display: "flex", gap: 4 }}>
+                            <button style={{ width: 24, height: 24, borderRadius: 6, border: "2px solid rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer", fontSize: 10 }}>⏸</button>
+                            <button style={{ width: 24, height: 24, borderRadius: 6, border: "2px solid rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer", fontSize: 7, fontWeight: 900 }}>+10</button>
                         </div>
                     </div>
                 </Shadow>
 
                 {/* Info Button */}
-                <Shadow offset={2} size={2} radius={DS.radius.sm}>
-                    <button 
-                        style={{ 
-                            position: "relative", 
-                            width: 40, 
-                            height: 40, 
-                            borderRadius: DS.radius.sm, 
-                            border: DS.border, 
-                            background: themeColor, 
-                            color: "#fff", 
-                            cursor: "pointer", 
-                            fontSize: 16, 
-                            fontWeight: 800,
-                            flexShrink: 0 
-                        }}
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                    >
-                        {sidebarOpen ? "✕" : "ℹ"}
-                    </button>
-                </Shadow>
+                <div 
+                    style={{ position: "relative", borderRadius: DS.radius.sm, transition: "transform 0.15s", flexShrink: 0 }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = "translate(-2px,-2px)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "translate(0,0)"; }}
+                >
+                    <Shadow offset={2} size={2} radius={DS.radius.sm}>
+                        <button 
+                            style={{ 
+                                position: "relative", 
+                                width: 32, 
+                                height: 32, 
+                                borderRadius: DS.radius.sm, 
+                                border: DS.border, 
+                                background: themeColor, 
+                                color: "#fff", 
+                                cursor: "pointer", 
+                                fontSize: 13, 
+                                fontWeight: 800
+                            }}
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                        >
+                            {sidebarOpen ? "✕" : "ℹ"}
+                        </button>
+                    </Shadow>
+                </div>
             </div>
 
             {/* Main Content Area with Sidebar */}
@@ -307,8 +318,8 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
 
                 {/* Complete Button */}
                 <div style={{ maxWidth: 900, margin: "16px 0 0" }}>
-                    <div>
-                        <Shadow offset={3} size={2.5} radius={DS.radius.pill}>
+                    <div style={{ width: "fit-content" }}>
+                        <Shadow offset={1} size={1} radius={DS.radius.pill}>
                             <button 
                                 disabled
                                 className="b"
