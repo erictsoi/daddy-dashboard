@@ -5,6 +5,7 @@ import { INITIAL_DATA } from './constants';
 import { AuthProvider, useAuth } from './src/lib/AuthContext';
 import { auth as firebaseAuth, googleProvider, signInWithGoogle, logOut as firebaseLogOut } from './src/lib/firebase'
 import { fetchChildren, fetchChildByEmail, fetchChildById, getLocalData, saveFullCurriculum, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, hardDeleteTopicFromFirebase, migrateChildToTopicStructure, fetchUserSettings, saveUserSettings, UserSettings } from './src/lib/dataService';
+import { getSubjectWeight, STEM_SUBJECTS, CORE_SUBJECTS } from './src/lib/scheduleUtils';
 import { usePersistentTimer } from './src/lib/useTimer';
 import { saveData, generateUuid, exportDataToFile } from './src/lib/helpers';
 import { ProgressBar } from './components/ProgressBar';
@@ -456,31 +457,6 @@ const App: React.FC = () => {
       const freqModeSophia = storedFreqSophia ? JSON.parse(storedFreqSophia) : {};
       const freqModeAdrian = storedFreqAdrian ? JSON.parse(storedFreqAdrian) : {};
       
-      // Define subject categories
-      const STEM_SUBJECTS = ['Maths', 'Science', 'Physics', 'Technology', 'Computer Science', 'Design'];
-      const CORE_SUBJECTS = ['Maths', 'English', 'Science'];
-      
-      const getSubjectWeight = (subjectName: string, childIndex: number): number => {
-        // First check for per-subject override
-        const perSubjectWeights = childIndex === 0 ? freqModeSophia : freqModeAdrian;
-        if (perSubjectWeights[subjectName]) {
-          return perSubjectWeights[subjectName];
-        }
-        
-        // Fall back to child-level mode
-        const mode = childFreqMode[childIndex] || 'balanced';
-        const isSTEM = STEM_SUBJECTS.some(s => subjectName.toLowerCase().includes(s.toLowerCase()));
-        const isCore = CORE_SUBJECTS.some(s => subjectName.toLowerCase().includes(s.toLowerCase()));
-        
-        if (mode === 'balanced') return 2;
-        if (mode === 'stem') return isSTEM ? 3 : 1;
-        if (mode === 'arts') {
-          if (isCore) return 2;
-          return isSTEM ? 1 : 3;
-        }
-        return 2;
-      };
-      
       allChildren.forEach((child, childIdx) => {
         const subjects = shuffle(child.yearGroups.flatMap(yg => yg.subjects));
         // Flatten all topics from all subjects and weight by frequency
@@ -488,7 +464,7 @@ const App: React.FC = () => {
         subjects.forEach((s: any, subjIdx: number) => {
           s.topics.forEach((t: any) => {
             // Use topic's own frequency if set, otherwise use subject weight
-            const topicFreq = t.frequency || getSubjectWeight(s.name, childIdx);
+            const topicFreq = t.frequency || getSubjectWeight(s.name, childIdx, childFreqMode, freqModeSophia, freqModeAdrian);
             // Add topic multiple times based on frequency (1-3x)
             for (let i = 0; i < topicFreq; i++) {
               allTopics.push({ ...t, subjectId: s.id, subjectName: s.name, subjectColor: s.color });
