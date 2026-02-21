@@ -450,11 +450,24 @@ const App: React.FC = () => {
       const storedChildFreqMode = localStorage.getItem('childFreqMode');
       const childFreqMode = storedChildFreqMode ? JSON.parse(storedChildFreqMode) : ['balanced', 'balanced'];
       
+      // Read per-subject frequency overrides from localStorage
+      const storedFreqSophia = localStorage.getItem('freqModeSophia');
+      const storedFreqAdrian = localStorage.getItem('freqModeAdrian');
+      const freqModeSophia = storedFreqSophia ? JSON.parse(storedFreqSophia) : {};
+      const freqModeAdrian = storedFreqAdrian ? JSON.parse(storedFreqAdrian) : {};
+      
       // Define subject categories
       const STEM_SUBJECTS = ['Maths', 'Science', 'Physics', 'Technology', 'Computer Science', 'Design'];
       const CORE_SUBJECTS = ['Maths', 'English', 'Science'];
       
       const getSubjectWeight = (subjectName: string, childIndex: number): number => {
+        // First check for per-subject override
+        const perSubjectWeights = childIndex === 0 ? freqModeSophia : freqModeAdrian;
+        if (perSubjectWeights[subjectName]) {
+          return perSubjectWeights[subjectName];
+        }
+        
+        // Fall back to child-level mode
         const mode = childFreqMode[childIndex] || 'balanced';
         const isSTEM = STEM_SUBJECTS.some(s => subjectName.toLowerCase().includes(s.toLowerCase()));
         const isCore = CORE_SUBJECTS.some(s => subjectName.toLowerCase().includes(s.toLowerCase()));

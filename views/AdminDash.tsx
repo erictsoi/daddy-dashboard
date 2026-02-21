@@ -128,11 +128,11 @@ export const AdminDash: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const [hoveredSophia, setHoveredSophia] = React.useState<number | null>(null);
   const [hoveredAdrian, setHoveredAdrian] = React.useState<number | null>(null);
-  const [freqModeSophia, setFreqModeSophia] = React.useState<Record<number, 1 | 2 | 3>>(() => {
+  const [freqModeSophia, setFreqModeSophia] = React.useState<Record<string, 1 | 2 | 3>>(() => {
     const saved = localStorage.getItem('freqModeSophia');
     return saved ? JSON.parse(saved) : {};
   });
-  const [freqModeAdrian, setFreqModeAdrian] = React.useState<Record<number, 1 | 2 | 3>>(() => {
+  const [freqModeAdrian, setFreqModeAdrian] = React.useState<Record<string, 1 | 2 | 3>>(() => {
     const saved = localStorage.getItem('freqModeAdrian');
     return saved ? JSON.parse(saved) : {};
   });
@@ -157,13 +157,13 @@ export const AdminDash: React.FC = () => {
     streak: i === 0 ? 5 : 8,
   }));
 
-  const cycleFreqMode = (kidIndex: number, subjectIndex: number) => {
-    const current = kidIndex === 0 ? freqModeSophia[subjectIndex] : freqModeAdrian[subjectIndex];
+  const cycleFreqMode = (kidIndex: number, subjectName: string) => {
+    const current = kidIndex === 0 ? freqModeSophia[subjectName] : freqModeAdrian[subjectName];
     const next = ((current || 2) % 3) + 1 as 1 | 2 | 3;
     if (kidIndex === 0) {
-      setFreqModeSophia(prev => ({ ...prev, [subjectIndex]: next }));
+      setFreqModeSophia(prev => ({ ...prev, [subjectName]: next }));
     } else {
-      setFreqModeAdrian(prev => ({ ...prev, [subjectIndex]: next }));
+      setFreqModeAdrian(prev => ({ ...prev, [subjectName]: next }));
     }
   };
 
@@ -180,7 +180,7 @@ export const AdminDash: React.FC = () => {
 
     // Update all subject cards based on category and weighting
     const subjects = kidIndex === 0 ? kids[0].subjects : kids[1].subjects;
-    const newFreqModes: Record<number, 1 | 2 | 3> = {};
+    const newFreqModes: Record<string, 1 | 2 | 3> = {};
     
     const isCoreSubject = (subj: string) => {
       const core = ['Maths', 'English', 'Science'];
@@ -190,24 +190,24 @@ export const AdminDash: React.FC = () => {
     const isArtsSubject = (subj: any) => subj.category === 'arts';
     const isStemSubject = (subj: any) => subj.category === 'stem';
     
-    subjects.forEach((subj: any, idx: number) => {
+    subjects.forEach((subj: any) => {
       if (next === 'balanced') {
-        newFreqModes[idx] = 2;
+        newFreqModes[subj.subject] = 2;
       } else if (next === 'stem') {
         // STEM: stem subjects get 3 stars, arts get 1 star
         if (isStemSubject(subj)) {
-          newFreqModes[idx] = 3;
+          newFreqModes[subj.subject] = 3;
         } else {
-          newFreqModes[idx] = 1;
+          newFreqModes[subj.subject] = 1;
         }
       } else if (next === 'arts') {
         // Arts: Core (Maths/English/Science) at 2 stars, arts subjects at 3, STEM at 1
         if (isCoreSubject(subj.subject)) {
-          newFreqModes[idx] = 2;
+          newFreqModes[subj.subject] = 2;
         } else if (isArtsSubject(subj)) {
-          newFreqModes[idx] = 3;
+          newFreqModes[subj.subject] = 3;
         } else {
-          newFreqModes[idx] = 1;
+          newFreqModes[subj.subject] = 1;
         }
       }
     });
@@ -432,7 +432,7 @@ export const AdminDash: React.FC = () => {
                         <div style={{ width: 40, height: 40, background: `${item.color}20`, border: `2px solid ${item.color}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{item.icon}</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           <div 
-                            onClick={(e) => { e.stopPropagation(); cycleFreqMode(0, i); }}
+                            onClick={(e) => { e.stopPropagation(); cycleFreqMode(0, item.subject); }}
                             style={{ cursor: "pointer", display: "flex", gap: 1 }}
                           >
                             {[1, 2, 3].map((star) => (
@@ -440,7 +440,7 @@ export const AdminDash: React.FC = () => {
                                 key={star}
                                 style={{ 
                                   fontSize: 14, 
-                                  color: star >= (4 - (freqModeSophia[i] || 2)) ? "#F5A623" : "transparent" 
+                                  color: star >= (4 - (freqModeSophia[item.subject] || 2)) ? "#F5A623" : "transparent" 
                                 }}
                               >
                                 ★
@@ -521,7 +521,7 @@ export const AdminDash: React.FC = () => {
                         <div style={{ width: 40, height: 40, background: `${item.color}20`, border: `2px solid ${item.color}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{item.icon}</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           <div 
-                            onClick={(e) => { e.stopPropagation(); cycleFreqMode(1, i); }}
+                            onClick={(e) => { e.stopPropagation(); cycleFreqMode(1, item.subject); }}
                             style={{ cursor: "pointer", display: "flex", gap: 1 }}
                           >
                             {[1, 2, 3].map((star) => (
@@ -529,7 +529,7 @@ export const AdminDash: React.FC = () => {
                                 key={star}
                                 style={{ 
                                   fontSize: 14, 
-                                  color: star >= (4 - (freqModeAdrian[i] || 2)) ? "#F5A623" : "transparent" 
+                                  color: star >= (4 - (freqModeAdrian[item.subject] || 2)) ? "#F5A623" : "transparent" 
                                 }}
                               >
                                 ★

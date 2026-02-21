@@ -2,56 +2,57 @@
 
 ## Current State
 
-### Frequency Weighting System (v3.8.0)
+### Frequency Weighting System (v3.8.1)
 
 **UI Implemented:**
 - Header buttons for balanced/stem/arts weighting per child
 - Per-card star overrides (1-3 stars) for individual subject fine-tuning
-- Stars saved to localStorage
+- Stars saved to localStorage by subject NAME
 
 **Schedule Generator:**
 - Uses header mode (balanced/stem/arts) from localStorage
-- Applies weighting when building topic pool
+- Also reads per-subject overrides from localStorage
+- Per-subject weights override header mode
 - Topics added multiple times based on weight
 
-### NOT YET CONNECTED
+### HOW IT WORKS
 
-The per-card star overrides (individual subject weighting) are NOT connected to the schedule generator because:
+1. **Header Mode (balanced/stem/arts)** - Sets default weights for all subjects based on category
+2. **Per-Subject Override** - Individual cards can be clicked to set custom weight (1-3 stars)
+3. **Priority** - Per-subject weight takes priority over header mode
+4. **Storage** - Both stored in localStorage by subject name (e.g., "Maths", "English")
 
-1. **AdminDash uses mock data** - The subject cards in AdminDash display dummy data (SUBJECTS constant), not the actual curriculum from Firebase
-2. **Per-card weights stored per-index** - The star overrides are stored as `{ 0: 3, 1: 2, ... }` where keys are array indices, not subject IDs
-3. **Schedule uses real data** - The schedule generator pulls from Firebase/real curriculum data which has different subject IDs
+### WIRING DIAGRAM
 
-### To Fully Connect
+```
+AdminDash.tsx
+├── localStorage keys:
+│   ├── 'freqModeSophia' → { "Maths": 3, "English": 2, ... }
+│   ├── 'freqModeAdrian' → { "Maths": 3, "Science": 2, ... }
+│   └── 'childFreqMode' → ["balanced", "balanced"]
+│
+└── State:
+    ├── freqModeSophia: Record<string, 1|2|3>  ← stores by subject name
+    ├── freqModeAdrian: Record<string, 1|2|3>
+    └── childFreqMode: ['balanced'|'stem'|'arts', ...]
 
-To connect per-card overrides to schedule generation, would need to:
+App.tsx (generateSchedule function)
+├── Line 450: localStorage.getItem('childFreqMode')
+├── Line 452: localStorage.getItem('freqModeSophia')
+├── Line 453: localStorage.getItem('freqModeAdrian')
+│
+└── getSubjectWeight(subjectName, childIndex)
+    ├── Line 459-461: Check per-subject override first
+    │   └── Returns freqModeSophia[subjectName] or freqModeAdrian[subjectName]
+    │
+    └── Line 465-475: Fall back to child-level mode
+        └── Returns 1, 2, or 3 based on balanced/stem/arts
 
-1. Store frequency weights by actual subject ID (not array index)
-2. In schedule generator, read per-subject frequency from localStorage or Firebase
-3. Apply subject-level frequency in addition to topic-level frequency
+Subject Matching
+────────────────
+AdminDash uses mock data with subject names: "Maths", "English", "Science", etc.
+Real curriculum uses subject names from Firebase.
 
-### Subject Categories (for reference)
+⚠️ NOTE: If curriculum has "Maths: Algebra" instead of "Maths", exact match fails.
+   Consider fuzzy matching in future (e.g., subjectName.includes(key)).
 
-**STEM Subjects:**
-- Maths
-- Science
-- Physics
-- Technology
-- Computer Science
-- Design
-
-**Core Subjects:**
-- Maths
-- English
-- Science
-
-**Arts/Humanities:**
-- English
-- Art
-- Music
-- Drama
-- History
-- Geography
-- Languages
-- PE
-- PSHE

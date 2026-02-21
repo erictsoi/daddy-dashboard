@@ -8,6 +8,13 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-22 - Version 3.8.2 (Per-Subject Frequency)
+
+### Changed
+- **Frequency weighting** - Per-card star overrides now stored by subject name (not index)
+- **Schedule generator** - Now reads per-subject overrides from localStorage
+- Per-subject weights override header mode (balanced/stem/arts)
+
 ## 2026-02-22 - Version 3.8.1 (Bug Fixes)
 
 ### Fixed
