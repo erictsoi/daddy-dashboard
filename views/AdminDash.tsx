@@ -128,9 +128,25 @@ export const AdminDash: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const [hoveredSophia, setHoveredSophia] = React.useState<number | null>(null);
   const [hoveredAdrian, setHoveredAdrian] = React.useState<number | null>(null);
-  const [freqModeSophia, setFreqModeSophia] = React.useState<Record<number, 1 | 2 | 3>>({});
-  const [freqModeAdrian, setFreqModeAdrian] = React.useState<Record<number, 1 | 2 | 3>>({});
-  const [childFreqMode, setChildFreqMode] = React.useState<[('balanced' | 'stem' | 'arts'), ('balanced' | 'stem' | 'arts')]>(['balanced', 'balanced']);
+  const [freqModeSophia, setFreqModeSophia] = React.useState<Record<number, 1 | 2 | 3>>(() => {
+    const saved = localStorage.getItem('freqModeSophia');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [freqModeAdrian, setFreqModeAdrian] = React.useState<Record<number, 1 | 2 | 3>>(() => {
+    const saved = localStorage.getItem('freqModeAdrian');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [childFreqMode, setChildFreqMode] = React.useState<[('balanced' | 'stem' | 'arts'), ('balanced' | 'stem' | 'arts')]>(() => {
+    const saved = localStorage.getItem('childFreqMode');
+    return saved ? JSON.parse(saved) : ['balanced', 'balanced'];
+  });
+
+  // Save to localStorage when state changes
+  React.useEffect(() => {
+    localStorage.setItem('freqModeSophia', JSON.stringify(freqModeSophia));
+    localStorage.setItem('freqModeAdrian', JSON.stringify(freqModeAdrian));
+    localStorage.setItem('childFreqMode', JSON.stringify(childFreqMode));
+  }, [freqModeSophia, freqModeAdrian, childFreqMode]);
 
   const kids = [PROFILES[2], PROFILES[4]].map((profile, i) => ({
     profile,

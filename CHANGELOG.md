@@ -8,6 +8,13 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-22 - Version 3.8.1 (Bug Fixes)
+
+### Fixed
+- **App.tsx** - Fixed ViewOrigin comparison (CHILD_DASHBOARD → KIDSDASH)
+- **App.tsx** - Created hardDeleteTopicFromFirebase function for proper topic deletion
+- **dataService.ts** - Added hardDeleteTopicFromFirebase function
+
 ## 2026-02-22 - Version 3.8.0 (Frequency Weighting)
 
 ### Added
@@ -20,6 +27,9 @@
 ### Changed
 - **Subject cards** - Stars aligned right (3 stars = rightmost 3 highlighted)
 - **Frequency logic** - Balanced = 24 stars total, STEM emphasizes STEM subjects, Arts emphasizes arts/humanities
+
+### Added
+- **Schedule generator** - Now uses frequency weights from localStorage
 
 ## 2026-02-21 - Version 3.7.2 (Hover & Header Updates)
 

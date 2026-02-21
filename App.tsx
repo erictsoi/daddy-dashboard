@@ -4,7 +4,7 @@ import { ViewState, ChildProfile, YearGroup, Subject, Topic, Lesson, ScheduleBlo
 import { INITIAL_DATA } from './constants';
 import { AuthProvider, useAuth } from './src/lib/AuthContext';
 import { auth as firebaseAuth, googleProvider, signInWithGoogle, logOut as firebaseLogOut } from './src/lib/firebase'
-import { fetchChildren, fetchChildByEmail, fetchChildById, getLocalData, saveFullCurriculum, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, migrateChildToTopicStructure, fetchUserSettings, saveUserSettings, UserSettings } from './src/lib/dataService';
+import { fetchChildren, fetchChildByEmail, fetchChildById, getLocalData, saveFullCurriculum, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, hardDeleteTopicFromFirebase, migrateChildToTopicStructure, fetchUserSettings, saveUserSettings, UserSettings } from './src/lib/dataService';
 import { usePersistentTimer } from './src/lib/useTimer';
 import { saveData, generateUuid, exportDataToFile } from './src/lib/helpers';
 import { ProgressBar } from './components/ProgressBar';
@@ -445,15 +445,39 @@ const App: React.FC = () => {
   
       // Pre-shuffle subjects for each child and weight by frequency
       const childSubjects: Record<string, { subjects: any[], topics: any[], subjectIndex: number, topicIndex: number }> = {};
-      allChildren.forEach(child => {
+      
+      // Read frequency modes from localStorage
+      const storedChildFreqMode = localStorage.getItem('childFreqMode');
+      const childFreqMode = storedChildFreqMode ? JSON.parse(storedChildFreqMode) : ['balanced', 'balanced'];
+      
+      // Define subject categories
+      const STEM_SUBJECTS = ['Maths', 'Science', 'Physics', 'Technology', 'Computer Science', 'Design'];
+      const CORE_SUBJECTS = ['Maths', 'English', 'Science'];
+      
+      const getSubjectWeight = (subjectName: string, childIndex: number): number => {
+        const mode = childFreqMode[childIndex] || 'balanced';
+        const isSTEM = STEM_SUBJECTS.some(s => subjectName.toLowerCase().includes(s.toLowerCase()));
+        const isCore = CORE_SUBJECTS.some(s => subjectName.toLowerCase().includes(s.toLowerCase()));
+        
+        if (mode === 'balanced') return 2;
+        if (mode === 'stem') return isSTEM ? 3 : 1;
+        if (mode === 'arts') {
+          if (isCore) return 2;
+          return isSTEM ? 1 : 3;
+        }
+        return 2;
+      };
+      
+      allChildren.forEach((child, childIdx) => {
         const subjects = shuffle(child.yearGroups.flatMap(yg => yg.subjects));
         // Flatten all topics from all subjects and weight by frequency
         const allTopics: any[] = [];
-        subjects.forEach((s: any) => {
+        subjects.forEach((s: any, subjIdx: number) => {
           s.topics.forEach((t: any) => {
-            const frequency = t.frequency || 3;
-            // Add topic multiple times based on frequency (1-5x)
-            for (let i = 0; i < frequency; i++) {
+            // Use topic's own frequency if set, otherwise use subject weight
+            const topicFreq = t.frequency || getSubjectWeight(s.name, childIdx);
+            // Add topic multiple times based on frequency (1-3x)
+            for (let i = 0; i < topicFreq; i++) {
               allTopics.push({ ...t, subjectId: s.id, subjectName: s.name, subjectColor: s.color });
             }
           });
@@ -1099,7 +1123,7 @@ const App: React.FC = () => {
     const profileDropdownRef = useRef<HTMLDivElement>(null);
     
     // Admin Mode Check
-    const isReadOnly = origin === 'CHILD_DASHBOARD';
+    const isReadOnly = origin === 'KIDSDASH';
 
     const toggleTopic = useCallback((topicId: string) => {
       setExpandedTopics(prev => {
@@ -1180,7 +1204,7 @@ const App: React.FC = () => {
       
       // Delete from Firebase if exists
       if (user) {
-        hardDeleteSubjectFromFirebase(topicId, user.uid).catch(err => {
+        hardDeleteTopicFromFirebase(topicId, childId, user.uid).catch(err => {
           console.error('Failed to delete topic from Firebase:', err);
         });
       }

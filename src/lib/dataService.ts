@@ -289,6 +289,28 @@ export const hardDeleteSubjectFromFirebase = async (
   await setDoc(childRef, updated, { merge: true })
 }
 
+export const hardDeleteTopicFromFirebase = async (
+  topicId: string,
+  childId: string,
+  userId: string
+): Promise<void> => {
+  const childRef = doc(db, 'users', userId, 'children', childId)
+  const childDoc = await getDoc(childRef)
+  
+  if (!childDoc.exists()) return
+  
+  const childData = childDoc.data() as ChildProfile
+  const updated = { ...childData }
+  
+  for (const yg of updated.yearGroups || []) {
+    for (const subj of yg.subjects || []) {
+      subj.topics = subj.topics?.filter(t => t.id !== topicId) || []
+    }
+  }
+  
+  await setDoc(childRef, updated, { merge: true })
+}
+
 export const migrateChildToTopicStructure = (child: ChildProfile): ChildProfile => {
   return {
     ...child,
