@@ -21,7 +21,7 @@ export interface Topic {
   focus?: string;          // "YT Playlist Focus" from table
   notes?: string;          // Notes from table
   timeSpentSeconds?: number;
-  frequency?: number;
+  frequency?: 1 | 2 | 3;   // 1=low, 2=balanced(3x), 3=high(5x)
 }
 
 export interface Subject {
@@ -31,6 +31,7 @@ export interface Subject {
   category: string;
   color: string;
   youtubeUrl?: string;  // Legacy field, now stored in topics
+  frequencyMode?: 'balanced' | 'stem' | 'arts';
 }
 
 export interface YearGroup {

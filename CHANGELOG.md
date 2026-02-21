@@ -8,6 +8,19 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-22 - Version 3.8.0 (Frequency Weighting)
+
+### Added
+- **AdminDash** - Subject frequency weighting system with star UI (1-3 stars)
+- **AdminDash** - Header button to set balanced/stem/arts weighting for all subjects
+- **AdminDash** - Per-card star override for individual subject fine-tuning
+- **AdminDash** - Reports section with charts (Weekly Progress, Subject Breakdown, Stats)
+- **Sidebar** - Reports link scrolls to Reports section
+
+### Changed
+- **Subject cards** - Stars aligned right (3 stars = rightmost 3 highlighted)
+- **Frequency logic** - Balanced = 24 stars total, STEM emphasizes STEM subjects, Arts emphasizes arts/humanities
+
 ## 2026-02-21 - Version 3.7.2 (Hover & Header Updates)
 
 ### Changed
