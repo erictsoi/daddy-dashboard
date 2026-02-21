@@ -8,6 +8,12 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-22 - Version 3.8.3 (Refactor)
+
+### Changed
+- Extracted frequency weighting logic to `src/lib/scheduleUtils.ts`
+- Removed unused `frequencyMode` from Subject type
+
 ## 2026-02-22 - Version 3.8.2 (Per-Subject Frequency)
 
 ### Changed
