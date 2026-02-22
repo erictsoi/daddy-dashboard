@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getDummyProfiles } from '../src/data/dummyData';
 
 const DS = {
@@ -19,10 +19,6 @@ const GlobalStyles = () => (
     html, body { font-family: 'Nunito Sans', sans-serif; background: #FAF6F0; color: #1A1A2E; }
     .b  { font-family: 'Baloo 2', cursive; }
     .n  { font-family: 'Nunito', sans-serif; }
-    .t-hero  { font-size: 56px; font-weight: 800; line-height: 1.0; }
-    .t-h2    { font-size: 22px; font-weight: 800; line-height: 1.2; }
-    .t-small { font-size: 12px; font-weight: 600; line-height: 1.5; }
-    .t-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
     @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
     .float { animation: float 3s ease-in-out infinite; }
     ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -48,42 +44,27 @@ const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: numb
   </div>
 );
 
-const Texture = () => (
-  <div style={{
-    position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
-    backgroundImage: `radial-gradient(circle, #1A1A2E08 1px, transparent 1px)`,
-    backgroundSize: "20px 20px"
-  }} />
-);
-
-const Blobs = ({ color }: { color: string }) => (
-  <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
-    <div style={{ position: "absolute", top: "-12%", right: "-4%", width: 380, height: 380, borderRadius: "50%", background: color, opacity: .06, filter: "blur(64px)" }} />
-    <div style={{ position: "absolute", bottom: "-5%", left: "-8%", width: 300, height: 300, borderRadius: "50%", background: color, opacity: .04, filter: "blur(52px)" }} />
-  </div>
-);
-
-const Deco = ({ color }: { color: string }) => (
-  <>
-    <Blobs color={color} />
-    {[{ t: "⭐", x: 4, y: 7, s: 26 }, { t: "✨", x: 87, y: 9, s: 20 }, { t: "🚀", x: 2, y: 48, s: 22 }, { t: "💫", x: 93, y: 72, s: 18 }, { t: "⭐", x: 47, y: 3, s: 15 }, { t: "🌈", x: 90, y: 46, s: 24 }]
-      .map((d, i) => (
-        <div key={i} style={{ position: "absolute", left: `${d.x}%`, top: `${d.y}%`, fontSize: d.s, opacity: .14, pointerEvents: "none", zIndex: 0, animation: `float ${2.6 + i * .35}s ease-in-out ${i * .18}s infinite` }}>{d.t}</div>
-      ))}
-  </>
-);
-
 const Tag = ({ label, color, dark = false }: { label: string; color: string; dark?: boolean }) => (
   <Shadow offset={2} size={2} radius={DS.radius.pill} style={{ display: "inline-block" }}>
     <div style={{ position: "relative", background: dark ? DS.ink : color, border: DS.border, borderRadius: DS.radius.pill, padding: "3px 13px" }}>
-      <span className="n t-label" style={{ color: "#fff" }}>{label}</span>
+      <span className="n" style={{ color: "#fff", fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>{label}</span>
     </div>
   </Shadow>
 );
 
-const PROFILES = getDummyProfiles().slice(0, 6);
+const RETURNING_PROFILES = getDummyProfiles().slice(0, 6);
+
+const INITIAL_PROFILES = [
+  { id: "filler1", name: "?", year: "Year ?", color: "#95A5A6", emoji: "❓" },
+  { id: "filler2", name: "?", year: "Year ?", color: "#7F8C8D", emoji: "❓" },
+  { id: "filler3", name: "?", year: "Year ?", color: "#BDC3C7", emoji: "❓" },
+];
+
+const ALL_CARDS = [...RETURNING_PROFILES, ...INITIAL_PROFILES];
+const TOTAL_RETURNING = RETURNING_PROFILES.length;
 
 const INTERESTS: Record<string, string[]> = {
+  admin: ["Dashboard", "Settings", "Admin"],
   amara: ["Animals", "Drawing", "Singing", "Nature"],
   marcus: ["Dinosaurs", "Football", "Building", "Comics"],
   sophia: ["Art", "Dance", "Music", "Sports"],
@@ -93,82 +74,239 @@ const INTERESTS: Record<string, string[]> = {
 };
 
 export const LandingView: React.FC = () => {
-  const [active, setActive] = useState(2);
-  const p = PROFILES[active];
+  const [activeIndex, setActiveIndex] = useState(TOTAL_RETURNING - 1);
+  const [animationStage, setAnimationStage] = useState<'stack' | 'dealing' | 'carousel'>('stack');
+  const [readingProfileId, setReadingProfileId] = useState<string | null>(null);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const [footerVisible, setFooterVisible] = useState(false);
+  
+  const p = RETURNING_PROFILES[activeIndex];
 
-  const handleStart = () => {
-    window.location.href = `/kiddash?child=${p.id}`;
+  const isFiller = (id: string) => id.startsWith('filler');
+
+  const cardOffsets = useMemo(() => {
+    return ALL_CARDS.map((_, i) => ({
+      x: ((i * 7) % 16) - 8,
+      y: ((i * 23) % 20) - 10,
+      rotate: ((i * 17) % 5) - 2,
+      dealX: ((i * 100) % 1000) - 500,
+      dealRotate: ((i * 50) % 90) - 45,
+    }));
+  }, []);
+
+  const messyValues = useMemo(() => {
+    return RETURNING_PROFILES.map((_, i) => ({
+      messyRotate: ((i * 17) % 5) - 2,
+      messyY: ((i * 23) % 10) - 5,
+    }));
+  }, []);
+
+  useEffect(() => {
+    const timer1 = setTimeout(() => setAnimationStage('dealing'), 800);
+    const timer2 = setTimeout(() => setAnimationStage('carousel'), 1600);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (animationStage === 'carousel') {
+      const timer = setTimeout(() => setFooterVisible(true), 200);
+      return () => clearTimeout(timer);
+    } else {
+      setFooterVisible(false);
+    }
+  }, [animationStage]);
+
+  useEffect(() => {
+    if (readingProfileId) {
+      setHeaderVisible(false);
+      setFooterVisible(false);
+    }
+  }, [readingProfileId]);
+
+  const handleCardClick = (index: number, profileId: string) => {
+    if (animationStage !== 'carousel' || readingProfileId) return;
+    if (isFiller(profileId)) return;
+
+    const returningIndex = RETURNING_PROFILES.findIndex(p => p.id === profileId);
+    
+    if (returningIndex === activeIndex) {
+      setReadingProfileId(profileId);
+      setTimeout(() => {
+        window.location.href = profileId === 'admin' ? '/admindash' : `/kiddash?child=${profileId}`;
+      }, 800);
+    } else {
+      setActiveIndex(returningIndex);
+    }
   };
 
-  return (
-    <div style={{ minHeight: "100vh", background: DS.cream, position: "relative", overflow: "hidden" }}>
-      <GlobalStyles />
-      <Texture />
-      <Deco color={p.color} />
+  const getCardStyle = (index: number, profileId: string): React.CSSProperties => {
+    const isFillerCard = isFiller(profileId);
+    
+    if (readingProfileId) {
+      if (profileId === readingProfileId) {
+        return {
+          transform: `translateX(calc(-50% + 0px)) translateY(0px) scale(1.5) rotate(0deg)`,
+          zIndex: 1000,
+          opacity: 1,
+          transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
+        };
+      }
+      const baseStyle = getCarouselStyle(index, profileId);
+      return { ...baseStyle, scale: 0.8, opacity: 0, transition: "all 0.4s ease-out" };
+    }
 
-      {/* NAV */}
-      <nav style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 40px", borderBottom: DS.border, background: `${DS.card}F0`, backdropFilter: "blur(14px)" }}>
+    if (animationStage === 'stack') {
+      const offsets = cardOffsets[index];
+      return {
+        transform: `translateX(calc(-50% + ${offsets.x + 120}px)) translateY(${offsets.y}px) scale(1) rotate(${offsets.rotate}deg)`,
+        zIndex: ALL_CARDS.length - index,
+        opacity: 1,
+        transition: "all 0.5s cubic-bezier(.34,1.56,.64,1)",
+      };
+    }
+
+    if (animationStage === 'dealing') {
+      if (isFillerCard) {
+        return {
+          transform: `translateX(calc(-50% + ${cardOffsets[index].dealX}px)) translateY(1000px) scale(0.5) rotate(${cardOffsets[index].dealRotate}deg)`,
+          zIndex: 0,
+          opacity: 0,
+          transition: "all 0.8s ease-in",
+        };
+      }
+      return getCarouselStyle(index, profileId);
+    }
+
+    if (animationStage === 'carousel') {
+      if (isFillerCard) return { opacity: 0, scale: 0, zIndex: -1 };
+      return getCarouselStyle(index, profileId);
+    }
+
+    return {};
+  };
+
+  const getCarouselStyle = (index: number, profileId: string): React.CSSProperties => {
+    const returningIndex = RETURNING_PROFILES.findIndex(p => p.id === profileId);
+    let offset = (returningIndex - activeIndex) % TOTAL_RETURNING;
+    if (offset < 0) offset += TOTAL_RETURNING;
+    if (offset > TOTAL_RETURNING / 2) offset -= TOTAL_RETURNING;
+    
+    const absOffset = Math.abs(offset);
+    const isVisible = absOffset <= 2;
+
+    const xOffset = offset * 120 + 120;
+    const yOffset = 0;
+    const scale = 1 - absOffset * 0.1;
+    const zIndex = 100 - absOffset;
+    const rotate = offset * 3;
+
+    const messy = messyValues[returningIndex];
+
+    return {
+      transform: `translateX(calc(-50% + ${xOffset}px)) translateY(${yOffset + messy.messyY}px) scale(${scale}) rotate(${rotate + messy.messyRotate}deg)`,
+      zIndex,
+      opacity: isVisible ? 1 : 0,
+      pointerEvents: isVisible ? 'auto' as const : 'none' as const,
+      transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
+    };
+  };
+
+  const getInterestsText = () => {
+    const interests = INTERESTS[p.id] || [];
+    if (interests.length === 0) return "learning";
+    if (interests.length === 1) return interests[0].toLowerCase();
+    const last = interests[interests.length - 1];
+    const others = interests.slice(0, -1).join(", ");
+    return `${others} and ${last}`.toLowerCase();
+  };
+
+  const headerStyle: React.CSSProperties = headerVisible 
+    ? { opacity: 1, transform: "translateY(0)", transition: "all 0.5s ease-out", marginBottom: 40, paddingTop: 25 }
+    : { opacity: 0, transform: "translateY(-50px)", transition: "all 0.5s ease-out", pointerEvents: "none" as const };
+
+  const footerStyle: React.CSSProperties = footerVisible
+    ? { opacity: 1, transform: "translateY(0)", transition: "all 0.5s ease-out 0.2s", marginTop: "auto", paddingBottom: 24 }
+    : { opacity: 0, transform: "translateY(50px)", transition: "all 0.5s ease-out", pointerEvents: "none" as const };
+
+  return (
+    <div style={{ minHeight: "100vh", background: DS.cream, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      <GlobalStyles />
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, backgroundImage: 'radial-gradient(circle, #1A1A2E08 1px, transparent 1px)', backgroundSize: '24px 24px', opacity: 0.3 }} />
+
+      <nav style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 40px", borderBottom: DS.border, background: `${DS.card}F0`, backdropFilter: "blur(14px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Shadow offset={3} size={2.5} radius={12}>
-            <div style={{ position: "relative", width: 40, height: 40, background: p.color, border: DS.border, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, transition: "background .35s" }}>🎓</div>
+            <div style={{ position: "relative", width: 40, height: 40, background: p.color, border: DS.border, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🎓</div>
           </Shadow>
-          <span className="b t-h2" style={{ color: DS.ink }}>DADDY DASHBOARD</span>
+          <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: 22, fontWeight: 800, color: DS.ink }}>DADDY DASHBOARD</span>
         </div>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-          <span className="n t-small" style={{ color: DS.ink, cursor: "pointer", fontWeight: 700 }}>HOW IT WORKS</span>
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: DS.ink, cursor: "pointer" }}>HOW IT WORKS</span>
           <Shadow offset={3} size={2.5} radius={DS.radius.pill}>
-            <button className="n" style={{ position: "relative", background: DS.ink, color: "#fff", fontWeight: 800, fontSize: 13, padding: "9px 22px", borderRadius: DS.radius.pill, border: DS.border, cursor: "pointer" }} onClick={() => window.location.href = '/admindash'}>Admin</button>
+            <button style={{ position: "relative", background: DS.ink, color: "#fff", fontWeight: 800, fontSize: 13, padding: "9px 22px", borderRadius: DS.radius.pill, border: DS.border, cursor: "pointer" }} onClick={() => window.location.href = '/admindash'}>Admin</button>
           </Shadow>
         </div>
       </nav>
 
-      {/* HERO */}
-      <div style={{ position: "relative", zIndex: 5, textAlign: "center", padding: "44px 40px 8px" }}>
-        <h1 className="b t-hero" style={{ color: DS.ink, marginBottom: 8 }}>Who's ready for an</h1>
-        <Shadow offset={5} size={3} radius={DS.radius.md} style={{ display: "inline-block" }}>
-          <div style={{ position: "relative", background: p.color, border: DS.border, borderRadius: DS.radius.md, padding: "4px 32px", marginBottom: 12, transition: "background .35s" }}>
-            <span className="b" style={{ fontSize: 56, fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>ADVENTURE?</span>
+      <main style={{ flex: 1, display: "flex", flexDirection: "column", padding: "16px 40px 24px", maxWidth: 1400, margin: "0 auto", width: "100%" }}>
+        
+        <div style={headerStyle}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ display: "inline-block", transform: "rotate(-2deg)" }}>
+              <Shadow offset={5} size={3} radius={DS.radius.lg}>
+                <div style={{ position: "relative", background: p.color, border: DS.border, borderRadius: DS.radius.lg, padding: "8px 32px" }}>
+                  <h1 style={{ fontFamily: "'Baloo 2', cursive", fontSize: 28, fontWeight: 800, color: "#fff", letterSpacing: "0.05em", textTransform: "uppercase" }}>Who are we learning with Today?</h1>
+                </div>
+              </Shadow>
+            </div>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: DS.inkSoft, marginTop: 25, textTransform: "uppercase", letterSpacing: "0.1em" }}>select the profile that best matches your child's age and interests.</p>
           </div>
-        </Shadow>
-        <p className="n" style={{ fontSize: 17, fontWeight: 700, color: DS.inkSoft, marginTop: 12, marginBottom: 32 }}>Pick your hero to start your learning mission!</p>
-      </div>
+        </div>
 
-      {/* CAROUSEL */}
-      <div style={{ position: "relative", zIndex: 5, display: "flex", alignItems: "center", justifyContent: "center", gap: 18, padding: "0 56px", marginBottom: 24 }}>
-        <Shadow offset={3} size={2.5} radius="50%">
-          <button onClick={() => setActive(a => (a - 1 + PROFILES.length) % PROFILES.length)}
-            style={{ position: "relative", width: 52, height: 52, borderRadius: "50%", border: DS.border, background: DS.card, fontSize: 20, cursor: "pointer", color: DS.ink, transition: "transform .15s" }}
-            onMouseEnter={e => e.currentTarget.style.transform = "translate(-2px,-2px)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "none"}>←</button>
-        </Shadow>
+        <div style={{ position: "relative", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", flex: 1, minHeight: 340, marginTop: -25, padding: "0 40px" }}>
+          {ALL_CARDS.map((profile, index) => {
+            const style = getCardStyle(index, profile.id);
+            const isReturning = !isFiller(profile.id);
+            const isActive = isReturning && RETURNING_PROFILES.findIndex(p => p.id === profile.id) === activeIndex;
 
-        <div style={{ position: "relative", height: 380, width: 280, flexShrink: 0 }}>
-          {PROFILES.map((pr, i) => {
-            const off = ((i - active) + PROFILES.length) % PROFILES.length;
-            const dist = off > PROFILES.length / 2 ? off - PROFILES.length : off;
-            const abs = Math.abs(dist);
-            if (abs > 2) return null;
-            const isA = dist === 0;
+            if (!isReturning && animationStage === 'carousel') return null;
+
             return (
-              <div key={pr.id} onClick={() => !isA && setActive(i)}
-                style={{ position: "absolute", left: "50%", top: 0, transform: `translateX(calc(-50% + ${dist * 182}px)) scale(${1 - abs * .17})`, zIndex: 10 - abs, opacity: isA ? 1 : 1 - abs * .4, transition: "all .44s cubic-bezier(.34,1.56,.64,1)", cursor: isA ? "default" : "pointer", transformOrigin: "center top" }}>
-                <Shadow offset={isA ? 5 : 3} size={isA ? 3 : 2.5} radius={DS.radius.lg}>
-                  <div style={{ position: "relative", width: 268, background: isA ? pr.color : DS.cream, border: DS.border, borderRadius: DS.radius.lg, padding: isA ? "24px 20px 20px" : "16px", transition: "all .4s" }}>
-                    {isA && (
+              <div
+                key={profile.id}
+                onClick={() => isReturning && handleCardClick(index, profile.id)}
+                style={{ 
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  width: 240,
+                  height: 312,
+                  marginLeft: -120,
+                  marginTop: -156,
+                  cursor: isReturning && animationStage === 'carousel' ? 'pointer' : 'default',
+                  ...style,
+                }}
+              >
+                <Shadow offset={isActive ? 5 : 3} size={isActive ? 3 : 2.5} radius={DS.radius.lg}>
+                  <div style={{ position: "relative", width: 240, height: 312, background: profile.color, border: DS.border, borderRadius: DS.radius.lg, padding: isActive ? "22px 20px 18px" : "16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", transition: "all .4s" }}>
+                    {isActive && (
                       <div style={{ position: "absolute", top: -14, right: 14 }}>
                         <Shadow offset={2} size={2} radius={DS.radius.pill}>
                           <div style={{ position: "relative", background: "#FF6B6B", color: "#fff", fontSize: 11, fontWeight: 900, padding: "4px 14px", borderRadius: DS.radius.pill, border: DS.border, fontFamily: "Nunito,sans-serif", letterSpacing: .5 }}>★ ACTIVE</div>
                         </Shadow>
                       </div>
                     )}
-                    <div style={{ background: "rgba(255,255,255,.3)", border: DS.border, borderRadius: DS.radius.md, padding: 10, marginBottom: 12, textAlign: "center" }}>
-                      <div style={{ fontSize: 54, lineHeight: 1 }}>{pr.emoji}</div>
+                    <div style={{ background: "rgba(255,255,255,.3)", border: DS.border, borderRadius: DS.radius.md, padding: 10, marginBottom: 10, textAlign: "center" }}>
+                      <div style={{ fontSize: 48, lineHeight: 1 }}>{profile.emoji}</div>
                     </div>
-                    <Tag label={pr.year} color={pr.color} dark />
-                    <div className="b" style={{ fontSize: 34, fontWeight: 800, color: isA ? "#fff" : DS.ink, marginTop: 10, marginBottom: 10 }}>{pr.name}</div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {(INTERESTS[pr.id] || []).slice(0, 3).map(int => (
-                        <span key={int} style={{ background: "rgba(255,255,255,.38)", border: `2px solid ${isA ? "rgba(255,255,255,.6)" : DS.ink}`, borderRadius: DS.radius.pill, padding: "2px 10px", fontSize: 10, fontWeight: 800, color: isA ? "#fff" : DS.ink, fontFamily: "Nunito,sans-serif" }}>{int.toUpperCase()}</span>
+                    <Tag label={profile.year} color={profile.color} dark />
+                    <div style={{ fontFamily: "'Baloo 2', cursive", fontSize: 24, fontWeight: 800, color: "#fff", marginTop: 10, marginBottom: 8, textAlign: "center" }}>{profile.name}</div>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center" }}>
+                      {(INTERESTS[profile.id] || []).slice(0, 2).map(int => (
+                        <span key={int} style={{ background: "rgba(255,255,255,.38)", border: `2px solid rgba(255,255,255,.6)`, borderRadius: DS.radius.pill, padding: "1px 8px", fontSize: 9, fontWeight: 800, color: "#fff", fontFamily: "Nunito,sans-serif", textTransform: "uppercase" }}>{int}</span>
                       ))}
                     </div>
                   </div>
@@ -178,34 +316,31 @@ export const LandingView: React.FC = () => {
           })}
         </div>
 
-        <Shadow offset={3} size={2.5} radius="50%">
-          <button onClick={() => setActive(a => (a + 1) % PROFILES.length)}
-            style={{ position: "relative", width: 52, height: 52, borderRadius: "50%", border: DS.border, background: DS.card, fontSize: 20, cursor: "pointer", color: DS.ink, transition: "transform .15s" }}
-            onMouseEnter={e => e.currentTarget.style.transform = "translate(-2px,-2px)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "none"}>→</button>
-        </Shadow>
-      </div>
+        <div style={footerStyle}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: 18, fontWeight: 700, color: DS.ink, maxWidth: 580, padding: "0 20px", textAlign: "center", minHeight: 56, lineHeight: 1.5 }}>
+              <span style={{ background: p.color, color: "#fff", padding: "4px 14px", borderRadius: 6, marginRight: 6, whiteSpace: "nowrap", display: "inline-block" }}>{p.name}</span> 
+              is a {p.year} Learner who loves {getInterestsText()}. A great match for ages {p.age}.
+            </p>
+            
+            <Shadow offset={4} size={3} radius={DS.radius.pill}>
+              <button
+                onClick={() => handleCardClick(activeIndex, p.id)}
+                style={{ position: "relative", background: p.color, color: "#fff", fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: 16, padding: "12px 36px", borderRadius: DS.radius.pill, border: DS.border, cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.05em", transition: "transform .2s" }}
+                onMouseEnter={e => e.currentTarget.style.transform = "translate(-2px,-2px)"}
+                onMouseLeave={e => e.currentTarget.style.transform = "none"}
+              >
+                Select this profile 🚀
+              </button>
+            </Shadow>
 
-      {/* CTA */}
-      <div style={{ position: "relative", zIndex: 5, textAlign: "center", padding: "0 40px 52px" }}>
-        <p className="b" style={{ fontSize: 20, fontWeight: 700, color: DS.ink, marginBottom: 6 }}>
-          "Welcome back,{" "}
-          <span style={{ background: p.color, color: "#fff", padding: "1px 12px", borderRadius: DS.radius.sm, border: DS.border }}>{p.name}</span>!
-          {" "}Ready to learn something amazing?"
-        </p>
-        <p className="n t-small" style={{ color: DS.inkFade, marginBottom: 26 }}>Choose the profile closest to your child</p>
-        <Shadow offset={4} size={3} radius={DS.radius.pill} style={{ display: "inline-block" }}>
-          <button className="b"
-            style={{ position: "relative", background: p.color, color: "#fff", fontWeight: 800, fontSize: 20, padding: "16px 52px", borderRadius: DS.radius.pill, border: DS.border, cursor: "pointer", transition: "transform .2s" }}
-            onMouseEnter={e => e.currentTarget.style.transform = "translate(-2px,-2px)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "none"}
-            onClick={handleStart}>START LEARNING 🚀</button>
-        </Shadow>
-        <div style={{ marginTop: 12 }}>
-          <span className="n t-small" style={{ color: DS.inkFade }}>Not you? </span>
-          <span className="n t-small" style={{ color: p.color, fontWeight: 800, cursor: "pointer", borderBottom: `2.5px solid ${p.color}` }} onClick={() => window.location.href = '/returningview'}>Switch Hero</span>
+            <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: DS.inkFade, marginTop: 4 }}>
+              Already have an account? <span style={{ color: p.color, cursor: "pointer", textDecoration: "underline" }} onClick={() => window.location.href = '/returningview'}>Sign in here</span>
+            </div>
+          </div>
         </div>
-      </div>
+
+      </main>
     </div>
   );
 };

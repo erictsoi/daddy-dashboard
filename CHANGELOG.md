@@ -8,6 +8,25 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-22 - Version 3.9.0 (Landing Page Redesign)
+
+### Changed
+- **LandingView** - Complete carousel redesign with:
+  - 3-stage animation: stack → dealing → carousel
+  - Filler cards fly off-screen in dealing phase
+  - Infinite loop carousel with messiness/randomness
+  - Header/footer fade in/out on selection
+  - Selected card: 1.5x scale, others fade
+  - Dynamic colors based on active profile
+- Removed Admin card from carousel
+- Updated text per spec: "Who are we learning with Today?", profile blurbs
+
+### Technical
+- Cards: 240x312px
+- Carousel spacing: 120px + 120px offset for centering
+- Stack offset: 120px for centering
+- Vertical arch effect removed
+
 ## 2026-02-22 - Version 3.8.3 (Refactor)
 
 ### Changed

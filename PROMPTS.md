@@ -8,6 +8,25 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-22 - Landing Page Carousel Redesign
+
+**User Request:**
+> carousel.md hasnt been saved: [prompt content] ... save over carousel.md, update teh carousel_plan.md, read and execute the plan.
+> [Various adjustments to text, positioning, sizing, centering]
+
+**Session Actions:**
+- Applied AI Studio carousel animations to LandingView.tsx
+- 3-stage animation: stack → dealing (800ms) → carousel (1600ms)
+- Filler cards fly off-screen in dealing phase
+- Infinite loop carousel with messiness/randomness
+- Header/footer fade on selection
+- Selected card: 1.5x scale
+- Removed Admin card from carousel
+- Updated text: "Who are we learning with Today?", profile blurbs
+- Card size: 240x312px
+- Carousel spacing: 120px + 120px offset
+- Stack offset: 120px for centering
+
 ## 2026-02-21 - UI Styling Updates
 
 **User Request:**
