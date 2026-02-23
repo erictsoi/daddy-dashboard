@@ -74,7 +74,8 @@ const INTERESTS: Record<string, string[]> = {
 };
 
 export const LandingView: React.FC = () => {
-  const [activeIndex, setActiveIndex] = useState(TOTAL_RETURNING - 1);
+  const sophiaIndex = RETURNING_PROFILES.findIndex(p => p.id === 'sophia');
+  const [activeIndex, setActiveIndex] = useState(sophiaIndex >= 0 ? sophiaIndex : TOTAL_RETURNING - 1);
   const [animationStage, setAnimationStage] = useState<'stack' | 'dealing' | 'carousel'>('stack');
   const [readingProfileId, setReadingProfileId] = useState<string | null>(null);
   const [headerVisible, setHeaderVisible] = useState(true);
@@ -140,6 +141,16 @@ export const LandingView: React.FC = () => {
     } else {
       setActiveIndex(returningIndex);
     }
+  };
+
+  const goToPrev = () => {
+    if (readingProfileId) return;
+    setActiveIndex((activeIndex - 1 + TOTAL_RETURNING) % TOTAL_RETURNING);
+  };
+
+  const goToNext = () => {
+    if (readingProfileId) return;
+    setActiveIndex((activeIndex + 1) % TOTAL_RETURNING);
   };
 
   const getCardStyle = (index: number, profileId: string): React.CSSProperties => {
@@ -267,6 +278,12 @@ export const LandingView: React.FC = () => {
         </div>
 
         <div style={{ position: "relative", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", flex: 1, minHeight: 340, marginTop: -25, padding: "0 40px" }}>
+          {animationStage === 'carousel' && !readingProfileId && (
+            <>
+              <button onClick={goToPrev} style={{ position: "absolute", left: 20, width: 44, height: 44, borderRadius: "50%", border: DS.border, background: DS.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, boxShadow: "3px 3px #3D2B1F", zIndex: 100 }}>←</button>
+              <button onClick={goToNext} style={{ position: "absolute", right: 20, width: 44, height: 44, borderRadius: "50%", border: DS.border, background: DS.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, boxShadow: "3px 3px #3D2B1F", zIndex: 100 }}>→</button>
+            </>
+          )}
           {ALL_CARDS.map((profile, index) => {
             const style = getCardStyle(index, profile.id);
             const isReturning = !isFiller(profile.id);

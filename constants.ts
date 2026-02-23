@@ -1,5 +1,29 @@
 import { ChildProfile } from './types';
 
+// Shared subject color scheme - consistent across all kids and dashboards
+export const SUBJECT_COLORS: Record<string, string> = {
+  'Maths': '#FF6B6B',
+  'English': '#4CAF8A',
+  'Science': '#2B8ED4',
+  'Art': '#F5A623',
+  'Music': '#9B6DD6',
+  'PE': '#FF9800',
+  'History': '#E91E63',
+  'Geography': '#4CAF50',
+  'Drama': '#E8505B',
+  'Technology': '#00BCD4',
+  'Languages': '#DDA0DD',
+  'PSHE': '#4CAF8A',
+  'Design': '#9B6DD6',
+  'Physics': '#F5A623',
+  'Computer Science': '#00BCD4',
+  'Economics': '#E8507A',
+};
+
+export const getSubjectColor = (subjectName: string): string => {
+  return SUBJECT_COLORS[subjectName] || '#888888';
+};
+
 export const INITIAL_DATA: ChildProfile[] = [
   {
     id: "amara",
@@ -12,9 +36,9 @@ export const INITIAL_DATA: ChildProfile[] = [
         id: "amara-y1",
         name: "Year 1",
         subjects: [
-          { id: "amara-maths", name: "Maths", category: "Maths", color: "#FF6B6B", topics: [{ id: "amara-maths-1", name: "Numbers", lessons: [] }] },
-          { id: "amara-english", name: "English", category: "English", color: "#4CAF8A", topics: [{ id: "amara-english-1", name: "Phonics", lessons: [] }] },
-          { id: "amara-science", name: "Science", category: "Science", color: "#2B8ED4", topics: [{ id: "amara-science-1", name: "Animals", lessons: [] }] },
+          { id: "amara-maths", name: "Maths", category: "Maths", color: getSubjectColor("Maths"), topics: [{ id: "amara-maths-1", name: "Numbers", lessons: [] }] },
+          { id: "amara-english", name: "English", category: "English", color: getSubjectColor("English"), topics: [{ id: "amara-english-1", name: "Phonics", lessons: [] }] },
+          { id: "amara-science", name: "Science", category: "Science", color: getSubjectColor("Science"), topics: [{ id: "amara-science-1", name: "Animals", lessons: [] }] },
         ]
       }
     ]
@@ -30,9 +54,9 @@ export const INITIAL_DATA: ChildProfile[] = [
         id: "marcus-y3",
         name: "Year 3",
         subjects: [
-          { id: "marcus-maths", name: "Maths", category: "Maths", color: "#FF6B6B", topics: [{ id: "marcus-maths-1", name: "Multiplication", lessons: [] }] },
-          { id: "marcus-english", name: "English", category: "English", color: "#4CAF8A", topics: [{ id: "marcus-english-1", name: "Reading", lessons: [] }] },
-          { id: "marcus-science", name: "Science", category: "Science", color: "#2B8ED4", topics: [{ id: "marcus-science-1", name: "Dinosaurs", lessons: [] }] },
+          { id: "marcus-maths", name: "Maths", category: "Maths", color: getSubjectColor("Maths"), topics: [{ id: "marcus-maths-1", name: "Multiplication", lessons: [] }] },
+          { id: "marcus-english", name: "English", category: "English", color: getSubjectColor("English"), topics: [{ id: "marcus-english-1", name: "Reading", lessons: [] }] },
+          { id: "marcus-science", name: "Science", category: "Science", color: getSubjectColor("Science"), topics: [{ id: "marcus-science-1", name: "Dinosaurs", lessons: [] }] },
         ]
       }
     ]
@@ -48,12 +72,12 @@ export const INITIAL_DATA: ChildProfile[] = [
         id: "sophia-y5",
         name: "Year 5",
         subjects: [
-          { id: "sophia-maths", name: "Maths", category: "Maths", color: "#FF6B6B", topics: [{ id: "sophia-maths-1", name: "Fractions", lessons: [] }] },
-          { id: "sophia-english", name: "English", category: "English", color: "#4CAF8A", topics: [{ id: "sophia-english-1", name: "Creative Writing", lessons: [] }] },
-          { id: "sophia-science", name: "Science", category: "Science", color: "#2B8ED4", topics: [{ id: "sophia-science-1", name: "Ecosystems", lessons: [] }] },
-          { id: "sophia-art", name: "Art", category: "Art", color: "#F5A623", topics: [{ id: "sophia-art-1", name: "Watercolour", lessons: [] }] },
-          { id: "sophia-music", name: "Music", category: "Music", color: "#9B6DD6", topics: [{ id: "sophia-music-1", name: "Rhythm & Beat", lessons: [] }] },
-          { id: "sophia-pe", name: "PE", category: "PE", color: "#4CAF8A", topics: [{ id: "sophia-pe-1", name: "Gymnastics", lessons: [] }] },
+          { id: "sophia-maths", name: "Maths", category: "Maths", color: getSubjectColor("Maths"), topics: [{ id: "sophia-maths-1", name: "Fractions", lessons: [] }] },
+          { id: "sophia-english", name: "English", category: "English", color: getSubjectColor("English"), topics: [{ id: "sophia-english-1", name: "Creative Writing", lessons: [] }] },
+          { id: "sophia-science", name: "Science", category: "Science", color: getSubjectColor("Science"), topics: [{ id: "sophia-science-1", name: "Ecosystems", lessons: [] }] },
+          { id: "sophia-art", name: "Art", category: "Art", color: getSubjectColor("Art"), topics: [{ id: "sophia-art-1", name: "Watercolour", lessons: [] }] },
+          { id: "sophia-music", name: "Music", category: "Music", color: getSubjectColor("Music"), topics: [{ id: "sophia-music-1", name: "Rhythm & Beat", lessons: [] }] },
+          { id: "sophia-pe", name: "PE", category: "PE", color: getSubjectColor("PE"), topics: [{ id: "sophia-pe-1", name: "Gymnastics", lessons: [] }] },
         ]
       }
     ]
@@ -69,9 +93,9 @@ export const INITIAL_DATA: ChildProfile[] = [
         id: "kai-y7",
         name: "Year 7",
         subjects: [
-          { id: "kai-maths", name: "Maths", category: "Maths", color: "#FF6B6B", topics: [{ id: "kai-maths-1", name: "Algebra", lessons: [] }] },
-          { id: "kai-english", name: "English", category: "English", color: "#4CAF8A", topics: [{ id: "kai-english-1", name: "Literature", lessons: [] }] },
-          { id: "kai-science", name: "Science", category: "Science", color: "#2B8ED4", topics: [{ id: "kai-science-1", name: "Physics", lessons: [] }] },
+          { id: "kai-maths", name: "Maths", category: "Maths", color: getSubjectColor("Maths"), topics: [{ id: "kai-maths-1", name: "Algebra", lessons: [] }] },
+          { id: "kai-english", name: "English", category: "English", color: getSubjectColor("English"), topics: [{ id: "kai-english-1", name: "Literature", lessons: [] }] },
+          { id: "kai-science", name: "Science", category: "Science", color: getSubjectColor("Science"), topics: [{ id: "kai-science-1", name: "Physics", lessons: [] }] },
         ]
       }
     ]
@@ -87,10 +111,10 @@ export const INITIAL_DATA: ChildProfile[] = [
         id: "adrian-y9",
         name: "Year 9",
         subjects: [
-          { id: "adrian-maths", name: "Maths", category: "Maths", color: "#FF6B6B", topics: [{ id: "adrian-maths-1", name: "Algebra II", lessons: [] }] },
-          { id: "adrian-english", name: "English", category: "English", color: "#4CAF8A", topics: [{ id: "adrian-english-1", name: "Essay Writing", lessons: [] }] },
-          { id: "adrian-science", name: "Science", category: "Science", color: "#2B8ED4", topics: [{ id: "adrian-science-1", name: "Chemical Reactions", lessons: [] }] },
-          { id: "adrian-design", name: "Design", category: "Design", color: "#F5A623", topics: [{ id: "adrian-design-1", name: "Graphic Design", lessons: [] }] },
+          { id: "adrian-maths", name: "Maths", category: "Maths", color: getSubjectColor("Maths"), topics: [{ id: "adrian-maths-1", name: "Algebra II", lessons: [] }] },
+          { id: "adrian-english", name: "English", category: "English", color: getSubjectColor("English"), topics: [{ id: "adrian-english-1", name: "Essay Writing", lessons: [] }] },
+          { id: "adrian-science", name: "Science", category: "Science", color: getSubjectColor("Science"), topics: [{ id: "adrian-science-1", name: "Chemical Reactions", lessons: [] }] },
+          { id: "adrian-design", name: "Design", category: "Design", color: getSubjectColor("Design"), topics: [{ id: "adrian-design-1", name: "Graphic Design", lessons: [] }] },
         ]
       }
     ]
@@ -106,9 +130,9 @@ export const INITIAL_DATA: ChildProfile[] = [
         id: "rohan-y11",
         name: "Year 11",
         subjects: [
-          { id: "rohan-maths", name: "Maths", category: "Maths", color: "#FF6B6B", topics: [{ id: "rohan-maths-1", name: "Calculus", lessons: [] }] },
-          { id: "rohan-english", name: "English", category: "English", color: "#4CAF8A", topics: [{ id: "rohan-english-1", name: "Literature", lessons: [] }] },
-          { id: "rohan-economics", name: "Economics", category: "Economics", color: "#E8507A", topics: [{ id: "rohan-economics-1", name: "Microeconomics", lessons: [] }] },
+          { id: "rohan-maths", name: "Maths", category: "Maths", color: getSubjectColor("Maths"), topics: [{ id: "rohan-maths-1", name: "Calculus", lessons: [] }] },
+          { id: "rohan-english", name: "English", category: "English", color: getSubjectColor("English"), topics: [{ id: "rohan-english-1", name: "Literature", lessons: [] }] },
+          { id: "rohan-economics", name: "Economics", category: "Economics", color: getSubjectColor("Economics"), topics: [{ id: "rohan-economics-1", name: "Microeconomics", lessons: [] }] },
         ]
       }
     ]

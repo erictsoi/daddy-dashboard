@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { getDummyProfiles } from '../src/data/dummyData';
+import { SUBJECT_COLORS, getSubjectColor } from '../constants';
 
 const DS = {
   cream: "#FAF6F0",
@@ -95,32 +96,32 @@ const SCHEDULES: Record<string, any[]> = {
 
 const SUBJECTS: Record<string, any[]> = {
   sophia: [
-    { subject: "Maths", topic: "Fractions", icon: "📐", color: "#FF6B6B", progress: 1, total: 1, category: "stem" },
-    { subject: "English", topic: "Creative Writing", icon: "📖", color: "#4CAF8A", progress: 1, total: 1, category: "arts" },
-    { subject: "Science", topic: "Ecosystems", icon: "🔬", color: "#2B8ED4", progress: 0, total: 1, category: "stem" },
-    { subject: "Art", topic: "Watercolour", icon: "🎨", color: "#F5A623", progress: 0, total: 1, category: "arts" },
-    { subject: "Music", topic: "Rhythm & Beat", icon: "🎵", color: "#E91E63", progress: 0, total: 1, category: "arts" },
-    { subject: "PE", topic: "Gymnastics", icon: "⚽", color: "#FF9800", progress: 0, total: 1, category: "arts" },
-    { subject: "History", topic: "Ancient Egypt", icon: "📜", color: "#9B6DD6", progress: 0, total: 1, category: "arts" },
-    { subject: "Geography", topic: "Weather Systems", icon: "🌍", color: "#4CAF50", progress: 0, total: 1, category: "arts" },
-    { subject: "Drama", topic: "Improvisation", icon: "🎭", color: "#E8505B", progress: 0, total: 1, category: "arts" },
-    { subject: "Technology", topic: "Intro to Coding", icon: "✏️", color: "#00BCD4", progress: 0, total: 1, category: "stem" },
-    { subject: "Languages", topic: "French Basics", icon: "🗣️", color: "#FF6B6B", progress: 0, total: 1, category: "arts" },
-    { subject: "PSHE", topic: "Wellbeing", icon: "💛", color: "#4CAF8A", progress: 0, total: 1, category: "arts" },
+    { subject: "Maths", topic: "Fractions", icon: "📐", color: getSubjectColor("Maths"), progress: 1, total: 1, category: "stem" },
+    { subject: "English", topic: "Creative Writing", icon: "📖", color: getSubjectColor("English"), progress: 1, total: 1, category: "arts" },
+    { subject: "Science", topic: "Ecosystems", icon: "🔬", color: getSubjectColor("Science"), progress: 0, total: 1, category: "stem" },
+    { subject: "Art", topic: "Watercolour", icon: "🎨", color: getSubjectColor("Art"), progress: 0, total: 1, category: "arts" },
+    { subject: "Music", topic: "Rhythm & Beat", icon: "🎵", color: getSubjectColor("Music"), progress: 0, total: 1, category: "arts" },
+    { subject: "PE", topic: "Gymnastics", icon: "⚽", color: getSubjectColor("PE"), progress: 0, total: 1, category: "arts" },
+    { subject: "History", topic: "Ancient Egypt", icon: "📜", color: getSubjectColor("History"), progress: 0, total: 1, category: "arts" },
+    { subject: "Geography", topic: "Weather Systems", icon: "🌍", color: getSubjectColor("Geography"), progress: 0, total: 1, category: "arts" },
+    { subject: "Drama", topic: "Improvisation", icon: "🎭", color: getSubjectColor("Drama"), progress: 0, total: 1, category: "arts" },
+    { subject: "Technology", topic: "Intro to Coding", icon: "✏️", color: getSubjectColor("Technology"), progress: 0, total: 1, category: "stem" },
+    { subject: "Languages", topic: "French Basics", icon: "🗣️", color: getSubjectColor("Languages"), progress: 0, total: 1, category: "arts" },
+    { subject: "PSHE", topic: "Wellbeing", icon: "💛", color: getSubjectColor("PSHE"), progress: 0, total: 1, category: "arts" },
   ],
   adrian: [
-    { subject: "Maths", topic: "Algebra II", icon: "📐", color: "#FF6B6B", progress: 1, total: 1, category: "stem" },
-    { subject: "Science", topic: "Chemical Reactions", icon: "🔬", color: "#4CAF8A", progress: 1, total: 1, category: "stem" },
-    { subject: "English", topic: "Essay Writing", icon: "📖", color: "#2B8ED4", progress: 0, total: 1, category: "arts" },
-    { subject: "Design", topic: "Graphic Design", icon: "✏️", color: "#9B6DD6", progress: 0, total: 1, category: "stem" },
-    { subject: "Physics", topic: "Mechanics", icon: "⚡", color: "#F5A623", progress: 0, total: 1, category: "stem" },
-    { subject: "History", topic: "World Wars", icon: "📜", color: "#E91E63", progress: 0, total: 1, category: "arts" },
-    { subject: "Geography", topic: "Climate Change", icon: "🌍", color: "#4CAF50", progress: 0, total: 1, category: "arts" },
-    { subject: "Computer Science", topic: "Python Programming", icon: "💻", color: "#00BCD4", progress: 0, total: 1, category: "stem" },
-    { subject: "Art", topic: "Digital Art", icon: "🎨", color: "#FF9800", progress: 0, total: 1, category: "arts" },
-    { subject: "Music", topic: "Music Theory", icon: "🎵", color: "#E8505B", progress: 0, total: 1, category: "arts" },
-    { subject: "PE", topic: "Basketball", icon: "🏀", color: "#FF6B6B", progress: 0, total: 1, category: "arts" },
-    { subject: "Languages", topic: "Spanish Basics", icon: "🗣️", color: "#4CAF8A", progress: 0, total: 1, category: "arts" },
+    { subject: "Maths", topic: "Algebra II", icon: "📐", color: getSubjectColor("Maths"), progress: 1, total: 1, category: "stem" },
+    { subject: "Science", topic: "Chemical Reactions", icon: "🔬", color: getSubjectColor("Science"), progress: 1, total: 1, category: "stem" },
+    { subject: "English", topic: "Essay Writing", icon: "📖", color: getSubjectColor("English"), progress: 0, total: 1, category: "arts" },
+    { subject: "Design", topic: "Graphic Design", icon: "✏️", color: getSubjectColor("Design"), progress: 0, total: 1, category: "stem" },
+    { subject: "Physics", topic: "Mechanics", icon: "⚡", color: getSubjectColor("Physics"), progress: 0, total: 1, category: "stem" },
+    { subject: "History", topic: "World Wars", icon: "📜", color: getSubjectColor("History"), progress: 0, total: 1, category: "arts" },
+    { subject: "Geography", topic: "Climate Change", icon: "🌍", color: getSubjectColor("Geography"), progress: 0, total: 1, category: "arts" },
+    { subject: "Computer Science", topic: "Python Programming", icon: "💻", color: getSubjectColor("Computer Science"), progress: 0, total: 1, category: "stem" },
+    { subject: "Art", topic: "Digital Art", icon: "🎨", color: getSubjectColor("Art"), progress: 0, total: 1, category: "arts" },
+    { subject: "Music", topic: "Music Theory", icon: "🎵", color: getSubjectColor("Music"), progress: 0, total: 1, category: "arts" },
+    { subject: "PE", topic: "Basketball", icon: "🏀", color: getSubjectColor("PE"), progress: 0, total: 1, category: "arts" },
+    { subject: "Languages", topic: "Spanish Basics", icon: "🗣️", color: getSubjectColor("Languages"), progress: 0, total: 1, category: "arts" },
   ],
 };
 
@@ -128,6 +129,10 @@ export const AdminDash: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const [hoveredSophia, setHoveredSophia] = React.useState<number | null>(null);
   const [hoveredAdrian, setHoveredAdrian] = React.useState<number | null>(null);
+  const [subjectColors, setSubjectColors] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('subjectColors');
+    return saved ? JSON.parse(saved) : { ...SUBJECT_COLORS };
+  });
   const [freqModeSophia, setFreqModeSophia] = React.useState<Record<string, 1 | 2 | 3>>(() => {
     const saved = localStorage.getItem('freqModeSophia');
     return saved ? JSON.parse(saved) : {};
@@ -136,6 +141,16 @@ export const AdminDash: React.FC = () => {
     const saved = localStorage.getItem('freqModeAdrian');
     return saved ? JSON.parse(saved) : {};
   });
+
+  const handleColorChange = (subject: string, color: string) => {
+    const updated = { ...subjectColors, [subject]: color };
+    setSubjectColors(updated);
+    localStorage.setItem('subjectColors', JSON.stringify(updated));
+  };
+
+  const getSubjectColor = (subject: string): string => {
+    return subjectColors[subject] || SUBJECT_COLORS[subject] || '#888888';
+  };
   const [childFreqMode, setChildFreqMode] = React.useState<[('balanced' | 'stem' | 'arts'), ('balanced' | 'stem' | 'arts')]>(() => {
     const saved = localStorage.getItem('childFreqMode');
     return saved ? JSON.parse(saved) : ['balanced', 'balanced'];
@@ -282,7 +297,10 @@ export const AdminDash: React.FC = () => {
           <span style={{ fontSize: 16 }}>📈</span>
           {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 600, whiteSpace: "nowrap" }}>Reports</span>}
         </div>
-        <div style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, borderLeft: "4px solid transparent" }}>
+        <div 
+          onClick={() => document.getElementById('section-settings')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", borderLeft: "4px solid transparent" }}
+        >
           <span style={{ fontSize: 16 }}>⚙️</span>
           {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 600, whiteSpace: "nowrap" }}>Settings</span>}
         </div>
@@ -674,17 +692,17 @@ export const AdminDash: React.FC = () => {
 
             {/* SUBJECT BREAKDOWN */}
             <Shadow offset={3} size={2.5} radius={DS.radius.lg}>
-              <div style={{ position: "relative", background: DS.card, border: DS.border, borderRadius: DS.radius.lg, padding: 26 }}>
+                <div style={{ position: "relative", background: DS.card, border: DS.border, borderRadius: DS.radius.lg, padding: 26 }}>
                 <div className="b t-h2" style={{ color: DS.ink, marginBottom: 20 }}>Subject Breakdown</div>
                 
                 {/* Bar chart */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {[
-                    { subject: "Maths", percent: 85, color: "#FF6B6B" },
-                    { subject: "English", percent: 72, color: "#4CAF8A" },
-                    { subject: "Science", percent: 60, color: "#2B8ED4" },
-                    { subject: "History", percent: 45, color: "#9B6DD6" },
-                    { subject: "Art", percent: 38, color: "#F5A623" },
+                    { subject: "Maths", percent: 85 },
+                    { subject: "English", percent: 72 },
+                    { subject: "Science", percent: 60 },
+                    { subject: "History", percent: 45 },
+                    { subject: "Art", percent: 38 },
                   ].map((item, idx) => (
                     <div key={idx}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
@@ -692,7 +710,7 @@ export const AdminDash: React.FC = () => {
                         <span className="n t-small" style={{ color: DS.inkFade }}>{item.percent}%</span>
                       </div>
                       <div style={{ height: 8, background: "#EDE8E0", borderRadius: 4, overflow: "hidden", border: "1px solid #1A1A2E" }}>
-                        <div style={{ height: "100%", width: `${item.percent}%`, background: item.color, borderRadius: 4, transition: "width 0.5s" }} />
+                        <div style={{ height: "100%", width: `${item.percent}%`, background: getSubjectColor(item.subject), borderRadius: 4, transition: "width 0.5s" }} />
                       </div>
                     </div>
                   ))}
@@ -760,6 +778,34 @@ export const AdminDash: React.FC = () => {
               </div>
             </Shadow>
           </div>
+        </div>
+
+        {/* SETTINGS SECTION */}
+        <div id="section-settings" style={{ marginTop: 48, paddingTop: 28, borderTop: `2px solid ${DS.dotBrown}20` }}>
+          <h1 className="b t-h1" style={{ color: DS.ink, marginBottom: 8 }}>Settings</h1>
+          <p className="n t-small" style={{ color: DS.inkSoft, marginBottom: 24 }}>Customize your dashboard preferences</p>
+          
+          {/* Subject Colors */}
+          <Shadow offset={3} size={2.5} radius={DS.radius.lg}>
+            <div style={{ position: "relative", background: DS.card, border: DS.border, borderRadius: DS.radius.lg, padding: 26 }}>
+              <div className="b t-h2" style={{ color: DS.ink, marginBottom: 20 }}>Subject Colors</div>
+              <p className="n t-small" style={{ color: DS.inkSoft, marginBottom: 20 }}>Assign colors to subjects - these will be consistent across all kids</p>
+              
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
+                {Object.keys(subjectColors).map((subject) => (
+                  <div key={subject} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: `${subjectColors[subject]}10`, borderRadius: DS.radius.md, border: `1.5px solid ${subjectColors[subject]}` }}>
+                    <input
+                      type="color"
+                      value={subjectColors[subject]}
+                      onChange={(e) => handleColorChange(subject, e.target.value)}
+                      style={{ width: 32, height: 32, border: "none", borderRadius: 6, cursor: "pointer", padding: 0 }}
+                    />
+                    <span className="n t-small" style={{ color: DS.ink, fontWeight: 600 }}>{subject}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Shadow>
         </div>
       </div>
     </div>

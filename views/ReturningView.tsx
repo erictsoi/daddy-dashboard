@@ -4,6 +4,19 @@ import { ChildProfile } from '../types';
 import { DS } from '../components/design-system';
 import { getDummyProfiles } from '../src/data/dummyData';
 
+const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties }> = ({ children, offset = 3, size = 2.5, radius, style = {} }) => (
+  <div style={{ position: "relative", borderRadius: radius, ...style }}>
+    <div style={{
+      position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset,
+      zIndex: -1, pointerEvents: "none",
+      backgroundImage: `radial-gradient(circle, #3D2B1F ${size}px, transparent ${size}px)`,
+      backgroundSize: `${size * 2.2}px ${size * 2.2}px`,
+      borderRadius: "inherit", opacity: 0.35,
+    }} />
+    {children}
+  </div>
+);
+
 interface CardProps {
   id: string;
   name: string;
@@ -60,7 +73,7 @@ const ProfileCard: React.FC<CardProps> = ({
           opacity: 1,
         }}
         transition={{
-          duration: 1,
+          duration: 0.8,
           ease: "easeIn",
         }}
         style={{
@@ -103,9 +116,8 @@ const ProfileCard: React.FC<CardProps> = ({
         opacity: 1,
       }}
       transition={{
-        type: "spring",
-        stiffness: 120,
-        damping: 15,
+        duration: 0.5,
+        ease: [0.34, 1.56, 0.64, 1],
       }}
       whileHover={!isSelected && !isOtherSelected && isRevealed ? {
         y: -4,
@@ -262,7 +274,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
   useEffect(() => {
     const timer = setTimeout(() => {
       setPhase('reveal');
-    }, 1200);
+    }, 800);
     return () => clearTimeout(timer);
   }, []);
 
@@ -286,21 +298,14 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
       background: DS.cream,
       position: "relative",
       overflow: "hidden",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
     }}>
       {/* NAV */}
       <motion.nav
         initial={{ opacity: 0 }}
         animate={{ opacity: selectedId ? 0 : 1 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
         style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
+        position: "relative",
         zIndex: 200,
         display: "flex",
         alignItems: "center",
@@ -354,72 +359,52 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
         </div>
       </motion.nav>
 
-      {/* Headers */}
-      <AnimatePresence>
-        {phase === 'reveal' && (
-          <>
-            <motion.h1
+      {/* Main content area */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "16px 40px 24px", maxWidth: 1400, margin: "0 auto", width: "100%" }}>
+        
+        {/* Headers - matching LandingView position */}
+        <AnimatePresence>
+          {phase === 'reveal' && (
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: selectedId ? 0 : 1 }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
               style={{
-                position: 'absolute',
-                top: 120,
-                fontFamily: "'Baloo 2', cursive",
-                fontSize: 42,
-                fontWeight: 800,
-                color: DS.ink,
-                marginBottom: 8,
-                zIndex: 50,
-                letterSpacing: "0.02em",
+                textAlign: 'center',
+                padding: "20px 0",
               }}
             >
-              Welcome back!
-            </motion.h1>
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: selectedId ? 0 : 1, y: selectedId ? -20 : 0 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-              style={{
-                position: 'absolute',
-                top: 180,
-                zIndex: 50,
-              }}
-            >
-              <div style={{
-                position: "relative",
-                background: "#1A1A2E",
-                border: DS.border,
-                borderRadius: DS.radius.lg,
-                padding: "8px 32px",
-                boxShadow: "5px 5px #3D2B1F",
-              }}>
-                <span style={{
-                  fontFamily: "'Baloo 2', cursive",
-                  fontSize: 28,
-                  fontWeight: 800,
-                  color: "#fff",
-                  lineHeight: 1.1,
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                }}>
-                  Who is learning today?
-                </span>
+              <div style={{ display: "inline-block", transform: "rotate(-2deg)" }}>
+                <Shadow offset={5} size={3} radius={DS.radius.lg}>
+                  <div style={{ position: "relative", background: "#1A1A2E", border: DS.border, borderRadius: DS.radius.lg, padding: "8px 32px" }}>
+                    <span style={{
+                      fontFamily: "'Baloo 2', cursive",
+                      fontSize: 28,
+                      fontWeight: 800,
+                      color: "#fff",
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                    }}>
+                      Who is learning today?
+                    </span>
+                  </div>
+                </Shadow>
               </div>
+              <p style={{ 
+                fontFamily: "'Baloo 2', cursive", 
+                fontSize: 18, 
+                fontWeight: 700, 
+                color: DS.ink,
+                marginTop: 20,
+              }}>
+                Pick a card to take you to your dashboard
+              </p>
             </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
 
-      {/* Cards Container */}
-      <div style={{
-        position: 'relative',
-        width: '100%',
-        height: 400,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
+        {/* Cards Container */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
         {allCards.map((card: CardItem) => (
           <ProfileCard
             key={card.id}
@@ -442,30 +427,29 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
         ))}
       </div>
 
-      {/* Footer text */}
+      {/* Footer */}
       <AnimatePresence>
         {phase === 'reveal' && (
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: selectedId ? 0 : 1, y: selectedId ? 20 : 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: selectedId ? 0 : 1 }}
+            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
             style={{
               position: 'absolute',
-              bottom: 60,
+              bottom: 80,
               left: 0,
               right: 0,
               textAlign: 'center',
-              fontFamily: "'Baloo 2', cursive",
-              fontSize: 18,
-              fontWeight: 700,
-              color: DS.ink,
               zIndex: 50,
             }}
           >
-            Pick a card to take you to your dashboard
-          </motion.p>
+            <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: DS.inkFade, marginTop: 4 }}>
+              Already have an account? <span style={{ color: DS.ink, cursor: "pointer", textDecoration: "underline" }} onClick={() => window.location.href = '/landingview'}>Sign in here</span>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 };

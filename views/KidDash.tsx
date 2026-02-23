@@ -140,8 +140,18 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
         );
     }
 
-    const themeColor = child.themeColor === 'purple' ? '#9B6DD6' : child.themeColor === 'blue' ? '#2B8ED4' : '#4CAF50';
-    const tintColor = child.themeColor === 'purple' ? '#F3EEFF' : child.themeColor === 'blue' ? '#E3F2FD' : '#E8F5E9';
+    const themeColor = child.themeColor === 'purple' ? '#9B6DD6' 
+        : child.themeColor === 'blue' ? '#2B8ED4'
+        : child.themeColor === 'green' ? '#4CAF8A'
+        : child.themeColor === 'amber' ? '#F5A623'
+        : child.themeColor === 'rose' ? '#FF6B6B'
+        : '#9B6DD6';
+    const tintColor = child.themeColor === 'purple' ? '#F3EEFF' 
+        : child.themeColor === 'blue' ? '#EAF4FC'
+        : child.themeColor === 'green' ? '#EDFAF4'
+        : child.themeColor === 'amber' ? '#FFF8EC'
+        : child.themeColor === 'rose' ? '#FFF0F0'
+        : '#F3EEFF';
     
     const profile = {
         name: child.name,
@@ -265,13 +275,13 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
                     </div>
                     <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
                         <Chip icon="✅" val={`${todayDone}/${totalToday}`} label="TODAY" color={profile.color} />
-                        <Chip icon="🔥" val={`${streak} days`} label="STREAK" color="#F5A623" />
-                        <Chip icon="⭐" val={`+${xp}`} label="XP" color="#9B6DD6" />
+                        <Chip icon="🔥" val={`${streak} days`} label="STREAK" color={profile.color} />
+                        <Chip icon="⭐" val={`+${xp}`} label="XP" color={profile.color} />
                     </div>
                 </div>
 
                 {/* TODAY'S PLAN */}
-                <SectionHead label="TODAY'S PLAN" color={DS.ink} />
+                <SectionHead label="TODAY'S PLAN" color={profile.color} />
                 <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6, paddingTop: 8, marginBottom: 28 }}>
                     {schedule.map((item, i) => {
                         const cfg = statusCfg[item.status] || statusCfg.pending;
