@@ -184,9 +184,18 @@ export const LandingView: React.FC = () => {
   const [headerVisible, setHeaderVisible] = useState(true);
   const [footerVisible, setFooterVisible] = useState(false);
   
+  const isFiller = (id: string) => id.startsWith('filler');
   const p = RETURNING_PROFILES[activeIndex];
 
-  const isFiller = (id: string) => id.startsWith('filler');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const timer1 = setTimeout(() => setAnimationStage('dealing'), 800);
+    const timer2 = setTimeout(() => setAnimationStage('carousel'), 1600);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
 
   const cardOffsets = useMemo(() => {
     return ALL_CARDS.map((_, i) => ({
@@ -203,15 +212,6 @@ export const LandingView: React.FC = () => {
       messyRotate: ((i * 17) % 5) - 2,
       messyY: ((i * 23) % 10) - 5,
     }));
-  }, []);
-
-  useEffect(() => {
-    const timer1 = setTimeout(() => setAnimationStage('dealing'), 800);
-    const timer2 = setTimeout(() => setAnimationStage('carousel'), 1600);
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
   }, []);
 
   useEffect(() => {

@@ -34,6 +34,14 @@
 
 ---
 
+## 2026-02-25 - Version 3.13.1 (Bug Fix)
+
+### Fixed
+- **LandingView** - Fixed missing state declarations causing crash
+- Animation cycle now runs once and stays in carousel mode
+
+---
+
 ## 2026-02-24 - Version 3.12.0 (Major Refactor)
 
 ### Added
