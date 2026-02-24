@@ -8,6 +8,51 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-24 - AdminDash Sidebar & Marketplace
+
+**User Request:**
+> on admindashview, i need a sidebar button for curriculum builder and one for marketplace.
+> marketplace cards to be similar to subject cards in the admindashview. i want the colours for each subject, and the hover transitions and animations.
+
+**Session Actions:**
+- Added Curriculum Builder and Marketplace sidebar buttons to AdminDash
+- Created new Marketplace view at `/marketplace`
+- Styled marketplace cards to match AdminDash subject cards:
+  - Subject-specific colors via getSubjectColor()
+  - Hover transition (translate -2px, -2px)
+  - Border color change on hover
+  - Benday shadow effect
+  - Staggered fadeUp animations
+  - Icon in colored rounded square, stars, progress badge
+
+**Files Modified:**
+- `views/AdminDash.tsx` - Added sidebar buttons
+- `views/Marketplace.tsx` - New marketplace view
+- `App.tsx` - Added route for /marketplace
+
+---
+
+## 2026-02-24 - Major Refactor & Code Cleanup
+
+**User Request:**
+> [recent commit: major refactor and delete old code]
+
+**Session Actions:**
+- Deleted old unused dashboard files:
+  - `claude views/AdminDashboard.jsx` (203 lines)
+  - `claude views/KidsDashboard.jsx` (272 lines)
+  - `claude views/LandingPage.jsx` (208 lines)
+  - `claude views/LessonView.jsx` (227 lines)
+  - `claude views/LessonViewInline.txt` (277 lines)
+  - `daddy_dashboard_FINAL.jsx` (745 lines)
+  - `supabase_schema.sql` (170 lines)
+- App.tsx reduced from 4237 lines to 341 lines (92% reduction)
+- Build passes successfully
+
+**Result:** App.tsx now cleanly uses v6 views with React.lazy() - LandingView, AdminDash, KidDash, LessonView, ReturningView.
+
+---
+
 ## 2026-02-22 - Landing Page Carousel Redesign
 
 **User Request:**

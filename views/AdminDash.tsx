@@ -297,6 +297,25 @@ export const AdminDash: React.FC = () => {
           <span style={{ fontSize: 16 }}>📈</span>
           {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 600, whiteSpace: "nowrap" }}>Reports</span>}
         </div>
+
+        {/* Curriculum Builder */}
+        <div 
+          onClick={() => window.location.href = '/curriculum'}
+          style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", borderLeft: "4px solid transparent" }}
+        >
+          <span style={{ fontSize: 16 }}>📚</span>
+          {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 600, whiteSpace: "nowrap" }}>Curriculum Builder</span>}
+        </div>
+
+        {/* Marketplace */}
+        <div 
+          onClick={() => window.location.href = '/marketplace'}
+          style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", borderLeft: "4px solid transparent" }}
+        >
+          <span style={{ fontSize: 16 }}>🛒</span>
+          {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 600, whiteSpace: "nowrap" }}>Marketplace</span>}
+        </div>
+
         <div 
           onClick={() => document.getElementById('section-settings')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", borderLeft: "4px solid transparent" }}

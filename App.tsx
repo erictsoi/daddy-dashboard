@@ -13,6 +13,7 @@ const AdminDash = lazy(() => import('./views/AdminDash').then(m => ({ default: m
 const KidDash = lazy(() => import('./views/KidDash').then(m => ({ default: m.KidDash })));
 const LessonView = lazy(() => import('./views/LessonView').then(m => ({ default: m.LessonView })));
 const ReturningView = lazy(() => import('./views/ReturningView').then(m => ({ default: m.ReturningView })));
+const Marketplace = lazy(() => import('./views/Marketplace').then(m => ({ default: m.Marketplace })));
 import { LandingView } from './views/LandingView';
 
 import { AdminAvatarEditModal } from './app/AdminAvatarEditModal';
@@ -878,6 +879,7 @@ const App: React.FC = () => {
         <Route path="/lessonview" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><LessonView childId={new URLSearchParams(window.location.search).get('child') || 'sophia'} lessonId={new URLSearchParams(window.location.search).get('lesson') || ''} /></Suspense>} />
         <Route path="/admin" element={<Navigate to="/admindash" replace />} />
         <Route path="/curriculum" element={<Navigate to="/admindash" replace />} />
+        <Route path="/marketplace" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><Marketplace /></Suspense>} />
         <Route path="/manage" element={<Navigate to="/admindash" replace />} />
         <Route path="/kiddash" element={<KidDash childId={new URLSearchParams(window.location.search).get('child') || 'sophia'} />} />
         <Route path="*" element={<Navigate to="/" replace />} />

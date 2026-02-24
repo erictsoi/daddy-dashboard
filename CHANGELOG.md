@@ -8,6 +8,30 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-24 - Version 3.12.0 (Major Refactor)
+
+### Added
+- **Marketplace view** - New `/marketplace` route with:
+  - Category filter buttons (All, Maths, Science, English, History, Art, Music)
+  - Product cards styled like AdminDash subject cards
+  - Subject-specific colors, hover transitions, Benday shadows
+  - Staggered fadeUp animations
+- **AdminDash sidebar** - Added Curriculum Builder and Marketplace links
+
+### Changed
+- **App.tsx** - Major refactor removing 4237 lines of dead code:
+  - Removed old dashboard views: AdminDashboard.jsx, KidsDashboard.jsx, LandingPage.jsx, LessonView.jsx
+  - Removed unused files: daddy_dashboard_FINAL.jsx, supabase_schema.sql, LessonViewInline.txt
+  - App.tsx reduced from 4237 to 341 lines (92% reduction)
+- **Code cleanup** - Deleted obsolete Claude-generated draft files
+- **Build passes** - Production build successful
+
+### Technical
+- Now uses v6 views: LandingView, AdminDash, KidDash, LessonView, ReturningView, Marketplace
+- All views properly lazy-loaded with React.lazy()
+
+---
+
 ## 2026-02-22 - Version 3.9.0 (Landing Page Redesign)
 
 ### Changed
