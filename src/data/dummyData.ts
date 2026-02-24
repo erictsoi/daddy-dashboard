@@ -19,12 +19,12 @@ const THEME_COLOR_NAMES: Record<string, string> = {
 };
 
 export const DUMMY_PROFILES = [
-  { id: "amara", name: "Amara", year: "Year 1", age: "5-6", color: "#FF6B6B", tint: "#FFF0F0", emoji: "🦋", interests: ["Animals", "Drawing", "Singing", "Nature"] },
-  { id: "marcus", name: "Marcus", year: "Year 3", age: "7-8", color: "#4CAF8A", tint: "#EDFAF4", emoji: "🦖", interests: ["Dinosaurs", "Football", "Building", "Comics"] },
-  { id: "sophia", name: "Sophia", year: "Year 5", age: "9-10", color: "#9B6DD6", tint: "#F3EEFF", emoji: "🎨", interests: ["Art", "Dance", "Music", "Sports"] },
-  { id: "kai", name: "Kai", year: "Year 7", age: "11-12", color: "#F5A623", tint: "#FFF8EC", emoji: "🛹", interests: ["Gaming", "Skateboarding", "History", "Film"] },
-  { id: "adrian", name: "Adrian", year: "Year 9", age: "13-14", color: "#2B8ED4", tint: "#EAF4FC", emoji: "🏀", interests: ["Design", "Maths", "Science", "Basketball"] },
-  { id: "rohan", name: "Rohan", year: "Year 11", age: "15-16", color: "#E8507A", tint: "#FFF0F5", emoji: "📸", interests: ["Coding", "Photography", "Film", "Economics"] },
+  { id: "amara", name: "Amara", year: "Year 1", age: "5-6", color: "#FF6B6B", tint: "#FFF0F0", emoji: "🎤", image: "/profile-pics/amara.jpg", interests: ["Animals", "Drawing", "Singing", "Nature"] },
+  { id: "marcus", name: "Marcus", year: "Year 3", age: "7-8", color: "#4CAF8A", tint: "#EDFAF4", emoji: "🦖", image: "/profile-pics/marcus.jpg", interests: ["Dinosaurs", "Football", "Building", "Comics"] },
+  { id: "sophia", name: "Sophia", year: "Year 5", age: "9-10", color: "#9B6DD6", tint: "#F3EEFF", emoji: "🎨", image: "/profile-pics/sophia.jpg", interests: ["Art", "Dance", "Music", "Sports"] },
+  { id: "kai", name: "Kai", year: "Year 7", age: "11-12", color: "#F5A623", tint: "#FFF8EC", emoji: "🛹", image: "/profile-pics/kai.jpg", interests: ["Gaming", "Skateboarding", "History", "Film"] },
+  { id: "adrian", name: "Adrian", year: "Year 9", age: "13-14", color: "#2B8ED4", tint: "#EAF4FC", emoji: "🏀", image: "/profile-pics/adrian.jpg", interests: ["Design", "Maths", "Science", "Basketball"] },
+  { id: "rohan", name: "Rohan", year: "Year 11", age: "15-16", color: "#E8507A", tint: "#FFF0F5", emoji: "📸", image: "/profile-pics/rohan.jpg", interests: ["Coding", "Photography", "Film", "Economics"] },
 ];
 
 const createDummyChild = (profile: typeof DUMMY_PROFILES[0]): ChildProfile => {

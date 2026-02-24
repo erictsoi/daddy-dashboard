@@ -8,6 +8,32 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-25 - Version 3.13.0 (Profile Cards Redesign)
+
+### Added
+- **Pokemon-style profile cards** - New card design applied to LandingView and ReturningView:
+  - Colored border (10px), white inner card with black 3px border
+  - Name at top (left), year at top (right)
+  - Rectangular image (170x180) with black border
+  - Metadata section at bottom with age and interests
+  - ACTIVE chip that fades in when card is centered
+- **TempGridView** - Test view at `/temp-grid` for card prototyping
+- **Profile pics** - Added actual photos for all 6 kids
+
+### Changed
+- **LandingView** - Applied new card design with carousel animation
+- **ReturningView** - Applied new card design with fanned stack layout
+- **Card animations** - Click to select scales card up 1.5x
+- **Spacing adjustments** - Card gap, xOffset tuned for centering
+- **Amara emoji** - Changed to microphone 🎤
+
+### Technical
+- Cards: 220x320px, image: 170x180px, border-radius: 16px
+- Animation: stack → dealing → carousel stages
+- Reading mode: selected card scales 1.5x, others fade out
+
+---
+
 ## 2026-02-24 - Version 3.12.0 (Major Refactor)
 
 ### Added

@@ -8,6 +8,41 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-25 - Profile Cards Redesign
+
+**User Request:**
+> make the profile pics full height
+> apply these cards to landingview and returningview pls
+> cards in returning view dont look the same as tempview and landingview
+> make the centreline of the screen
+> make it a chip that is over teh card
+> when i click on a card it shoudl grow larger on the screen like im picking it up and reading it
+> make sure we apply this to all cards
+> for amara, change her emoji to a mircophone
+
+**Session Actions:**
+- Created Pokemon-style profile cards:
+  - 10px colored border, white inner card with 3px black border
+  - Name at top-left, year at top-right
+  - 170x180 image with black border
+  - Metadata at bottom with age and interests
+- Applied to LandingView and ReturningView
+- Added ACTIVE chip that fades in when card is centered
+- Fixed centering: card scales from center using marginLeft/marginTop
+- Click to select: card grows 1.5x, others fade out
+- Fixed card spacing in ReturningView (gap -25)
+- Ordered profiles: admin (left) → amara → marcus → sophia → kai → adrian → rohan (right)
+- Added profile pics to public/profile-pics/
+
+**Files Modified:**
+- `views/LandingView.tsx` - New card design, carousel animation
+- `views/ReturningView.tsx` - New card design, fanned stack
+- `views/TempGridView.tsx` - Test view for prototyping
+- `src/data/dummyData.ts` - Added image paths, updated Amara emoji
+- `App.tsx` - Added routes for marketplace and temp-grid
+
+---
+
 ## 2026-02-24 - AdminDash Sidebar & Marketplace
 
 **User Request:**

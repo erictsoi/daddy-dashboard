@@ -20,7 +20,9 @@ const GlobalStyles = () => (
     .b  { font-family: 'Baloo 2', cursive; }
     .n  { font-family: 'Nunito', sans-serif; }
     @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+    @keyframes fadeIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
     .float { animation: float 3s ease-in-out infinite; }
+    .fadeIn { animation: fadeIn 0.3s ease-out both; }
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: #EDE8E0; }
     ::-webkit-scrollbar-thumb { background: #C4BBAF; border-radius: 3px; }
@@ -48,6 +50,107 @@ const Tag = ({ label, color, dark = false }: { label: string; color: string; dar
   <Shadow offset={2} size={2} radius={DS.radius.pill} style={{ display: "inline-block" }}>
     <div style={{ position: "relative", background: dark ? DS.ink : color, border: DS.border, borderRadius: DS.radius.pill, padding: "3px 13px" }}>
       <span className="n" style={{ color: "#fff", fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>{label}</span>
+    </div>
+  </Shadow>
+);
+
+// Pokemon-style Profile Card Component
+const ProfileCard: React.FC<{ profile: typeof RETURNING_PROFILES[0]; isActive?: boolean; onClick?: () => void }> = ({ profile, isActive, onClick }) => (
+  <Shadow offset={isActive ? 5 : 3} size={isActive ? 3 : 2.5} radius={16}>
+    <div 
+      style={{ 
+        position: "relative", 
+        background: profile.color, 
+        border: DS.border, 
+        borderRadius: 16, 
+        cursor: onClick ? "pointer" : "default",
+        transition: "transform 0.15s",
+        overflow: "visible",
+        width: 220,
+        height: 320,
+        padding: 10
+      }}
+      onClick={onClick}
+    >
+      {isActive && (
+        <div style={{ position: "absolute", top: -12, right: -4, zIndex: 20 }}>
+          <Shadow offset={2} size={2} radius={DS.radius.pill}>
+            <div className="fadeIn" style={{ position: "relative", background: "#FF6B6B", color: "#fff", fontSize: 8, fontWeight: 900, padding: "4px 8px", borderRadius: DS.radius.pill, border: DS.border, fontFamily: "Nunito,sans-serif", letterSpacing: .5 }}>ACTIVE</div>
+          </Shadow>
+        </div>
+      )}
+      {/* Inner white card with black border */}
+      <div style={{
+        width: "100%",
+        height: "100%",
+        background: "white",
+        borderRadius: 8,
+        border: "3px solid black",
+        overflow: "hidden"
+      }}>
+        {/* Name and Year at top */}
+        <div style={{
+          height: 28,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 10px"
+        }}>
+          <span style={{ 
+            fontSize: 14, 
+            fontWeight: 800, 
+            color: profile.color,
+            textTransform: "uppercase",
+            letterSpacing: 1
+          }}>
+            {profile.name}
+          </span>
+          <span style={{ 
+            fontSize: 11, 
+            fontWeight: 700, 
+            color: "#333"
+          }}>
+            {profile.year}
+          </span>
+        </div>
+
+        {/* Rectangular image */}
+        <div style={{
+          width: 170,
+          height: 180,
+          margin: "0 auto",
+          border: "3px solid black",
+          borderRadius: 4,
+          overflow: "hidden",
+          background: "white"
+        }}>
+          <img 
+            src={profile.image} 
+            alt={profile.name}
+            style={{ 
+              width: "100%", 
+              height: "100%", 
+              objectFit: "cover"
+            }}
+          />
+        </div>
+
+        {/* Metadata rectangle */}
+        <div style={{
+          width: 170,
+          height: 60,
+          margin: "0 auto 6px",
+          background: "white",
+          padding: "8px"
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 3 }}>
+            Age: {profile.age}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", lineHeight: 1.3 }}>
+            {profile.interests?.join(" · ")}
+          </div>
+        </div>
+      </div>
     </div>
   </Shadow>
 );
@@ -137,7 +240,7 @@ export const LandingView: React.FC = () => {
       setReadingProfileId(profileId);
       setTimeout(() => {
         window.location.href = profileId === 'admin' ? '/admindash' : `/kiddash?child=${profileId}`;
-      }, 800);
+      }, 1500);
     } else {
       setActiveIndex(returningIndex);
     }
@@ -156,19 +259,24 @@ export const LandingView: React.FC = () => {
   const getCardStyle = (index: number, profileId: string): React.CSSProperties => {
     const isFillerCard = isFiller(profileId);
     
+    // Handle "reading" mode - selected card scales up, others scale down
     if (readingProfileId) {
       if (profileId === readingProfileId) {
         return {
-          transform: `translateX(calc(-50% + 0px)) translateY(0px) scale(1.5) rotate(0deg)`,
+          transform: `scale(1.5)`,
           zIndex: 1000,
           opacity: 1,
-          transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
+          transition: "transform 0.5s cubic-bezier(.34,1.56,.64,1)",
         };
       }
-      const baseStyle = getCarouselStyle(index, profileId);
-      return { ...baseStyle, scale: 0.8, opacity: 0, transition: "all 0.4s ease-out" };
+      return {
+        transform: `scale(0.5)`,
+        zIndex: 0,
+        opacity: 0,
+        transition: "all 0.3s ease-out",
+      };
     }
-
+    
     if (animationStage === 'stack') {
       const offsets = cardOffsets[index];
       return {
@@ -193,6 +301,7 @@ export const LandingView: React.FC = () => {
 
     if (animationStage === 'carousel') {
       if (isFillerCard) return { opacity: 0, scale: 0, zIndex: -1 };
+      
       return getCarouselStyle(index, profileId);
     }
 
@@ -208,7 +317,7 @@ export const LandingView: React.FC = () => {
     const absOffset = Math.abs(offset);
     const isVisible = absOffset <= 2;
 
-    const xOffset = offset * 120 + 120;
+    const xOffset = offset * 160 + 120;
     const yOffset = 0;
     const scale = 1 - absOffset * 0.1;
     const zIndex = 100 - absOffset;
@@ -277,7 +386,7 @@ export const LandingView: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ position: "relative", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", flex: 1, minHeight: 340, marginTop: -25, padding: "0 40px" }}>
+        <div style={{ position: "relative", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", flex: 1, minHeight: 400, padding: "0 40px" }}>
           {animationStage === 'carousel' && !readingProfileId && (
             <>
               <button onClick={goToPrev} style={{ position: "absolute", left: 20, width: 44, height: 44, borderRadius: "50%", border: DS.border, background: DS.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, boxShadow: "3px 3px #3D2B1F", zIndex: 100 }}>←</button>
@@ -288,6 +397,7 @@ export const LandingView: React.FC = () => {
             const style = getCardStyle(index, profile.id);
             const isReturning = !isFiller(profile.id);
             const isActive = isReturning && RETURNING_PROFILES.findIndex(p => p.id === profile.id) === activeIndex;
+            const isCentered = isActive && animationStage === 'carousel';
 
             if (!isReturning && animationStage === 'carousel') return null;
 
@@ -299,35 +409,21 @@ export const LandingView: React.FC = () => {
                   position: "absolute",
                   top: "50%",
                   left: "50%",
-                  width: 240,
-                  height: 312,
-                  marginLeft: -120,
-                  marginTop: -156,
+                  width: 220,
+                  height: 320,
+                  marginLeft: -110,
+                  marginTop: -160,
+                  transformOrigin: "center center",
                   cursor: isReturning && animationStage === 'carousel' ? 'pointer' : 'default',
+                  transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
                   ...style,
                 }}
               >
-                <Shadow offset={isActive ? 5 : 3} size={isActive ? 3 : 2.5} radius={DS.radius.lg}>
-                  <div style={{ position: "relative", width: 240, height: 312, background: profile.color, border: DS.border, borderRadius: DS.radius.lg, padding: isActive ? "22px 20px 18px" : "16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", transition: "all .4s" }}>
-                    {isActive && (
-                      <div style={{ position: "absolute", top: -14, right: 14 }}>
-                        <Shadow offset={2} size={2} radius={DS.radius.pill}>
-                          <div style={{ position: "relative", background: "#FF6B6B", color: "#fff", fontSize: 11, fontWeight: 900, padding: "4px 14px", borderRadius: DS.radius.pill, border: DS.border, fontFamily: "Nunito,sans-serif", letterSpacing: .5 }}>★ ACTIVE</div>
-                        </Shadow>
-                      </div>
-                    )}
-                    <div style={{ background: "rgba(255,255,255,.3)", border: DS.border, borderRadius: DS.radius.md, padding: 10, marginBottom: 10, textAlign: "center" }}>
-                      <div style={{ fontSize: 48, lineHeight: 1 }}>{profile.emoji}</div>
-                    </div>
-                    <Tag label={profile.year} color={profile.color} dark />
-                    <div style={{ fontFamily: "'Baloo 2', cursive", fontSize: 24, fontWeight: 800, color: "#fff", marginTop: 10, marginBottom: 8, textAlign: "center" }}>{profile.name}</div>
-                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center" }}>
-                      {(INTERESTS[profile.id] || []).slice(0, 2).map(int => (
-                        <span key={int} style={{ background: "rgba(255,255,255,.38)", border: `2px solid rgba(255,255,255,.6)`, borderRadius: DS.radius.pill, padding: "1px 8px", fontSize: 9, fontWeight: 800, color: "#fff", fontFamily: "Nunito,sans-serif", textTransform: "uppercase" }}>{int}</span>
-                      ))}
-                    </div>
-                  </div>
-                </Shadow>
+                <ProfileCard 
+                  profile={profile} 
+                  isActive={isCentered}
+                  onClick={() => isReturning && handleCardClick(index, profile.id)}
+                />
               </div>
             );
           })}

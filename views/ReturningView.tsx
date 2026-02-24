@@ -24,6 +24,9 @@ interface CardProps {
   emoji: string;
   color: string;
   tint: string;
+  age?: string;
+  interests?: string[];
+  image?: string;
   isAdmin?: boolean;
   isFiller?: boolean;
   initialOffset: { x: number; y: number; rotation: number };
@@ -42,6 +45,9 @@ const ProfileCard: React.FC<CardProps> = ({
   emoji,
   color,
   tint,
+  age,
+  interests,
+  image,
   isAdmin,
   isFiller,
   initialOffset,
@@ -77,17 +83,17 @@ const ProfileCard: React.FC<CardProps> = ({
           ease: "easeIn",
         }}
         style={{
-          width: 192,
-          height: 256,
+          width: 220,
+          height: 320,
           background: color,
-          border: '2px solid black',
+          border: '2.5px solid #1A1A2E',
           borderRadius: 16,
           position: 'absolute',
           top: '50%',
           left: '50%',
-          marginTop: -128,
-          marginLeft: -96,
-          boxShadow: '4px 4px black',
+          marginTop: -160,
+          marginLeft: -110,
+          boxShadow: '3px 3px #3D2B1F',
         }}
       />
     );
@@ -125,49 +131,100 @@ const ProfileCard: React.FC<CardProps> = ({
       } : undefined}
       onClick={onClick}
       style={{
-        width: 192,
-        height: 256,
+        width: 220,
+        height: 320,
         background: color,
-        border: '2px solid black',
+        border: '2.5px solid #1A1A2E',
         borderRadius: 16,
-        padding: '24px 16px',
-        textAlign: 'center',
+        padding: 10,
         cursor: 'pointer',
-        boxShadow: isSelected ? '2px 2px black' : '4px 4px black',
+        boxShadow: isSelected ? '2px 2px #3D2B1F' : '3px 3px #3D2B1F',
         position: 'absolute',
         top: '50%',
         left: '50%',
-        marginTop: -128,
-        marginLeft: -96,
+        marginTop: -160,
+        marginLeft: -110,
         transform: 'translate(-50%, -50%)',
         zIndex: isSelected ? 100 : 10,
       }}
     >
+      {/* Inner white card with black border */}
       <div style={{
-        background: 'rgba(255,255,255,.3)',
-        border: '2px solid rgba(255,255,255,.5)',
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 12,
+        width: "100%",
+        height: "100%",
+        background: "white",
+        borderRadius: 8,
+        border: "3px solid black",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column"
       }}>
-        <div style={{ fontSize: 48, lineHeight: 1 }}>{emoji}</div>
-      </div>
-      {year && (
+        {/* Name and Year at top */}
         <div style={{
-          display: 'inline-block',
-          background: 'rgba(255,255,255,.2)',
-          border: '2px solid rgba(255,255,255,.5)',
-          borderRadius: 20,
-          padding: '2px 10px',
-          marginBottom: 6,
+          height: 28,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 10px",
+          flexShrink: 0
         }}>
-          <span style={{ color: '#fff', fontSize: 10, fontWeight: 800 }}>{year.toUpperCase()}</span>
+          <span style={{ 
+            fontSize: 14, 
+            fontWeight: 800, 
+            color: color,
+            textTransform: "uppercase",
+            letterSpacing: 1
+          }}>
+            {name}
+          </span>
+          <span style={{ 
+            fontSize: 11, 
+            fontWeight: 700, 
+            color: "#333"
+          }}>
+            {year}
+          </span>
         </div>
-      )}
-      <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', marginBottom: 4 }}>{name}</div>
-      <p style={{ color: 'rgba(255,255,255,.8)', fontSize: 12 }}>
-        {isAdmin ? 'Dashboard & Admin' : 'Student Access'}
-      </p>
+
+        {/* Image with border */}
+        <div style={{
+          width: 170,
+          height: 180,
+          margin: "0 auto",
+          border: "3px solid black",
+          borderRadius: 4,
+          overflow: "hidden",
+          background: "white",
+          flexShrink: 0
+        }}>
+          <img 
+            src={isAdmin ? undefined : (image || `/profile-pics/${id}.jpg`)} 
+            alt={name}
+            style={{ 
+              width: "100%", 
+              height: "100%", 
+              objectFit: "cover",
+              display: id === 'admin' ? 'none' : 'block'
+            }}
+          />
+        </div>
+
+        {/* Metadata */}
+        <div style={{
+          width: 170,
+          height: 60,
+          margin: "0 auto 6px",
+          background: "white",
+          padding: "8px"
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 3 }}>
+            Age: {age || '5-16'}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", lineHeight: 1.3 }}>
+            {isAdmin ? 'Dashboard & Admin' : (interests?.join(" · ") || 'Student Access')}
+          </div>
+        </div>
+      </div>
     </motion.button>
   );
 };
@@ -202,7 +259,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
   const DEMO_PROFILES = getDummyProfiles();
 
   const PROFILES = [
-    { id: "admin", name: "Daddy", year: "Admin", age: "", color: "#1A1A2E", tint: "#E8E8E8", emoji: "👨", interests: ["Dashboard", "Settings"], isAdmin: true },
+    { id: "admin", name: "Daddy", year: "Admin", age: "", color: "#1A1A2E", tint: "#E8E8E8", emoji: "👨", image: undefined, interests: ["Dashboard", "Settings"], isAdmin: true },
     ...DEMO_PROFILES.map(child => ({
       id: child.id,
       name: child.name,
@@ -211,6 +268,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
       color: child.color,
       tint: child.tint,
       emoji: child.emoji,
+      image: child.image,
       interests: child.interests,
       isAdmin: false,
     })),
@@ -245,8 +303,8 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
     },
   }));
 
-  const CARD_WIDTH = 192;
-  const GAP = 24;
+  const CARD_WIDTH = 220;
+  const GAP = -25;
   const totalWidth = PROFILES.length * CARD_WIDTH + (PROFILES.length - 1) * GAP;
   const startX = -totalWidth / 2 + CARD_WIDTH / 2;
 
