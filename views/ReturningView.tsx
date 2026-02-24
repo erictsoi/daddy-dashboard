@@ -170,8 +170,8 @@ const ProfileCard: React.FC<CardProps> = ({
         }}>
           <span style={{ 
             fontSize: 14, 
-            fontWeight: 800,
-            fontFamily: "'Baloo 2', cursive",
+            fontWeight: "bold",
+            fontFamily: "Baloo 2, cursive, sans-serif",
             color: color,
             textTransform: "uppercase",
             letterSpacing: 1
@@ -219,7 +219,7 @@ const ProfileCard: React.FC<CardProps> = ({
           <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 3 }}>
             Age: {age || '5-16'}
           </div>
-          <div style={{ fontSize: 12, fontFamily: "'Nunito', sans-serif", color: "#666", lineHeight: 1.3 }}>
+          <div style={{ fontSize: 12, fontFamily: "Nunito, sans-serif", color: "#666", lineHeight: 1.3 }}>
             {isAdmin ? 'Dashboard & Admin' : (interests?.join(" · ") || 'Student Access')}
           </div>
         </div>

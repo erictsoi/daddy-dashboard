@@ -98,8 +98,8 @@ const ProfileCard: React.FC<{ profile: typeof RETURNING_PROFILES[0]; isActive?: 
         }}>
           <span style={{ 
             fontSize: 14, 
-            fontWeight: 800,
-            fontFamily: "'Baloo 2', cursive",
+            fontWeight: "bold",
+            fontFamily: "Baloo 2, cursive, sans-serif",
             color: profile.color,
             textTransform: "uppercase",
             letterSpacing: 1
@@ -145,7 +145,7 @@ const ProfileCard: React.FC<{ profile: typeof RETURNING_PROFILES[0]; isActive?: 
           <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 3 }}>
             Age: {profile.age}
           </div>
-          <div style={{ fontSize: 12, fontFamily: "'Nunito', sans-serif", color: "#666", lineHeight: 1.3 }}>
+          <div style={{ fontSize: 12, fontFamily: "Nunito, sans-serif", color: "#666", lineHeight: 1.3 }}>
             {profile.interests?.join(" · ")}
           </div>
         </div>
