@@ -99,7 +99,7 @@ const ProfileCard: React.FC<{ profile: typeof RETURNING_PROFILES[0]; isActive?: 
           <span style={{ 
             fontSize: 14, 
             fontWeight: 800, 
-            color: profile.color,
+            color: "#2B8ED4",
             textTransform: "uppercase",
             letterSpacing: 1
           }}>

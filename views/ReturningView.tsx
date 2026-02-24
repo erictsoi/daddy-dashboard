@@ -171,7 +171,7 @@ const ProfileCard: React.FC<CardProps> = ({
           <span style={{ 
             fontSize: 14, 
             fontWeight: 800, 
-            color: color,
+            color: "#2B8ED4",
             textTransform: "uppercase",
             letterSpacing: 1
           }}>
@@ -243,6 +243,7 @@ interface CardItem {
   finalY?: number;
   age?: string;
   interests?: string[];
+  image?: string;
 }
 
 interface ReturningViewProps {
@@ -472,6 +473,9 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
             emoji={card.emoji}
             color={card.color}
             tint={card.tint}
+            age={card.age}
+            interests={card.interests}
+            image={card.image}
             isAdmin={card.isAdmin}
             isFiller={card.isFiller}
             initialOffset={card.initialOffset}
