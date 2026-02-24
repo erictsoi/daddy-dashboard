@@ -170,8 +170,9 @@ const ProfileCard: React.FC<CardProps> = ({
         }}>
           <span style={{ 
             fontSize: 14, 
-            fontWeight: 800, 
-            color: "#2B8ED4",
+            fontWeight: 800,
+            fontFamily: "'Baloo 2', cursive",
+            color: color,
             textTransform: "uppercase",
             letterSpacing: 1
           }}>
@@ -211,16 +212,14 @@ const ProfileCard: React.FC<CardProps> = ({
 
         {/* Metadata */}
         <div style={{
-          width: 170,
-          height: 60,
-          margin: "0 auto 6px",
+          margin: "0 0 6px 0",
           background: "white",
           padding: "8px"
         }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 3 }}>
             Age: {age || '5-16'}
           </div>
-          <div style={{ fontSize: 12, color: "#666", lineHeight: 1.3 }}>
+          <div style={{ fontSize: 12, fontFamily: "'Nunito', sans-serif", color: "#666", lineHeight: 1.3 }}>
             {isAdmin ? 'Dashboard & Admin' : (interests?.join(" · ") || 'Student Access')}
           </div>
         </div>
