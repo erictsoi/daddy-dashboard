@@ -148,7 +148,7 @@ const ProfileCard: React.FC<CardProps> = ({
         x: isSelected ? 0 : finalX,
         y: isSelected ? finalY : finalY,
         rotate: isSelected ? 0 : 0,
-        scale: isSelected ? 1.5 : isOtherSelected ? 0.8 : 1,
+        scale: isSelected ? 1.8 : isOtherSelected ? 0.8 : 1,
         opacity: isOtherSelected ? 0 : 1,
       } : {
         x: initialOffset.x,
@@ -187,7 +187,7 @@ const ProfileCard: React.FC<CardProps> = ({
       }}
     >
       <Shadow
-        scale={isSelected ? 1.5 : 1}
+        scale={isSelected ? 1.8 : 1}
         offset={4}
         size={3}
         radius={16}
@@ -410,7 +410,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
       } else {
         window.location.href = '/kiddash?child=' + card.id;
       }
-    }, 800);
+    }, 1500);
   };
 
   return (

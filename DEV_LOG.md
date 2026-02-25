@@ -14,6 +14,13 @@
 
 ## Recent Changes (2026-02-26)
 
+### v3.13.7 - Enhanced Expansion Animation
+- **Expansion Scale**: Increased selection scale from 1.5x to 1.8x in `ReturningView.tsx` to match the "expand" feel.
+- **Selection Timing**: Extended `setTimeout` navigation delay to 1500ms.
+- **Consistency**: Synchronized expansion behavior with `LandingView.tsx`.
+- **Version bump**: v3.13.7.
+- **Build**: Successful production build.
+
 ### v3.13.6 - Typography Thickness Refinement
 - **Faux Bold**: Implemented `text-shadow` based thickening for child names in `LandingView.tsx` and `ReturningView.tsx`.
 - **Thickness**: Achieved ~125% extra thickness as requested while maintaining readability.
