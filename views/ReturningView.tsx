@@ -227,7 +227,7 @@ const ProfileCard: React.FC<CardProps> = ({
             }}>
               <span style={{
                 fontSize: 14,
-                fontWeight: "bold",
+                fontWeight: 900,
                 fontFamily: "Baloo 2, cursive, sans-serif",
                 color: color,
                 textTransform: "uppercase",
@@ -271,7 +271,8 @@ const ProfileCard: React.FC<CardProps> = ({
             <div style={{
               margin: "0 0 6px 0",
               background: "white",
-              padding: "8px"
+              padding: "8px",
+              textAlign: "left"
             }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 3, fontFamily: "'Nunito', sans-serif" }}>
                 Age: {age || '5-16'}

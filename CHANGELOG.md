@@ -8,6 +8,11 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-26 - v3.13.5 - Card Layout & Typography Refinement
+- **Metadata Alignment**: Aligned metadata rectangle text to the left in `ReturningView.tsx`.
+- **Typographic Weight**: Increased card title `fontWeight` to `900` in both `LandingView.tsx` and `ReturningView.tsx`.
+- **Version bump**: v3.13.5.
+
 ## 2026-02-26 - v3.13.4 - Benday Dot Standardization
 - **Visuals**: Enlarged benday dots to `3px` across all components and views for better contrast and premium feel.
 - **Design System**: Restored benday dots to global `Shadow` component in `design-system.tsx`.

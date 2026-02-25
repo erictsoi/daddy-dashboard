@@ -14,6 +14,12 @@
 
 ## Recent Changes (2026-02-26)
 
+### v3.13.5 - Card Layout & Typography Refinement
+- **Metadata Alignment**: Aligned metadata rectangle text to the left in `ReturningView.tsx` to match `LandingView.tsx`.
+- **Typographic Weight**: Increased card title `fontWeight` to `900` in both `LandingView.tsx` and `ReturningView.tsx`.
+- **Version bump**: v3.13.5.
+- **Build**: Successful production build.
+
 ### v3.13.4 - Benday Dot Standardization
 - **Standardized `size` props**: Set default `size` to `3` in `Shadow` and `BendayShadow` components app-wide.
 - **Global `Shadow` Restore**: Re-implemented `BendayShadow` within the global `Shadow` component in `design-system.tsx`.
@@ -153,6 +159,10 @@
 - [x] Standardize benday dots across the application
 - [x] Increase benday dot size to 3px for a premium look
 - [x] Verify visual consistency across all views
+- [x] Align metadata to the left in `ReturningView.tsx`
+- [x] Embolden card titles in `LandingView.tsx` and `ReturningView.tsx` (fontWeight 900)
+- [x] Verify changes and update version to v3.13.5
+- [x] Push changes to GitHub
 - [x] Add Sophia/Adrian specific nav buttons
 
 ### Phase 3: Demo Views (Completed ✅)

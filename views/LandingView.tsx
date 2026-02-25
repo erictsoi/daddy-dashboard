@@ -129,7 +129,7 @@ const ProfileCard: React.FC<{ profile: typeof RETURNING_PROFILES[0]; isActive?: 
             }}>
               <span style={{
                 fontSize: 14,
-                fontWeight: "bold",
+                fontWeight: 900,
                 fontFamily: "Baloo 2, cursive, sans-serif",
                 color: profile.color,
                 textTransform: "uppercase",
