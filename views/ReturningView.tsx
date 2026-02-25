@@ -12,7 +12,20 @@ const GlobalStyles = () => (
     .b  { font-family: 'Baloo 2', cursive; }
     .n  { font-family: 'Nunito', sans-serif; }
     @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-    .bounce { animation: bounce 1.5s ease-in-out infinite; }
+    .bounce-card { animation: bounce 0.75s ease-in-out infinite; }
+    .card-shadow {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      right: -5px;
+      bottom: -5px;
+      z-index: -1;
+      pointer-events: none;
+      background-image: radial-gradient(circle, #3D2B1F 2.5px, transparent 2.5px);
+      background-size: 5.5px 5.5px;
+      border-radius: 16px;
+      opacity: 0.35;
+    }
   `}</style>
 );
 
@@ -113,6 +126,7 @@ const ProfileCard: React.FC<CardProps> = ({
 
   return (
     <motion.button
+      className={isSelected ? "bounce-card" : ""}
       initial={{
         x: initialOffset.x,
         y: initialOffset.y,
@@ -122,7 +136,7 @@ const ProfileCard: React.FC<CardProps> = ({
       }}
       animate={isRevealed ? {
         x: isSelected ? 0 : finalX,
-        y: isSelected ? 0 : finalY,
+        y: isSelected ? finalY : finalY,
         rotate: isSelected ? 0 : 0,
         scale: isSelected ? 1.5 : isOtherSelected ? 0.8 : 1,
         opacity: isOtherSelected ? 0 : 1,
@@ -142,7 +156,6 @@ const ProfileCard: React.FC<CardProps> = ({
         y: -4,
         transition: { duration: 0.2 }
       } : undefined}
-      className={isSelected ? "bounce" : ""}
       onClick={onClick}
       style={{
         position: 'absolute',
@@ -161,20 +174,8 @@ const ProfileCard: React.FC<CardProps> = ({
         zIndex: isSelected ? 100 : 10,
       }}
     >
-      {/* Benday dot shadow - moves with card */}
-      <div style={{
-        position: "absolute",
-        top: 5,
-        left: 5,
-        right: -5,
-        bottom: -5,
-        zIndex: -1,
-        pointerEvents: "none",
-        backgroundImage: `radial-gradient(circle, #3D2B1F 2.5px, transparent 2.5px)`,
-        backgroundSize: "5.5px 5.5px",
-        borderRadius: "inherit",
-        opacity: 0.35,
-      }} />
+      {/* Benday dot shadow - CSS class */}
+      <div className="card-shadow" />
       {/* Inner white card with black border */}
       <div style={{
         width: "100%",
@@ -243,10 +244,10 @@ const ProfileCard: React.FC<CardProps> = ({
           background: "white",
           padding: "8px"
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 3 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 3, fontFamily: "'Nunito', sans-serif" }}>
             Age: {age || '5-16'}
           </div>
-          <div style={{ fontSize: 12, fontFamily: "Nunito, sans-serif", color: "#666", lineHeight: 1.3 }}>
+          <div style={{ fontSize: 12, fontFamily: "'Nunito', sans-serif", color: "#666", lineHeight: 1.3 }}>
             {isAdmin ? 'Dashboard & Admin' : (interests?.join(" · ") || 'Student Access')}
           </div>
         </div>
