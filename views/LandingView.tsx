@@ -133,7 +133,8 @@ const ProfileCard: React.FC<{ profile: typeof RETURNING_PROFILES[0]; isActive?: 
                 fontFamily: "Baloo 2, cursive, sans-serif",
                 color: profile.color,
                 textTransform: "uppercase",
-                letterSpacing: 1
+                letterSpacing: 1,
+                textShadow: `0.5px 0 ${profile.color}, -0.5px 0 ${profile.color}, 0 0.5px ${profile.color}, 0 -0.5px ${profile.color}`
               }}>
                 {profile.name}
               </span>

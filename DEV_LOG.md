@@ -14,6 +14,12 @@
 
 ## Recent Changes (2026-02-26)
 
+### v3.13.6 - Typography Thickness Refinement
+- **Faux Bold**: Implemented `text-shadow` based thickening for child names in `LandingView.tsx` and `ReturningView.tsx`.
+- **Thickness**: Achieved ~125% extra thickness as requested while maintaining readability.
+- **Version bump**: v3.13.6.
+- **Build**: Successful production build.
+
 ### v3.13.5 - Card Layout & Typography Refinement
 - **Metadata Alignment**: Aligned metadata rectangle text to the left in `ReturningView.tsx` to match `LandingView.tsx`.
 - **Typographic Weight**: Increased card title `fontWeight` to `900` in both `LandingView.tsx` and `ReturningView.tsx`.

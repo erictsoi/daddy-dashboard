@@ -231,7 +231,8 @@ const ProfileCard: React.FC<CardProps> = ({
                 fontFamily: "Baloo 2, cursive, sans-serif",
                 color: color,
                 textTransform: "uppercase",
-                letterSpacing: 1
+                letterSpacing: 1,
+                textShadow: `0.5px 0 ${color}, -0.5px 0 ${color}, 0 0.5px ${color}, 0 -0.5px ${color}`
               }}>
                 {name}
               </span>
