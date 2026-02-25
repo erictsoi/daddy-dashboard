@@ -136,7 +136,7 @@ const ProfileCard: React.FC<CardProps> = ({
 
   return (
     <motion.button
-      className={isSelected ? "bounce-card" : ""}
+      className=""
       initial={{
         x: initialOffset.x,
         y: initialOffset.y,
@@ -146,9 +146,9 @@ const ProfileCard: React.FC<CardProps> = ({
       }}
       animate={isRevealed ? {
         x: isSelected ? 0 : finalX,
-        y: isSelected ? finalY : finalY,
+        y: isSelected ? 0 : finalY,
         rotate: isSelected ? 0 : 0,
-        scale: isSelected ? 1.8 : isOtherSelected ? 0.8 : 1,
+        scale: isSelected ? 1.5 : isOtherSelected ? 0.8 : 1,
         opacity: isOtherSelected ? 0 : 1,
       } : {
         x: initialOffset.x,
@@ -173,7 +173,6 @@ const ProfileCard: React.FC<CardProps> = ({
         left: '50%',
         marginTop: -160,
         marginLeft: -110,
-        transform: 'translate(-50%, -50%)',
         width: 220,
         height: 320,
         cursor: 'pointer',
@@ -187,7 +186,7 @@ const ProfileCard: React.FC<CardProps> = ({
       }}
     >
       <Shadow
-        scale={isSelected ? 1.8 : 1}
+        scale={isSelected ? 1.5 : 1}
         offset={4}
         size={3}
         radius={16}

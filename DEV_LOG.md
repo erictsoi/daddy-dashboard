@@ -14,6 +14,13 @@
 
 ## Recent Changes (2026-02-26)
 
+### v3.13.8 - Faux Bold & Animation Fixes
+- **Faux Bold**: Applied `text-shadow` to child names in `LandingView.tsx` and `ReturningView.tsx` for ~125% extra thickness.
+- **Animation Fix**: Resolved a conflict between CSS `bounce-card` and `framer-motion` in `ReturningView.tsx`.
+- **Scaling**: Synchronized `ReturningView` expansion scale to 1.5x to match `LandingView`.
+- **Version bump**: v3.13.8.
+- **Build**: Successful production build.
+
 ### v3.13.7 - Enhanced Expansion Animation
 - **Expansion Scale**: Increased selection scale from 1.5x to 1.8x in `ReturningView.tsx` to match the "expand" feel.
 - **Selection Timing**: Extended `setTimeout` navigation delay to 1500ms.

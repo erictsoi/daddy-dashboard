@@ -1,4 +1,8 @@
-# Changelog
+## 2026-02-26 - v3.13.8 - Faux Bold & Animation Fixes
+- **Faux Bold**: Applied `text-shadow` to child names for extra thickness (~125% boost).
+- **Animation Fix**: Removed `bounce-card` CSS conflict in `ReturningView.tsx`.
+- **Scaling**: Standardized expansion scale to 1.5x in `ReturningView.tsx` to match `LandingView.tsx`.
+- **Build**: Successful production build.
 
 ## 2026-02-26 - v3.13.7 - Enhanced Expansion Animation
 - **Interactions**: Upgraded the card selection expansion in `ReturningView.tsx` to match the dramatic feel of `LandingView.tsx`.
