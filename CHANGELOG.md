@@ -8,6 +8,14 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-26 - Version 3.13.3 (ReturningView Card Stack Fix)
+
+### Fixed
+- **Admin card stacking** - Admin now on top of stack (zIndex: 7), others stacked below in order
+- **Benday dot shadow** - Changed to div with inset:-3 and zIndex:-1 to render behind cards
+
+---
+
 ## 2026-02-25 - Version 3.13.0 (Profile Cards Redesign)
 
 ### Added

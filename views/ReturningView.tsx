@@ -29,7 +29,7 @@ const GlobalStyles = () => (
   `}</style>
 );
 const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties; scale?: number }> = ({ children, offset = 3, size = 2.5, radius, style = {}, scale = 1 }) => (
-  <div style={{ position: "relative", borderRadius: radius, ...style }}>
+  <div style={{ position: "relative", borderRadius: radius, zIndex: -1, ...style }}>
     <div style={{
       position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset,
       zIndex: -1, pointerEvents: "none",
@@ -56,6 +56,7 @@ interface CardProps {
   initialOffset: { x: number; y: number; rotation: number };
   finalX?: number;
   finalY?: number;
+  zIndex?: number;
   onClick?: () => void;
   isSelected?: boolean;
   isOtherSelected?: boolean;
@@ -77,6 +78,7 @@ const ProfileCard: React.FC<CardProps> = ({
   initialOffset,
   finalX = 0,
   finalY = 0,
+  zIndex,
   onClick,
   isSelected,
   isOtherSelected,
@@ -170,19 +172,21 @@ const ProfileCard: React.FC<CardProps> = ({
         borderRadius: 16,
         padding: 10,
         cursor: 'pointer',
-        zIndex: isSelected ? 100 : 10,
+        zIndex: isSelected ? 100 : (zIndex || 10),
+        boxShadow: 'none',
       }}
     >
-      {/* Benday dot shadow */}
-      <Shadow
-        scale={isSelected ? 1.5 : 1}
-        offset={isSelected ? 5 : 3}
-        size={2.5}
-        radius={16}
-        style={{ position: "absolute", inset: 0, zIndex: -1 }}
-      >
-        <div style={{ width: "100%", height: "100%" }} />
-      </Shadow>
+      {/* Benday dot shadow using ::before */}
+      <div style={{
+        position: 'absolute',
+        inset: -3,
+        borderRadius: 16,
+        zIndex: -1,
+        pointerEvents: 'none',
+        backgroundImage: `radial-gradient(circle, #3D2B1F 2.5px, transparent 2.5px)`,
+        backgroundSize: '5.5px 5.5px',
+        opacity: 0.35,
+      }} />
 
       {/* Inner white card with black border */}
       <div style={{
@@ -276,6 +280,7 @@ interface CardItem {
   initialOffset: { x: number; y: number; rotation: number };
   finalX?: number;
   finalY?: number;
+  zIndex?: number;
   age?: string;
   interests?: string[];
   image?: string;
@@ -354,6 +359,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
     },
     finalX: startX + index * (CARD_WIDTH + GAP),
     finalY: 0,
+    zIndex: PROFILES.length - index,
   }));
 
   const allCards = [...FILLERS.map(f => ({
@@ -517,6 +523,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
               initialOffset={card.initialOffset}
               finalX={card.finalX}
               finalY={card.finalY}
+              zIndex={card.zIndex}
               onClick={!card.isFiller && phase === 'reveal' ? () => handleCardClick(card as typeof cards[0]) : undefined}
               isSelected={selectedId === card.id}
               isOtherSelected={selectedId !== null && selectedId !== card.id && !card.isFiller}
