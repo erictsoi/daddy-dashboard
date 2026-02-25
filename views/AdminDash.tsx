@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getDummyProfiles } from '../src/data/dummyData';
-import { SUBJECT_COLORS, getSubjectColor } from '../constants';
+import { getSubjectColor } from '../constants';
+import { getSubjectHexColor } from '../utils/subjects';
 
 const DS = {
   cream: "#FAF6F0",
@@ -131,7 +132,7 @@ export const AdminDash: React.FC = () => {
   const [hoveredAdrian, setHoveredAdrian] = React.useState<number | null>(null);
   const [subjectColors, setSubjectColors] = useState<Record<string, string>>(() => {
     const saved = localStorage.getItem('subjectColors');
-    return saved ? JSON.parse(saved) : { ...SUBJECT_COLORS };
+    return saved ? JSON.parse(saved) : { };
   });
   const [freqModeSophia, setFreqModeSophia] = React.useState<Record<string, 1 | 2 | 3>>(() => {
     const saved = localStorage.getItem('freqModeSophia');
@@ -149,7 +150,7 @@ export const AdminDash: React.FC = () => {
   };
 
   const getSubjectColor = (subject: string): string => {
-    return subjectColors[subject] || SUBJECT_COLORS[subject] || '#888888';
+    return subjectColors[subject] || getSubjectHexColor(subject);
   };
   const [childFreqMode, setChildFreqMode] = React.useState<[('balanced' | 'stem' | 'arts'), ('balanced' | 'stem' | 'arts')]>(() => {
     const saved = localStorage.getItem('childFreqMode');

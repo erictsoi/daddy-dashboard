@@ -1,27 +1,8 @@
 import { ChildProfile } from './types';
-
-// Shared subject color scheme - consistent across all kids and dashboards
-export const SUBJECT_COLORS: Record<string, string> = {
-  'Maths': '#FF6B6B',
-  'English': '#4CAF8A',
-  'Science': '#2B8ED4',
-  'Art': '#F5A623',
-  'Music': '#9B6DD6',
-  'PE': '#FF9800',
-  'History': '#E91E63',
-  'Geography': '#4CAF50',
-  'Drama': '#E8505B',
-  'Technology': '#00BCD4',
-  'Languages': '#DDA0DD',
-  'PSHE': '#4CAF8A',
-  'Design': '#9B6DD6',
-  'Physics': '#F5A623',
-  'Computer Science': '#00BCD4',
-  'Economics': '#E8507A',
-};
+import { getSubjectHexColor as getColor } from './utils/subjects';
 
 export const getSubjectColor = (subjectName: string): string => {
-  return SUBJECT_COLORS[subjectName] || '#888888';
+  return getColor(subjectName);
 };
 
 export const INITIAL_DATA: ChildProfile[] = [

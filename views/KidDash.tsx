@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getDummyChild } from '../src/data/dummyData';
+import { getSubjectHexColor, getSubjectIcon } from '../utils/subjects';
 
 interface KidDashProps {
     childId: string;
@@ -176,27 +177,14 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
                         if (!firstLessonId) firstLessonId = lesson.id;
                     }
                 }
-                const colorMap: Record<string, string> = {
-                    'Maths': '#FF6B6B', 'English': '#4CAF8A', 'Science': '#2B8ED4',
-                    'History': '#9B6DD6', 'Geography': '#4CAF50', 'Art': '#F5A623',
-                    'PE': '#FF9800', 'Music': '#E91E63', 'Design': '#00BCD4',
-                    'Languages': '#FF6B6B', 'PSHE': '#4CAF8A', 'Drama': '#E8507A',
-                    'Technology': '#9B6DD6'
-                };
-                const iconMap: Record<string, string> = {
-                    'Maths': '📐', 'English': '📖', 'Science': '🔬',
-                    'History': '📜', 'Geography': '🌍', 'Art': '🎨',
-                    'PE': '⚽', 'Music': '🎵', 'Design': '✏️',
-                    'Languages': '🗣️', 'PSHE': '💛', 'Drama': '🎭',
-                    'Technology': '💻'
-                };
+                const subjectName = sub.category || sub.name;
                 subjects.push({
                     name: sub.name,
-                    icon: iconMap[sub.category || sub.name] || '📚',
+                    icon: getSubjectIcon(subjectName),
                     progress: completedCount,
                     total: lessonCount || 1,
                     topic: sub.topics?.[0]?.name || sub.category || 'General',
-                    color: colorMap[sub.category || sub.name] || '#9B6DD6',
+                    color: getSubjectHexColor(subjectName),
                     lessonId: firstLessonId
                 });
             }
