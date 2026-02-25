@@ -52,7 +52,7 @@ const GlobalStyles = () => (
   `}</style>
 );
 
-const BendayShadow = ({ offset = 3, size = 2.5, scale = 1 }: { offset?: number; size?: number; scale?: number }) => (
+const BendayShadow = ({ offset = 3, size = 3, scale = 1 }: { offset?: number; size?: number; scale?: number }) => (
   <div style={{
     position: "absolute",
     top: offset / scale,
@@ -67,7 +67,7 @@ const BendayShadow = ({ offset = 3, size = 2.5, scale = 1 }: { offset?: number; 
   }} />
 );
 
-const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties; scale?: number }> = ({ children, offset = 4, size = 2.5, radius, style = {}, scale = 1 }) => (
+const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties; scale?: number }> = ({ children, offset = 4, size = 3, radius, style = {}, scale = 1 }) => (
   <div style={{ position: "relative", borderRadius: radius, ...style }}>
     <BendayShadow offset={offset} size={size} scale={scale} />
     {children}

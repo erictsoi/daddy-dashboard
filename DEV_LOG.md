@@ -14,6 +14,19 @@
 
 ## Recent Changes (2026-02-26)
 
+### v3.13.4 - Benday Dot Standardization
+- **Standardized `size` props**: Set default `size` to `3` in `Shadow` and `BendayShadow` components app-wide.
+- **Global `Shadow` Restore**: Re-implemented `BendayShadow` within the global `Shadow` component in `design-system.tsx`.
+- **Manual Gradient Sync**: Updated hardcoded `radial-gradient` backgrounds in `AdminDash.tsx` and `Marketplace.tsx` to match the new `3px` / `6.6px` (2.2x) standard.
+- **Version bump**: v3.13.4.
+- **Build**: Verified with `npm run build`.
+
+### v3.13.3 - ReturningView Stacking Context Fix
+**Completed:**
+- ✅ Fixed shadow bounce synchronization by nesting logic inside animation container
+- ✅ Implemented pixel-based scale compensation for benday dots
+- ✅ Standardized LandingView header and footer styles to eliminate layout shifts
+
 ### v3.13.2 - LandingView Visual Refinement
 
 **Completed:**
@@ -137,6 +150,9 @@
 - [x] Update LessonDemo header + nav buttons
 - [x] Update SubjectDetailView header + nav buttons
 - [x] Update ManageProfilesView header + nav buttons
+- [x] Standardize benday dots across the application
+- [x] Increase benday dot size to 3px for a premium look
+- [x] Verify visual consistency across all views
 - [x] Add Sophia/Adrian specific nav buttons
 
 ### Phase 3: Demo Views (Completed ✅)

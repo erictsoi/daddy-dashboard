@@ -8,6 +8,12 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-26 - v3.13.4 - Benday Dot Standardization
+- **Visuals**: Enlarged benday dots to `3px` across all components and views for better contrast and premium feel.
+- **Design System**: Restored benday dots to global `Shadow` component in `design-system.tsx`.
+- **Consistency**: Synchronized dot sizes in `LandingView`, `ReturningView`, `KidDash`, `AdminDash`, `LessonView`, `TempGridView`, and `Marketplace`.
+- **Refinement**: Fixed unused import in `Marketplace.tsx`.
+
 ## 2026-02-26 - Version 3.13.3 (ReturningView Card Stack Fix)
 
 ### Fixed

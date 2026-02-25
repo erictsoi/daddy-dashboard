@@ -42,19 +42,13 @@ const GlobalStyles = () => (
     `}</style>
 );
 
-const BendayShadow = ({ offset = 3, size = 2.5 }: { offset?: number; size?: number }) => (
-    <div style={{
-        position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset,
-        zIndex: -1, pointerEvents: "none",
-        backgroundImage: `radial-gradient(circle, ${DS.dotBrown} ${size}px, transparent ${size}px)`,
-        backgroundSize: `${size * 2.2}px ${size * 2.2}px`,
-        borderRadius: "inherit", opacity: 0.35,
-    }} />
+const BendayShadow = ({ offset = 2 }: { offset?: number }) => (
+    <div style={{ position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset, zIndex: -1, pointerEvents: "none", backgroundImage: `radial-gradient(circle, ${DS.dotBrown} 3px, transparent 3px)`, backgroundSize: "6.6px 6.6px", borderRadius: "inherit", opacity: 0.35 }} />
 );
 
-const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties }> = ({ children, offset = 3, size = 2.5, radius, style = {} }) => (
+const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties }> = ({ children, offset = 3, radius, style = {} }) => (
     <div style={{ position: "relative", borderRadius: radius, ...style }}>
-        <BendayShadow offset={offset} size={size} />
+        <BendayShadow offset={offset} />
         {children}
     </div>
 );
@@ -77,7 +71,7 @@ const Blobs = ({ color }: { color: string }) => (
 export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const child = getDummyChild(childId);
-    
+
     const playlist = [
         { title: "What is an Ecosystem?", duration: "7:20", completed: true, active: false },
         { title: "Producers, Consumers & Decomposers", duration: "9:15", completed: true, active: false },
@@ -85,11 +79,11 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
         { title: "Food Webs & Energy Flow", duration: "8:30", completed: false, active: false },
         { title: "Ecosystems Under Threat", duration: "12:10", completed: false, active: false },
     ];
-    
+
     if (!child) {
         return (
-            <div style={{ 
-                minHeight: "100vh", 
+            <div style={{
+                minHeight: "100vh",
                 background: DS.cream,
                 position: "relative",
                 overflow: "hidden"
@@ -102,11 +96,11 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
     }
 
     const themeColor = child.themeColor === 'purple' ? '#9B6DD6' : child.themeColor === 'blue' ? '#2B8ED4' : '#4CAF50';
-    
+
     let lesson: { id: string; title: string; videoUrl?: string; completed: boolean } | undefined;
     let subjectName = '';
     let topicName = '';
-    
+
     for (const yearGroup of child.yearGroups || []) {
         for (const subject of yearGroup.subjects || []) {
             for (const topic of subject.topics || []) {
@@ -125,8 +119,8 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
 
     if (!lesson) {
         return (
-            <div style={{ 
-                minHeight: "100vh", 
+            <div style={{
+                minHeight: "100vh",
                 background: DS.cream,
                 position: "relative",
                 overflow: "hidden"
@@ -136,7 +130,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
                 <div style={{ position: "relative", zIndex: 10, textAlign: 'center', padding: 40 }}>
                     <h1>Lesson not found: {lessonId}</h1>
                     <a href={`/kiddash?child=${childId}`} style={{ color: themeColor, fontWeight: 700 }}></a>
-               ← Back to Dashboard </div>
+                    ← Back to Dashboard </div>
             </div>
         );
     }
@@ -144,8 +138,8 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
     const videoId = lesson.videoUrl?.match(/(?:youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/)?.[1];
 
     return (
-        <div style={{ 
-            minHeight: "100vh", 
+        <div style={{
+            minHeight: "100vh",
             background: DS.cream,
             position: "relative",
             overflow: "hidden"
@@ -155,40 +149,40 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
             <Blobs color={themeColor} />
 
             {/* Header - Full Width */}
-            <div style={{ 
-                position: "relative", 
-                zIndex: 10, 
-                background: `${DS.card}F5`, 
-                backdropFilter: "blur(14px)", 
+            <div style={{
+                position: "relative",
+                zIndex: 10,
+                background: `${DS.card}F5`,
+                backdropFilter: "blur(14px)",
                 borderBottom: DS.border,
-                padding: "8px 20px", 
-                display: "flex", 
-                alignItems: "center", 
+                padding: "8px 20px",
+                display: "flex",
+                alignItems: "center",
                 gap: 12,
                 flexShrink: 0,
                 height: 67
             }}>
-                <div 
+                <div
                     style={{ position: "relative", borderRadius: DS.radius.pill, transition: "transform 0.15s" }}
                     onMouseEnter={e => { e.currentTarget.style.transform = "translate(-2px,-2px)"; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = "translate(0,0)"; }}
                 >
                     <Shadow offset={1} size={1} radius={DS.radius.pill}>
-                        <button 
+                        <button
                             className="b"
                             onClick={() => window.location.href = `/kiddash?child=${childId}`}
-                            style={{ 
-                                position: "relative", 
-                                display: "flex", 
-                                alignItems: "center", 
-                                gap: 6, 
-                                background: themeColor, 
-                                border: DS.border, 
-                                borderRadius: DS.radius.pill, 
-                                padding: "6px 14px", 
-                                cursor: "pointer", 
-                                fontWeight: 800, 
-                                fontSize: 13, 
+                            style={{
+                                position: "relative",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                background: themeColor,
+                                border: DS.border,
+                                borderRadius: DS.radius.pill,
+                                padding: "6px 14px",
+                                cursor: "pointer",
+                                fontWeight: 800,
+                                fontSize: 13,
                                 color: "#fff"
                             }}
                         >
@@ -200,17 +194,17 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
                     <div className="n t-label" style={{ color: themeColor, fontSize: 9 }}>{subjectName} · {topicName}</div>
                     <div className="b t-h2" style={{ color: DS.ink, fontSize: 18 }}>{lesson.title}</div>
                 </div>
-                
+
                 {/* Timer */}
                 <Shadow offset={2} size={2} radius={DS.radius.md}>
-                    <div style={{ 
-                        position: "relative", 
-                        display: "flex", 
-                        alignItems: "center", 
-                        gap: 8, 
-                        background: themeColor, 
-                        border: DS.border, 
-                        borderRadius: DS.radius.md, 
+                    <div style={{
+                        position: "relative",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        background: themeColor,
+                        border: DS.border,
+                        borderRadius: DS.radius.md,
                         padding: "6px 12px"
                     }}>
                         <div>
@@ -225,23 +219,23 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
                 </Shadow>
 
                 {/* Info Button */}
-                <div 
+                <div
                     style={{ position: "relative", borderRadius: DS.radius.sm, transition: "transform 0.15s", flexShrink: 0 }}
                     onMouseEnter={e => { e.currentTarget.style.transform = "translate(-2px,-2px)"; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = "translate(0,0)"; }}
                 >
                     <Shadow offset={2} size={2} radius={DS.radius.sm}>
-                        <button 
-                            style={{ 
-                                position: "relative", 
-                                width: 32, 
-                                height: 32, 
-                                borderRadius: DS.radius.sm, 
-                                border: DS.border, 
-                                background: themeColor, 
-                                color: "#fff", 
-                                cursor: "pointer", 
-                                fontSize: 13, 
+                        <button
+                            style={{
+                                position: "relative",
+                                width: 32,
+                                height: 32,
+                                borderRadius: DS.radius.sm,
+                                border: DS.border,
+                                background: themeColor,
+                                color: "#fff",
+                                cursor: "pointer",
+                                fontSize: 13,
                                 fontWeight: 800
                             }}
                             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -256,99 +250,99 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
             <div style={{ position: "relative", zIndex: 10, display: "flex", height: "calc(100vh - 60px)" }}>
                 {/* Content */}
                 <div style={{ flex: 1, padding: "24px", overflow: "auto" }}>
-                {/* Video Player */}
-                <div className="pop" style={{ maxWidth: 900, margin: "0 auto" }}>
-                    <div style={{ 
-                        position: "relative", 
-                        background: "#0F0D2A", 
-                        border: DS.border, 
-                        borderRadius: DS.radius.lg, 
-                        aspectRatio: "16 / 9",
-                        display: "flex", 
-                        alignItems: "center", 
-                        justifyContent: "center", 
-                        overflow: "hidden",
-                        flexShrink: 0
-                    }}>
-                        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(135deg, ${themeColor}28, transparent)` }}></div>
-                        
-                        {videoId ? (
-                            <iframe 
-                                style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
-                                src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-                                title={lesson.title}
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                            />
-                        ) : (
-                            <div style={{ textAlign: "center", zIndex: 1 }}>
-                                <div style={{ fontSize: 50, marginBottom: 10 }}>▶</div>
-                                <div className="n t-body" style={{ color: "#fff", opacity: 0.8 }}>YouTube Video Player</div>
-                                <div className="n t-label" style={{ color: "rgba(255,255,255,0.4)", marginTop: 4 }}>{lesson.title} · 11:40</div>
+                    {/* Video Player */}
+                    <div className="pop" style={{ maxWidth: 900, margin: "0 auto" }}>
+                        <div style={{
+                            position: "relative",
+                            background: "#0F0D2A",
+                            border: DS.border,
+                            borderRadius: DS.radius.lg,
+                            aspectRatio: "16 / 9",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            overflow: "hidden",
+                            flexShrink: 0
+                        }}>
+                            <div style={{ position: "absolute", inset: 0, background: `linear-gradient(135deg, ${themeColor}28, transparent)` }}></div>
+
+                            {videoId ? (
+                                <iframe
+                                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+                                    src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+                                    title={lesson.title}
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                />
+                            ) : (
+                                <div style={{ textAlign: "center", zIndex: 1 }}>
+                                    <div style={{ fontSize: 50, marginBottom: 10 }}>▶</div>
+                                    <div className="n t-body" style={{ color: "#fff", opacity: 0.8 }}>YouTube Video Player</div>
+                                    <div className="n t-label" style={{ color: "rgba(255,255,255,0.4)", marginTop: 4 }}>{lesson.title} · 11:40</div>
+                                </div>
+                            )}
+
+                            {/* Progress bar */}
+                            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 5, background: "rgba(255,255,255,0.15)" }}>
+                                <div style={{ width: "42%", height: "100%", background: themeColor }}></div>
                             </div>
-                        )}
 
-                        {/* Progress bar */}
-                        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 5, background: "rgba(255,255,255,0.15)" }}>
-                            <div style={{ width: "42%", height: "100%", background: themeColor }}></div>
-                        </div>
-
-                        {/* Simulate video end button */}
-                        <button 
-                            style={{ 
-                                position: "absolute", 
-                                bottom: 14, 
-                                right: 14, 
-                                background: "rgba(255,255,255,0.15)", 
-                                border: "2px solid rgba(255,255,255,0.35)", 
-                                color: "#fff", 
-                                padding: "6px 16px", 
-                                borderRadius: 100, 
-                                fontSize: 11, 
-                                cursor: "pointer", 
-                                fontWeight: 800,
-                                backdropFilter: "blur(6px)"
-                            }}
-                        >
-                            Simulate video end ▸
-                        </button>
-                    </div>
-                </div>
-
-                {/* Complete Button */}
-                <div style={{ maxWidth: 900, margin: "16px 0 0" }}>
-                    <div style={{ width: "fit-content" }}>
-                        <Shadow offset={1} size={1} radius={DS.radius.pill}>
-                            <button 
-                                disabled
-                                className="b"
-                                style={{ 
-                                    position: "relative", 
-                                    padding: "14px 40px", 
-                                    borderRadius: DS.radius.pill, 
-                                    border: "2.5px solid #C4BBAF", 
-                                    background: "#EDE8E0", 
-                                    color: DS.inkFade, 
-                                    fontSize: 18, 
-                                    fontWeight: 800, 
-                                    cursor: "not-allowed",
-                                    transition: "transform 0.2s"
+                            {/* Simulate video end button */}
+                            <button
+                                style={{
+                                    position: "absolute",
+                                    bottom: 14,
+                                    right: 14,
+                                    background: "rgba(255,255,255,0.15)",
+                                    border: "2px solid rgba(255,255,255,0.35)",
+                                    color: "#fff",
+                                    padding: "6px 16px",
+                                    borderRadius: 100,
+                                    fontSize: 11,
+                                    cursor: "pointer",
+                                    fontWeight: 800,
+                                    backdropFilter: "blur(6px)"
                                 }}
                             >
-                                Finish the video first 👀
+                                Simulate video end ▸
                             </button>
-                        </Shadow>
-                        <p className="n t-small" style={{ color: themeColor, marginTop: 6, fontWeight: 700 }}>
-                            Button unlocks when the video ends
-                        </p>
+                        </div>
                     </div>
-                </div>
+
+                    {/* Complete Button */}
+                    <div style={{ maxWidth: 900, margin: "16px 0 0" }}>
+                        <div style={{ width: "fit-content" }}>
+                            <Shadow offset={1} size={1} radius={DS.radius.pill}>
+                                <button
+                                    disabled
+                                    className="b"
+                                    style={{
+                                        position: "relative",
+                                        padding: "14px 40px",
+                                        borderRadius: DS.radius.pill,
+                                        border: "2.5px solid #C4BBAF",
+                                        background: "#EDE8E0",
+                                        color: DS.inkFade,
+                                        fontSize: 18,
+                                        fontWeight: 800,
+                                        cursor: "not-allowed",
+                                        transition: "transform 0.2s"
+                                    }}
+                                >
+                                    Finish the video first 👀
+                                </button>
+                            </Shadow>
+                            <p className="n t-small" style={{ color: themeColor, marginTop: 6, fontWeight: 700 }}>
+                                Button unlocks when the video ends
+                            </p>
+                        </div>
+                    </div>
 
                 </div>
 
                 {/* Collapsible Sidebar */}
-                
+
                 {/* Sidebar */}
                 <div style={{
                     position: "relative",
@@ -397,13 +391,13 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
                             <div>
                                 <div className="n t-label" style={{ color: themeColor, marginBottom: 7, fontSize: 10 }}>Playlist · 3/5</div>
                                 {playlist.map((item, i) => (
-                                    <div 
+                                    <div
                                         key={i}
                                         onClick={() => item.active ? {} : window.location.reload()}
-                                        style={{ 
-                                            display: "flex", 
-                                            alignItems: "center", 
-                                            gap: 8, 
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
                                             padding: "7px 0",
                                             borderBottom: i < playlist.length - 1 ? "1px solid #F3EEFF" : "none",
                                             cursor: "pointer"
@@ -428,10 +422,10 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => 
                                             ) : null}
                                         </div>
                                         <div style={{ flex: 1 }}>
-                                            <div 
-                                                className="n t-small" 
-                                                style={{ 
-                                                    fontWeight: item.active ? 700 : 500, 
+                                            <div
+                                                className="n t-small"
+                                                style={{
+                                                    fontWeight: item.active ? 700 : 500,
                                                     color: item.completed ? DS.inkFade : DS.ink,
                                                     textDecoration: item.completed ? "line-through" : "none"
                                                 }}

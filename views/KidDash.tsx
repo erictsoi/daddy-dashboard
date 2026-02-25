@@ -54,7 +54,7 @@ const GlobalStyles = () => (
     `}</style>
 );
 
-const BendayShadow = ({ offset = 3, size = 2.5 }: { offset?: number; size?: number }) => (
+const BendayShadow = ({ offset = 3, size = 3 }: { offset?: number; size?: number }) => (
     <div style={{
         position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset,
         zIndex: -1, pointerEvents: "none",
@@ -64,7 +64,7 @@ const BendayShadow = ({ offset = 3, size = 2.5 }: { offset?: number; size?: numb
     }} />
 );
 
-const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties; className?: string }> = ({ children, offset = 3, size = 2.5, radius, style = {}, className = '' }) => (
+const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties; className?: string }> = ({ children, offset = 3, size = 3, radius, style = {}, className = '' }) => (
     <div className={className} style={{ position: "relative", borderRadius: radius, ...style }}>
         <BendayShadow offset={offset} size={size} />
         {children}
@@ -120,14 +120,14 @@ const SectionHead = ({ label, color }: { label: string; color: string }) => (
 export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
     const [sel, setSel] = useState<number | null>(null);
     const child = getDummyChild(childId);
-    
+
     if (!child) {
         return (
-            <div style={{ 
-                minHeight: "100vh", 
-                background: DS.cream, 
-                display: "flex", 
-                alignItems: "center", 
+            <div style={{
+                minHeight: "100vh",
+                background: DS.cream,
+                display: "flex",
+                alignItems: "center",
                 justifyContent: "center",
                 fontFamily: "'Nunito Sans', sans-serif",
                 color: DS.ink
@@ -141,19 +141,19 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
         );
     }
 
-    const themeColor = child.themeColor === 'purple' ? '#9B6DD6' 
+    const themeColor = child.themeColor === 'purple' ? '#9B6DD6'
         : child.themeColor === 'blue' ? '#2B8ED4'
-        : child.themeColor === 'green' ? '#4CAF8A'
-        : child.themeColor === 'amber' ? '#F5A623'
-        : child.themeColor === 'rose' ? '#FF6B6B'
-        : '#9B6DD6';
-    const tintColor = child.themeColor === 'purple' ? '#F3EEFF' 
+            : child.themeColor === 'green' ? '#4CAF8A'
+                : child.themeColor === 'amber' ? '#F5A623'
+                    : child.themeColor === 'rose' ? '#FF6B6B'
+                        : '#9B6DD6';
+    const tintColor = child.themeColor === 'purple' ? '#F3EEFF'
         : child.themeColor === 'blue' ? '#EAF4FC'
-        : child.themeColor === 'green' ? '#EDFAF4'
-        : child.themeColor === 'amber' ? '#FFF8EC'
-        : child.themeColor === 'rose' ? '#FFF0F0'
-        : '#F3EEFF';
-    
+            : child.themeColor === 'green' ? '#EDFAF4'
+                : child.themeColor === 'amber' ? '#FFF8EC'
+                    : child.themeColor === 'rose' ? '#FFF0F0'
+                        : '#F3EEFF';
+
     const profile = {
         name: child.name,
         year: child.yearGroups?.[0]?.name || "Student",
@@ -163,7 +163,7 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
     };
 
     const subjects: { name: string; icon: string; progress: number; total: number; topic: string; color: string; lessonId?: string }[] = [];
-    
+
     if (child.yearGroups) {
         for (const yg of child.yearGroups) {
             for (const sub of yg.subjects || []) {
@@ -214,11 +214,11 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
     const xp = 120;
 
     return (
-        <div style={{ 
-            minHeight: "100vh", 
-            background: DS.cream, 
-            position: "relative", 
-            overflow: "hidden" 
+        <div style={{
+            minHeight: "100vh",
+            background: DS.cream,
+            position: "relative",
+            overflow: "hidden"
         }}>
             <GlobalStyles />
             <Texture />
@@ -239,7 +239,7 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
                             <span className="n t-small" style={{ fontWeight: 800, color: DS.ink }}>5 day streak!</span>
                         </div>
                     </Shadow>
-                    <div 
+                    <div
                         className="float"
                         onClick={() => window.location.href = '/returningview'}
                         style={{ width: 38, height: 38, background: DS.card, border: DS.border, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer" }}
@@ -277,18 +277,18 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
                         const isActive = item.status === "active";
                         return (
                             <Shadow key={i} offset={2} size={2} radius={DS.radius.lg} className={isActive ? "float" : ""} style={{ flexShrink: 0, overflow: "visible", marginTop: 4 }}>
-                                <div 
-                                    style={{ 
-                                        position: "relative", 
-                                        background: cfg.bg, 
-                                        border: `3px solid ${cfg.border}`, 
-                                        borderRadius: DS.radius.lg, 
-                                        padding: isLunch ? "16px 18px" : "16px 18px", 
-                                        minWidth: 148, 
-                                        height: 148, 
-                                        textAlign: "center", 
-                                        cursor: !isLunch ? "pointer" : "default", 
-                                        transition: "all .2s" 
+                                <div
+                                    style={{
+                                        position: "relative",
+                                        background: cfg.bg,
+                                        border: `3px solid ${cfg.border}`,
+                                        borderRadius: DS.radius.lg,
+                                        padding: isLunch ? "16px 18px" : "16px 18px",
+                                        minWidth: 148,
+                                        height: 148,
+                                        textAlign: "center",
+                                        cursor: !isLunch ? "pointer" : "default",
+                                        transition: "all .2s"
                                     }}
                                 >
                                     {isLunch ? (
@@ -321,29 +321,29 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
                     {subjects.map((s, i) => {
                         const isActive = sel === i;
                         return (
-                            <div 
+                            <div
                                 key={i}
                                 className={`card-${i} subject-card`}
-                                style={{ 
-                                    position: "relative", 
+                                style={{
+                                    position: "relative",
                                     borderRadius: DS.radius.lg,
                                     transition: "transform 0.15s",
                                     cursor: "pointer"
                                 }}
                             >
                                 <Shadow offset={isActive ? 4 : 2} size={2} radius={DS.radius.lg}>
-                                    <div 
+                                    <div
                                         className="subject-card-inner"
                                         onClick={() => {
                                             if (s.lessonId) {
                                                 window.location.href = `/lessonview?child=${childId}&lesson=${s.lessonId}`;
                                             }
                                         }}
-                                        style={{ 
-                                            position: "relative", 
-                                            background: DS.card, 
-                                            border: `3px solid ${isActive ? DS.ink : "#C4BBAF"}`, 
-                                            borderRadius: DS.radius.lg, 
+                                        style={{
+                                            position: "relative",
+                                            background: DS.card,
+                                            border: `3px solid ${isActive ? DS.ink : "#C4BBAF"}`,
+                                            borderRadius: DS.radius.lg,
                                             padding: "16px 14px"
                                         }}
                                     >

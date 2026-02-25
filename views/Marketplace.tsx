@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SUBJECT_COLORS, getSubjectColor } from '../constants';
+import { getSubjectColor } from '../constants';
 
 const DS = {
   cream: "#FAF6F0",
@@ -64,8 +64,8 @@ export const Marketplace: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = React.useState("All");
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
-  const filteredItems = selectedCategory === "All" 
-    ? MARKETPLACE_ITEMS 
+  const filteredItems = selectedCategory === "All"
+    ? MARKETPLACE_ITEMS
     : MARKETPLACE_ITEMS.filter(item => item.category === selectedCategory);
 
   return (
@@ -74,18 +74,18 @@ export const Marketplace: React.FC = () => {
       <Texture />
 
       {/* Header */}
-      <div style={{ 
-        padding: "20px 32px", 
-        background: DS.card, 
+      <div style={{
+        padding: "20px 32px",
+        background: DS.card,
         borderBottom: DS.border,
-        display: "flex", 
-        alignItems: "center", 
+        display: "flex",
+        alignItems: "center",
         gap: 16,
         position: "sticky",
         top: 0,
         zIndex: 100
       }}>
-        <button 
+        <button
           onClick={() => window.location.href = '/admindash'}
           style={{
             padding: "8px 16px",
@@ -132,25 +132,25 @@ export const Marketplace: React.FC = () => {
         {filteredItems.map((item, idx) => {
           const itemColor = getSubjectColor(item.category);
           return (
-            <div 
+            <div
               key={item.id}
               className={`card-${idx}`}
               onMouseEnter={() => setHoveredId(item.id)}
               onMouseLeave={() => setHoveredId(null)}
-              style={{ 
-                position: "relative", 
-                borderRadius: DS.radius.lg, 
+              style={{
+                position: "relative",
+                borderRadius: DS.radius.lg,
                 cursor: "pointer"
               }}
             >
               <div style={{ position: "relative", borderRadius: DS.radius.lg, transform: hoveredId === item.id ? "translate(-2px, -2px)" : "none", transition: "transform 0.15s ease" }}>
-                <div style={{ position: "absolute", top: 2, left: 2, right: -2, bottom: -2, zIndex: -1, pointerEvents: "none", backgroundImage: `radial-gradient(circle, ${DS.dotBrown} 2px, transparent 2px)`, backgroundSize: "4.4px 4.4px", borderRadius: "inherit", opacity: 0.35 }} />
-                <div 
-                  style={{ 
-                    position: "relative", 
-                    background: DS.card, 
-                    border: hoveredId === item.id ? `3px solid ${DS.ink}` : "3px solid #C4BBAF", 
-                    borderRadius: DS.radius.lg, 
+                <div style={{ position: "absolute", top: 2, left: 2, right: -2, bottom: -2, zIndex: -1, pointerEvents: "none", backgroundImage: `radial-gradient(circle, ${DS.dotBrown} 3px, transparent 3px)`, backgroundSize: "6.6px 6.6px", borderRadius: "inherit", opacity: 0.35 }} />
+                <div
+                  style={{
+                    position: "relative",
+                    background: DS.card,
+                    border: hoveredId === item.id ? `3px solid ${DS.ink}` : "3px solid #C4BBAF",
+                    borderRadius: DS.radius.lg,
                     padding: "16px 14px",
                     transition: "border-color 0.15s"
                   }}
@@ -158,15 +158,15 @@ export const Marketplace: React.FC = () => {
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
                     <div style={{ width: 40, height: 40, background: `${itemColor}20`, border: `2px solid ${itemColor}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{item.emoji}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <div 
+                      <div
                         style={{ cursor: "pointer", display: "flex", gap: 1 }}
                       >
                         {[1, 2, 3].map((star) => (
-                          <span 
+                          <span
                             key={star}
-                            style={{ 
-                              fontSize: 14, 
-                              color: star >= 2 ? "#F5A623" : "transparent" 
+                            style={{
+                              fontSize: 14,
+                              color: star >= 2 ? "#F5A623" : "transparent"
                             }}
                           >
                             ★
@@ -183,7 +183,7 @@ export const Marketplace: React.FC = () => {
                   <p className="n t-small" style={{ color: DS.inkSoft, marginBottom: 12 }}>{item.description}</p>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <span className="b" style={{ fontSize: 20, color: "#4CAF8A" }}>{item.price}</span>
-                    <button 
+                    <button
                       style={{
                         padding: "6px 14px",
                         borderRadius: DS.radius.sm,

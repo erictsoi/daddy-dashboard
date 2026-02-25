@@ -28,15 +28,24 @@ const GlobalStyles = () => (
     }
   `}</style>
 );
-const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties; scale?: number }> = ({ children, offset = 3, size = 2.5, radius, style = {}, scale = 1 }) => (
-  <div style={{ position: "relative", borderRadius: radius, zIndex: -1, ...style }}>
-    <div style={{
-      position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset,
-      zIndex: -1, pointerEvents: "none",
-      backgroundImage: `radial-gradient(circle, #3D2B1F ${size / scale}px, transparent ${size / scale}px)`,
-      backgroundSize: `${(size * 2.2) / scale}px ${(size * 2.2) / scale}px`,
-      borderRadius: "inherit", opacity: 0.35,
-    }} />
+const BendayShadow = ({ offset = 3, size = 3, scale = 1 }: { offset?: number; size?: number; scale?: number }) => (
+  <div style={{
+    position: "absolute",
+    top: offset / scale,
+    left: offset / scale,
+    right: -offset / scale,
+    bottom: -offset / scale,
+    zIndex: -1, pointerEvents: "none",
+    backgroundImage: `radial-gradient(circle, #3D2B1F ${size / scale}px, transparent ${size / scale}px)`,
+    backgroundSize: `${(size * 2.2) / scale}px ${(size * 2.2) / scale}px`,
+    borderRadius: "inherit", opacity: 0.35,
+    transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
+  }} />
+);
+
+const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties; scale?: number }> = ({ children, offset = 4, size = 3, radius, style = {}, scale = 1 }) => (
+  <div style={{ position: "relative", borderRadius: radius, ...style }}>
+    <BendayShadow offset={offset} size={size} scale={scale} />
     {children}
   </div>
 );
@@ -167,103 +176,113 @@ const ProfileCard: React.FC<CardProps> = ({
         transform: 'translate(-50%, -50%)',
         width: 220,
         height: 320,
-        background: color,
-        border: '2.5px solid #1A1A2E',
-        borderRadius: 16,
-        padding: 10,
         cursor: 'pointer',
         zIndex: isSelected ? 100 : (zIndex || 10),
-        boxShadow: 'none',
+        background: 'none',
+        border: 'none',
+        padding: 0,
+        display: "block",
+        outline: "none",
+        boxShadow: "none"
       }}
     >
-      {/* Benday dot shadow using ::before */}
-      <div style={{
-        position: 'absolute',
-        inset: -3,
-        borderRadius: 16,
-        zIndex: -1,
-        pointerEvents: 'none',
-        backgroundImage: `radial-gradient(circle, #3D2B1F 2.5px, transparent 2.5px)`,
-        backgroundSize: '5.5px 5.5px',
-        opacity: 0.35,
-      }} />
-
-      {/* Inner white card with black border */}
-      <div style={{
-        width: "100%",
-        height: "100%",
-        background: "white",
-        borderRadius: 8,
-        border: "3px solid black",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column"
-      }}>
-        {/* Name and Year at top */}
+      <Shadow
+        scale={isSelected ? 1.5 : 1}
+        offset={4}
+        size={3}
+        radius={16}
+        style={{ width: "100%", height: "100%" }}
+      >
         <div style={{
-          height: 28,
+          width: "100%",
+          height: "100%",
+          background: color,
+          border: '2.5px solid #1A1A2E',
+          borderRadius: 16,
+          padding: 10,
           display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 10px",
-          flexShrink: 0
+          flexDirection: "column",
+          position: "relative",
+          overflow: "visible"
         }}>
-          <span style={{
-            fontSize: 14,
-            fontWeight: "bold",
-            fontFamily: "Baloo 2, cursive, sans-serif",
-            color: color,
-            textTransform: "uppercase",
-            letterSpacing: 1
+          {/* Inner white card with black border */}
+          <div style={{
+            width: "100%",
+            height: "100%",
+            background: "white",
+            borderRadius: 8,
+            border: "3px solid black",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column"
           }}>
-            {name}
-          </span>
-          <span style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: "#333"
-          }}>
-            {year}
-          </span>
-        </div>
+            {/* Name and Year at top */}
+            <div style={{
+              height: 28,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0 10px",
+              flexShrink: 0
+            }}>
+              <span style={{
+                fontSize: 14,
+                fontWeight: "bold",
+                fontFamily: "Baloo 2, cursive, sans-serif",
+                color: color,
+                textTransform: "uppercase",
+                letterSpacing: 1
+              }}>
+                {name}
+              </span>
+              <span style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: "#333"
+              }}>
+                {year}
+              </span>
+            </div>
 
-        {/* Image with border */}
-        <div style={{
-          width: 170,
-          height: 180,
-          margin: "0 auto",
-          border: "3px solid black",
-          borderRadius: 4,
-          overflow: "hidden",
-          background: "white",
-          flexShrink: 0
-        }}>
-          <img
-            src={isAdmin ? undefined : (image || `/profile-pics/${id}.jpg`)}
-            alt={name}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: id === 'admin' ? 'none' : 'block'
-            }}
-          />
-        </div>
+            {/* Image with border */}
+            <div style={{
+              width: 170,
+              height: 180,
+              margin: "0 auto",
+              border: "3px solid black",
+              borderRadius: 4,
+              overflow: "hidden",
+              background: "white",
+              flexShrink: 0
+            }}>
+              <img
+                src={isAdmin ? undefined : (image || `/profile-pics/${id}.jpg`)}
+                alt={name}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: id === 'admin' ? 'none' : 'block'
+                }}
+              />
+            </div>
 
-        {/* Metadata */}
-        <div style={{
-          margin: "0 0 6px 0",
-          background: "white",
-          padding: "8px"
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 3, fontFamily: "'Nunito', sans-serif" }}>
-            Age: {age || '5-16'}
-          </div>
-          <div style={{ fontSize: 12, fontFamily: "'Nunito', sans-serif", color: "#666", lineHeight: 1.3 }}>
-            {isAdmin ? 'Dashboard & Admin' : (interests?.join(" · ") || 'Student Access')}
+            {/* Metadata */}
+            <div style={{
+              margin: "0 0 6px 0",
+              background: "white",
+              padding: "8px"
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 3, fontFamily: "'Nunito', sans-serif" }}>
+                Age: {age || '5-16'}
+              </div>
+              <div style={{ fontSize: 12, fontFamily: "'Nunito', sans-serif", color: "#666", lineHeight: 1.3 }}>
+                {isAdmin ? 'Dashboard & Admin' : (interests?.join(" · ") || 'Student Access')}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </Shadow>
     </motion.button>
   );
 };

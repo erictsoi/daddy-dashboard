@@ -2,25 +2,26 @@ import React from 'react';
 
 // ─── DESIGN SYSTEM ────────────────────────────────────────────────────────────
 export const DS = {
-  cream:    "#FAF6F0",
-  card:     "#FFFFFF",
-  ink:      "#1A1A2E",
-  inkSoft:  "#6B6580",
-  inkFade:  "#B0A8C0",
-  border:   "2.5px solid #1A1A2E",
+  cream: "#FAF6F0",
+  card: "#FFFFFF",
+  ink: "#1A1A2E",
+  inkSoft: "#6B6580",
+  inkFade: "#B0A8C0",
+  border: "2.5px solid #1A1A2E",
   borderThick: "3px solid #1A1A2E",
-  radius:   { sm:10, md:16, lg:22, pill:100 },
+  radius: { sm: 10, md: 16, lg: 22, pill: 100 },
+  dotBrown: "#3D2B1F",
 };
 
 export const THEME_COLORS: Record<string, { main: string; tint: string }> = {
-  blue:   { main: "#2B8ED4", tint: "#EAF4FC" },
+  blue: { main: "#2B8ED4", tint: "#EAF4FC" },
   indigo: { main: "#6366F1", tint: "#EEF2FF" },
-  rose:   { main: "#F43F5E", tint: "#FFE4E6" },
+  rose: { main: "#F43F5E", tint: "#FFE4E6" },
   emerald: { main: "#10B981", tint: "#D1FAE5" },
-  amber:  { main: "#F59E0B", tint: "#FEF3C7" },
+  amber: { main: "#F59E0B", tint: "#FEF3C7" },
   purple: { main: "#8B5CF6", tint: "#EDE9FE" },
-  pink:   { main: "#EC4899", tint: "#FCE7F3" },
-  teal:   { main: "#14B8A6", tint: "#CCFBF1" },
+  pink: { main: "#EC4899", tint: "#FCE7F3" },
+  teal: { main: "#14B8A6", tint: "#CCFBF1" },
 };
 
 export const getThemeColor = (colorName: string) => THEME_COLORS[colorName] || THEME_COLORS.blue;
@@ -132,15 +133,31 @@ export const FlatShadow = ({ offset = 3 }: { offset?: number }) => (
   }} />
 );
 
-// Shadow component with flat dark shade (removed benday dots)
-export const Shadow = ({ children, offset = 3, size, radius, style = {} }: { children: React.ReactNode; offset?: number; size?: number; radius?: string | number; style?: React.CSSProperties }) => (
-  <div style={{ position: "relative", borderRadius: radius, ...style, boxShadow: `${offset * 2}px ${offset * 2}px 0 rgba(45,45,45,0.2)` }}>
+export const BendayShadow = ({ offset = 3, size = 3, scale = 1, radius }: { offset?: number; size?: number; scale?: number; radius?: string | number }) => (
+  <div style={{
+    position: "absolute",
+    top: offset / scale,
+    left: offset / scale,
+    right: -offset / scale,
+    bottom: -offset / scale,
+    zIndex: -1, pointerEvents: "none",
+    backgroundImage: `radial-gradient(circle, ${DS.dotBrown} ${size / scale}px, transparent ${size / scale}px)`,
+    backgroundSize: `${(size * 2.2) / scale}px ${(size * 2.2) / scale}px`,
+    borderRadius: radius || "inherit", opacity: 0.35,
+    transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
+  }} />
+);
+
+// Shadow component with benday dots
+export const Shadow = ({ children, offset = 3, size = 3, radius, style = {}, scale = 1 }: { children: React.ReactNode; offset?: number; size?: number; radius?: string | number; style?: React.CSSProperties; scale?: number }) => (
+  <div style={{ position: "relative", borderRadius: radius, ...style }}>
+    <BendayShadow offset={offset} size={size} scale={scale} radius={radius} />
     {children}
   </div>
 );
 
 export const Tag = ({ label, color, dark = false }: { label: string; color: string; dark?: boolean }) => (
-  <Shadow offset={2} size={2} radius={DS.radius.pill} style={{display:"inline-block"}}>
+  <Shadow offset={2} size={2} radius={DS.radius.pill} style={{ display: "inline-block" }}>
     <div style={{ position: "relative", background: dark ? DS.ink : color, border: DS.border, borderRadius: DS.radius.pill, padding: "3px 13px" }}>
       <span className="n t-label" style={{ color: "#fff" }}>{label}</span>
     </div>
@@ -159,7 +176,7 @@ export const Chip = ({ icon, val, label, color }: { icon: string; val: string | 
 
 export const SectionHead = ({ label, color }: { label: string; color: string }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-    <Shadow offset={2} size={2} radius={DS.radius.sm} style={{display:"inline-block"}}>
+    <Shadow offset={2} size={2} radius={DS.radius.sm} style={{ display: "inline-block" }}>
       <div style={{ position: "relative", background: color, border: DS.border, borderRadius: DS.radius.sm, padding: "4px 16px" }}>
         <span className="b t-label" style={{ color: "#fff" }}>{label}</span>
       </div>
@@ -250,7 +267,7 @@ export const IconButton = ({ children, onClick, size = 40, title }: { children: 
 export const Card = ({ children, color, className, style, onClick }: { children: React.ReactNode; color?: string; className?: string; style?: React.CSSProperties; onClick?: () => void }) => {
   const bgColor = color || DS.cream;
   const isLight = color && color !== DS.cream;
-  
+
   return (
     <Shadow offset={isLight ? 5 : 3} size={3} radius={DS.radius.lg} style={{ ...style, cursor: onClick ? "pointer" : "default" }}>
       <div
@@ -312,24 +329,24 @@ export const ProgressBar2 = ({ current, total, color, height = 8 }: { current: n
 };
 
 // ─── MINI CARD (for subject/topic grid) ────────────────────────────────────────
-export const MiniCard = ({ 
-  children, 
-  color, 
+export const MiniCard = ({
+  children,
+  color,
   accentColor,
   onClick,
   showCheckbox = false,
   isSelected = false,
   onToggleSelect,
-}: { 
-  children: React.ReactNode; 
-  color?: string; 
+}: {
+  children: React.ReactNode;
+  color?: string;
   accentColor?: string;
   onClick?: () => void;
   showCheckbox?: boolean;
   isSelected?: boolean;
   onToggleSelect?: () => void;
 }) => (
-  <div 
+  <div
     onClick={onClick}
     style={{
       position: "relative",
@@ -353,7 +370,7 @@ export const MiniCard = ({
     }}
   >
     {showCheckbox && (
-      <div 
+      <div
         onClick={(e) => { e.stopPropagation(); onToggleSelect?.(); }}
         style={{
           position: "absolute",
@@ -380,16 +397,16 @@ export const MiniCard = ({
 
 // ─── NAVBAR ───────────────────────────────────────────────────────────────────
 export const NavBar = ({ children, left, right }: { children?: React.ReactNode; left?: React.ReactNode; right?: React.ReactNode }) => (
-  <nav style={{ 
-    position: "relative", 
-    zIndex: 10, 
-    display: "flex", 
-    alignItems: "center", 
-    justifyContent: "space-between", 
-    padding: "14px 40px", 
-    borderBottom: DS.border, 
-    background: `${DS.card}F0`, 
-    backdropFilter: "blur(14px)" 
+  <nav style={{
+    position: "relative",
+    zIndex: 10,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "14px 40px",
+    borderBottom: DS.border,
+    background: `${DS.card}F0`,
+    backdropFilter: "blur(14px)"
   }}>
     {left}
     {children}
@@ -425,19 +442,19 @@ export const Avatar = ({ emoji, size = 48, color, onClick }: { emoji: string; si
 );
 
 // ─── DROPDOWN MENU ───────────────────────────────────────────────────────────
-export const DropdownMenu = ({ 
-  isOpen, 
-  onClose, 
-  children, 
-  align = "right" 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  children: React.ReactNode; 
+export const DropdownMenu = ({
+  isOpen,
+  onClose,
+  children,
+  align = "right"
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
   align?: "left" | "right";
 }) => {
   if (!isOpen) return null;
-  
+
   return (
     <>
       <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={onClose} />

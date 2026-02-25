@@ -36,7 +36,7 @@ const Texture = () => (
   }} />
 );
 
-const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties }> = ({ children, offset = 3, size = 2.5, radius, style = {} }) => (
+const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties }> = ({ children, offset = 3, size = 3, radius, style = {} }) => (
   <div style={{ position: "relative", borderRadius: radius, ...style }}>
     <div style={{
       position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset,
@@ -53,12 +53,12 @@ const PROFILES = getDummyProfiles();
 
 const ProfileCard: React.FC<{ profile: typeof PROFILES[0]; onClick?: () => void }> = ({ profile, onClick }) => (
   <Shadow offset={3} size={2.5} radius={16}>
-    <div 
-      style={{ 
-        position: "relative", 
-        background: profile.color, 
-        border: DS.border, 
-        borderRadius: 16, 
+    <div
+      style={{
+        position: "relative",
+        background: profile.color,
+        border: DS.border,
+        borderRadius: 16,
         cursor: onClick ? "pointer" : "default",
         transition: "transform 0.15s",
         overflow: "hidden",
@@ -85,18 +85,18 @@ const ProfileCard: React.FC<{ profile: typeof PROFILES[0]; onClick?: () => void 
           justifyContent: "space-between",
           padding: "0 10px"
         }}>
-          <span style={{ 
-            fontSize: 14, 
-            fontWeight: 800, 
+          <span style={{
+            fontSize: 14,
+            fontWeight: 800,
             color: profile.color,
             textTransform: "uppercase",
             letterSpacing: 1
           }}>
             {profile.name}
           </span>
-          <span style={{ 
-            fontSize: 11, 
-            fontWeight: 700, 
+          <span style={{
+            fontSize: 11,
+            fontWeight: 700,
             color: "#333"
           }}>
             {profile.year}
@@ -113,12 +113,12 @@ const ProfileCard: React.FC<{ profile: typeof PROFILES[0]; onClick?: () => void 
           overflow: "hidden",
           background: "white"
         }}>
-          <img 
-            src={profile.image} 
+          <img
+            src={profile.image}
             alt={profile.name}
-            style={{ 
-              width: "100%", 
-              height: "100%", 
+            style={{
+              width: "100%",
+              height: "100%",
               objectFit: "cover"
             }}
           />
@@ -149,7 +149,7 @@ export const TempGridView: React.FC = () => {
   const TOTAL = profiles.length;
   const [activeIndex, setActiveIndex] = useState(0);
   const [animationStage, setAnimationStage] = useState<'stack' | 'dealing' | 'carousel'>('stack');
-  
+
   const cardOffsets = useMemo(() => {
     return profiles.map((_, i) => ({
       x: ((i * 7) % 16) - 8,
@@ -223,7 +223,7 @@ export const TempGridView: React.FC = () => {
     let offset = (index - activeIndex) % TOTAL;
     if (offset < 0) offset += TOTAL;
     if (offset > TOTAL / 2) offset -= TOTAL;
-    
+
     const absOffset = Math.abs(offset);
     const isVisible = absOffset <= 2;
 
@@ -254,19 +254,19 @@ export const TempGridView: React.FC = () => {
       <Texture />
 
       {/* Header */}
-      <div style={{ 
-        padding: "20px 32px", 
-        background: DS.card, 
+      <div style={{
+        padding: "20px 32px",
+        background: DS.card,
         borderBottom: DS.border,
-        display: "flex", 
-        alignItems: "center", 
+        display: "flex",
+        alignItems: "center",
         gap: 16,
         position: "relative",
         zIndex: 200,
         opacity: animationStage === 'carousel' ? 1 : 0,
         transition: "opacity 0.3s"
       }}>
-        <button 
+        <button
           onClick={() => window.location.href = '/admindash'}
           style={{
             padding: "8px 16px",
@@ -285,20 +285,20 @@ export const TempGridView: React.FC = () => {
       </div>
 
       {/* Cards Container */}
-      <div style={{ 
-        position: "relative", 
+      <div style={{
+        position: "relative",
         height: "calc(100vh - 80px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center"
       }}>
         {profiles.map((profile, index) => (
-          <div 
+          <div
             key={profile.id}
             style={getCardStyle(index)}
           >
-            <ProfileCard 
-              profile={profile} 
+            <ProfileCard
+              profile={profile}
               onClick={() => handleCardClick(index)}
             />
           </div>
@@ -316,7 +316,7 @@ export const TempGridView: React.FC = () => {
           gap: 20,
           zIndex: 300,
         }}>
-          <button 
+          <button
             onClick={goToPrev}
             style={{
               width: 50,
@@ -341,7 +341,7 @@ export const TempGridView: React.FC = () => {
             borderRadius: 30
           }}>
             {profiles.map((_, i) => (
-              <div 
+              <div
                 key={i}
                 onClick={() => setActiveIndex(i)}
                 style={{
@@ -355,7 +355,7 @@ export const TempGridView: React.FC = () => {
               />
             ))}
           </div>
-          <button 
+          <button
             onClick={goToNext}
             style={{
               width: 50,
