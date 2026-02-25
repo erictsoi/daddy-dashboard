@@ -145,6 +145,12 @@ const ProfileCard: React.FC<CardProps> = ({
       className={isSelected ? "bounce" : ""}
       onClick={onClick}
       style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        marginTop: -160,
+        marginLeft: -110,
+        transform: 'translate(-50%, -50%)',
         width: 220,
         height: 320,
         background: color,
@@ -152,16 +158,23 @@ const ProfileCard: React.FC<CardProps> = ({
         borderRadius: 16,
         padding: 10,
         cursor: 'pointer',
-        boxShadow: isSelected ? '2px 2px #3D2B1F' : '3px 3px #3D2B1F',
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        marginTop: -160,
-        marginLeft: -110,
-        transform: 'translate(-50%, -50%)',
         zIndex: isSelected ? 100 : 10,
       }}
     >
+      {/* Benday dot shadow - moves with card */}
+      <div style={{
+        position: "absolute",
+        top: 5,
+        left: 5,
+        right: -5,
+        bottom: -5,
+        zIndex: -1,
+        pointerEvents: "none",
+        backgroundImage: `radial-gradient(circle, #3D2B1F 2.5px, transparent 2.5px)`,
+        backgroundSize: "5.5px 5.5px",
+        borderRadius: "inherit",
+        opacity: 0.35,
+      }} />
       {/* Inner white card with black border */}
       <div style={{
         width: "100%",
