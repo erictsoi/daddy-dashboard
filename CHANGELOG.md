@@ -34,6 +34,16 @@
 
 ---
 
+## 2026-02-26 - Version 3.13.2 (Visual Refinement & Stability)
+
+### Fixed
+- **LandingView Shadow Sync** - Shadow logic moved inside the bounce animation container to ensure perfect movement synchronization.
+- **Precision Scale Compensation** - Implemented pixel-based scale compensation for benday dots to maintain consistent texture density regardless of card zoom.
+- **Layout Stabilization** - Standardized header and footer styles to prevent nauseating layout shifts when interface elements fade in/out.
+- **Shadow Offset Stability** - Standardized shadow offset to a constant 4px across all carousel and animation states to eliminate perceived drift.
+
+---
+
 ## 2026-02-25 - Version 3.13.1 (Bug Fix)
 
 ### Fixed

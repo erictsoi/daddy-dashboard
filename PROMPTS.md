@@ -8,6 +8,25 @@
      5. Bump version in package.json
      -->
 
+## 2026-02-26 - Shadow Refinement & Layout Stabilization
+
+**User Request:**
+> fix the visual issue where the benday dot shadows in LandingView.tsx continue to grow and do not synchronize with the card's bounce animation.
+> the benday dots look smaller. i was used to what it was before. Im saying the offset to the shadow seems to grow, not the dot size themselves.
+> No i want the dot size to be what it was before. I want you to keep the benday shadow offset consistant from initail deck, to fanning out, to bounce animation
+> the carousel shifts up slightly once the footer text fades in. keep caorusle in the same place as its nausiating
+
+**Session Actions:**
+- Fixed Shadow Sync: Moved shadow inside card bounce `div`.
+- Standardized Dot Size: Reverted to pixel-based scaling (`size / scale`) to match original look while compensating for container zoom.
+- Stabilized Layout: Standardized header and footer styles to prevent vertical layout shifts when interface elements transition.
+- Standardized Offset: Locked shadow offset to constant `4px` to eliminate perceived growth or drift.
+
+**Files Modified:**
+- `views/LandingView.tsx` - Refactored Shadow and ProfileCard components, stabilized layout transitions.
+
+---
+
 ## 2026-02-25 - Profile Cards Redesign
 
 **User Request:**

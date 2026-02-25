@@ -28,14 +28,13 @@ const GlobalStyles = () => (
     }
   `}</style>
 );
-
-const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties }> = ({ children, offset = 3, size = 2.5, radius, style = {} }) => (
+const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties; scale?: number }> = ({ children, offset = 3, size = 2.5, radius, style = {}, scale = 1 }) => (
   <div style={{ position: "relative", borderRadius: radius, ...style }}>
     <div style={{
       position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset,
       zIndex: -1, pointerEvents: "none",
-      backgroundImage: `radial-gradient(circle, #3D2B1F ${size}px, transparent ${size}px)`,
-      backgroundSize: `${size * 2.2}px ${size * 2.2}px`,
+      backgroundImage: `radial-gradient(circle, #3D2B1F ${size / scale}px, transparent ${size / scale}px)`,
+      backgroundSize: `${(size * 2.2) / scale}px ${(size * 2.2) / scale}px`,
       borderRadius: "inherit", opacity: 0.35,
     }} />
     {children}
@@ -174,8 +173,17 @@ const ProfileCard: React.FC<CardProps> = ({
         zIndex: isSelected ? 100 : 10,
       }}
     >
-      {/* Benday dot shadow - CSS class */}
-      <div className="card-shadow" />
+      {/* Benday dot shadow */}
+      <Shadow
+        scale={isSelected ? 1.5 : 1}
+        offset={isSelected ? 5 : 3}
+        size={2.5}
+        radius={16}
+        style={{ position: "absolute", inset: 0, zIndex: -1 }}
+      >
+        <div style={{ width: "100%", height: "100%" }} />
+      </Shadow>
+
       {/* Inner white card with black border */}
       <div style={{
         width: "100%",
@@ -196,8 +204,8 @@ const ProfileCard: React.FC<CardProps> = ({
           padding: "0 10px",
           flexShrink: 0
         }}>
-          <span style={{ 
-            fontSize: 14, 
+          <span style={{
+            fontSize: 14,
             fontWeight: "bold",
             fontFamily: "Baloo 2, cursive, sans-serif",
             color: color,
@@ -206,9 +214,9 @@ const ProfileCard: React.FC<CardProps> = ({
           }}>
             {name}
           </span>
-          <span style={{ 
-            fontSize: 11, 
-            fontWeight: 700, 
+          <span style={{
+            fontSize: 11,
+            fontWeight: 700,
             color: "#333"
           }}>
             {year}
@@ -226,12 +234,12 @@ const ProfileCard: React.FC<CardProps> = ({
           background: "white",
           flexShrink: 0
         }}>
-          <img 
-            src={isAdmin ? undefined : (image || `/profile-pics/${id}.jpg`)} 
+          <img
+            src={isAdmin ? undefined : (image || `/profile-pics/${id}.jpg`)}
             alt={name}
-            style={{ 
-              width: "100%", 
-              height: "100%", 
+            style={{
+              width: "100%",
+              height: "100%",
               objectFit: "cover",
               display: id === 'admin' ? 'none' : 'block'
             }}
@@ -303,7 +311,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
   ];
 
   const FILLER_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
-  
+
   const FILLERS: ({
     id: string;
     name: string;
@@ -392,16 +400,16 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
         animate={{ opacity: selectedId ? 0 : 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         style={{
-        position: "relative",
-        zIndex: 200,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "14px 40px",
-        borderBottom: DS.border,
-        background: `${DS.card}F0`,
-        backdropFilter: "blur(14px)",
-      }}>
+          position: "relative",
+          zIndex: 200,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "14px 40px",
+          borderBottom: DS.border,
+          background: `${DS.card}F0`,
+          backdropFilter: "blur(14px)",
+        }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{
             position: "relative",
@@ -448,7 +456,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
 
       {/* Main content area */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "16px 40px 24px", maxWidth: 1400, margin: "0 auto", width: "100%" }}>
-        
+
         {/* Headers - matching LandingView position */}
         <AnimatePresence>
           {phase === 'reveal' && (
@@ -477,10 +485,10 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
                   </div>
                 </Shadow>
               </div>
-              <p style={{ 
-                fontFamily: "'Baloo 2', cursive", 
-                fontSize: 18, 
-                fontWeight: 700, 
+              <p style={{
+                fontFamily: "'Baloo 2', cursive",
+                fontSize: 18,
+                fontWeight: 700,
                 color: DS.ink,
                 marginTop: 20,
               }}>
@@ -492,53 +500,53 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
 
         {/* Cards Container */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-        {allCards.map((card: CardItem) => (
-          <ProfileCard
-            key={card.id}
-            id={card.id}
-            name={card.name}
-            year={card.year}
-            emoji={card.emoji}
-            color={card.color}
-            tint={card.tint}
-            age={card.age}
-            interests={card.interests}
-            image={card.image}
-            isAdmin={card.isAdmin}
-            isFiller={card.isFiller}
-            initialOffset={card.initialOffset}
-            finalX={card.finalX}
-            finalY={card.finalY}
-            onClick={!card.isFiller && phase === 'reveal' ? () => handleCardClick(card as typeof cards[0]) : undefined}
-            isSelected={selectedId === card.id}
-            isOtherSelected={selectedId !== null && selectedId !== card.id && !card.isFiller}
-            isRevealed={phase === 'reveal'}
-          />
-        ))}
-      </div>
+          {allCards.map((card: CardItem) => (
+            <ProfileCard
+              key={card.id}
+              id={card.id}
+              name={card.name}
+              year={card.year}
+              emoji={card.emoji}
+              color={card.color}
+              tint={card.tint}
+              age={card.age}
+              interests={card.interests}
+              image={card.image}
+              isAdmin={card.isAdmin}
+              isFiller={card.isFiller}
+              initialOffset={card.initialOffset}
+              finalX={card.finalX}
+              finalY={card.finalY}
+              onClick={!card.isFiller && phase === 'reveal' ? () => handleCardClick(card as typeof cards[0]) : undefined}
+              isSelected={selectedId === card.id}
+              isOtherSelected={selectedId !== null && selectedId !== card.id && !card.isFiller}
+              isRevealed={phase === 'reveal'}
+            />
+          ))}
+        </div>
 
-      {/* Footer */}
-      <AnimatePresence>
-        {phase === 'reveal' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: selectedId ? 0 : 1 }}
-            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-            style={{
-              position: 'absolute',
-              bottom: 80,
-              left: 0,
-              right: 0,
-              textAlign: 'center',
-              zIndex: 50,
-            }}
-          >
-            <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: DS.inkFade, marginTop: 4 }}>
-              Already have an account? <span style={{ color: DS.ink, cursor: "pointer", textDecoration: "underline" }} onClick={() => window.location.href = '/landingview'}>Sign in here</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        {/* Footer */}
+        <AnimatePresence>
+          {phase === 'reveal' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: selectedId ? 0 : 1 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+              style={{
+                position: 'absolute',
+                bottom: 80,
+                left: 0,
+                right: 0,
+                textAlign: 'center',
+                zIndex: 50,
+              }}
+            >
+              <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: DS.inkFade, marginTop: 4 }}>
+                Already have an account? <span style={{ color: DS.ink, cursor: "pointer", textDecoration: "underline" }} onClick={() => window.location.href = '/landingview'}>Sign in here</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

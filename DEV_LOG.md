@@ -8,11 +8,24 @@
 
 ---
 
-## Current Version: 3.4.1
+## Current Version: 3.13.2
 
 ---
 
-## Recent Changes (2026-02-20)
+## Recent Changes (2026-02-26)
+
+### v3.13.2 - LandingView Visual Refinement
+
+**Completed:**
+- ✅ Fixed shadow bounce synchronization by nesting logic inside animation container
+- ✅ Implemented pixel-based scale compensation for benday dots
+- ✅ Standardized LandingView header and footer styles to eliminate layout shifts
+- ✅ Locked shadow offset to constant 4px for stability
+- ✅ Updated `ReturningView` with consistent v6 design system components
+
+---
+
+## Recent Changes (2026-02-25)
 
 ### v3.4.1 - Firestore User Settings
 

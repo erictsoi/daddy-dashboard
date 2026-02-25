@@ -2,160 +2,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { getDummyProfiles } from '../src/data/dummyData';
 
 const DS = {
-  cream:    "#FAF6F0",
-  card:     "#FFFFFF",
-  ink:      "#1A1A2E",
-  inkSoft:  "#6B6580",
-  inkFade:  "#B0A8C0",
+  cream: "#FAF6F0",
+  card: "#FFFFFF",
+  ink: "#1A1A2E",
+  inkSoft: "#6B6580",
+  inkFade: "#B0A8C0",
   dotBrown: "#3D2B1F",
-  border:   "2.5px solid #1A1A2E",
-  radius:   { sm:10, md:16, lg:22, pill:100 },
+  border: "2.5px solid #1A1A2E",
+  radius: { sm: 10, md: 16, lg: 22, pill: 100 },
 };
-
-const GlobalStyles = () => (
-  <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { font-family: 'Nunito Sans', sans-serif; background: #FAF6F0; color: #1A1A2E; }
-    .b  { font-family: 'Baloo 2', cursive; }
-    .n  { font-family: 'Nunito', sans-serif; }
-    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
-    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-    @keyframes fadeIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
-    .float { animation: float 3s ease-in-out infinite; }
-    .bounce { animation: bounce 1.5s ease-in-out infinite; }
-    .fadeIn { animation: fadeIn 0.3s ease-out both; }
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: #EDE8E0; }
-    ::-webkit-scrollbar-thumb { background: #C4BBAF; border-radius: 3px; }
-  `}</style>
-);
-
-const BendayShadow = ({ offset = 3, size = 2.5 }: { offset?: number; size?: number }) => (
-  <div style={{
-    position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset,
-    zIndex: -1, pointerEvents: "none",
-    backgroundImage: `radial-gradient(circle, ${DS.dotBrown} ${size}px, transparent ${size}px)`,
-    backgroundSize: `${size * 2.2}px ${size * 2.2}px`,
-    borderRadius: "inherit", opacity: 0.35,
-  }} />
-);
-
-const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties }> = ({ children, offset = 3, size = 2.5, radius, style = {} }) => (
-  <div style={{ position: "relative", borderRadius: radius, ...style }}>
-    <BendayShadow offset={offset} size={size} />
-    {children}
-  </div>
-);
-
-const Tag = ({ label, color, dark = false }: { label: string; color: string; dark?: boolean }) => (
-  <Shadow offset={2} size={2} radius={DS.radius.pill} style={{ display: "inline-block" }}>
-    <div style={{ position: "relative", background: dark ? DS.ink : color, border: DS.border, borderRadius: DS.radius.pill, padding: "3px 13px" }}>
-      <span className="n" style={{ color: "#fff", fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>{label}</span>
-    </div>
-  </Shadow>
-);
-
-// Pokemon-style Profile Card Component
-const ProfileCard: React.FC<{ profile: typeof RETURNING_PROFILES[0]; isActive?: boolean; onClick?: () => void }> = ({ profile, isActive, onClick }) => (
-  <Shadow offset={isActive ? 5 : 3} size={isActive ? 3 : 2.5} radius={16}>
-    <div 
-      className={isActive ? "bounce" : ""}
-      style={{ 
-        position: "relative", 
-        background: profile.color, 
-        border: DS.border, 
-        borderRadius: 16, 
-        cursor: onClick ? "pointer" : "default",
-        transition: "transform 0.15s",
-        overflow: "visible",
-        width: 220,
-        height: 320,
-        padding: 10
-      }}
-      onClick={onClick}
-    >
-      {isActive && (
-        <div style={{ position: "absolute", top: -12, right: -4, zIndex: 20 }}>
-          <Shadow offset={2} size={2} radius={DS.radius.pill}>
-            <div className="fadeIn" style={{ position: "relative", background: "#FF6B6B", color: "#fff", fontSize: 8, fontWeight: 900, padding: "4px 8px", borderRadius: DS.radius.pill, border: DS.border, fontFamily: "Nunito,sans-serif", letterSpacing: .5 }}>ACTIVE</div>
-          </Shadow>
-        </div>
-      )}
-      {/* Inner white card with black border */}
-      <div style={{
-        width: "100%",
-        height: "100%",
-        background: "white",
-        borderRadius: 8,
-        border: "3px solid black",
-        overflow: "hidden"
-      }}>
-        {/* Name and Year at top */}
-        <div style={{
-          height: 28,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 10px"
-        }}>
-          <span style={{ 
-            fontSize: 14, 
-            fontWeight: "bold",
-            fontFamily: "Baloo 2, cursive, sans-serif",
-            color: profile.color,
-            textTransform: "uppercase",
-            letterSpacing: 1
-          }}>
-            {profile.name}
-          </span>
-          <span style={{ 
-            fontSize: 11, 
-            fontWeight: 700, 
-            color: "#333"
-          }}>
-            {profile.year}
-          </span>
-        </div>
-
-        {/* Rectangular image */}
-        <div style={{
-          width: 170,
-          height: 180,
-          margin: "0 auto",
-          border: "3px solid black",
-          borderRadius: 4,
-          overflow: "hidden",
-          background: "white"
-        }}>
-          <img 
-            src={profile.image} 
-            alt={profile.name}
-            style={{ 
-              width: "100%", 
-              height: "100%", 
-              objectFit: "cover"
-            }}
-          />
-        </div>
-
-        {/* Metadata rectangle */}
-        <div style={{
-          margin: "0 0 6px 0",
-          background: "white",
-          padding: "8px"
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 3 }}>
-            Age: {profile.age}
-          </div>
-          <div style={{ fontSize: 12, fontFamily: "Nunito, sans-serif", color: "#666", lineHeight: 1.3 }}>
-            {profile.interests?.join(" · ")}
-          </div>
-        </div>
-      </div>
-    </div>
-  </Shadow>
-);
 
 const RETURNING_PROFILES = getDummyProfiles().slice(0, 6);
 
@@ -178,6 +33,161 @@ const INTERESTS: Record<string, string[]> = {
   rohan: ["Coding", "Photography", "Film", "Economics"],
 };
 
+const GlobalStyles = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { font-family: 'Nunito Sans', sans-serif; background: #FAF6F0; color: #1A1A2E; }
+    .b  { font-family: 'Baloo 2', cursive; }
+    .n  { font-family: 'Nunito', sans-serif; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+    @keyframes fadeIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
+    .float { animation: float 3s ease-in-out infinite; }
+    .bounce { animation: bounce 1.5s ease-in-out infinite; }
+    .fadeIn { animation: fadeIn 0.3s ease-out both; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #EDE8E0; }
+    ::-webkit-scrollbar-thumb { background: #C4BBAF; border-radius: 3px; }
+  `}</style>
+);
+
+const BendayShadow = ({ offset = 3, size = 2.5, scale = 1 }: { offset?: number; size?: number; scale?: number }) => (
+  <div style={{
+    position: "absolute",
+    top: offset / scale,
+    left: offset / scale,
+    right: -offset / scale,
+    bottom: -offset / scale,
+    zIndex: -1, pointerEvents: "none",
+    backgroundImage: `radial-gradient(circle, ${DS.dotBrown} ${size / scale}px, transparent ${size / scale}px)`,
+    backgroundSize: `${(size * 2.2) / scale}px ${(size * 2.2) / scale}px`,
+    borderRadius: "inherit", opacity: 0.35,
+    transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
+  }} />
+);
+
+const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties; scale?: number }> = ({ children, offset = 4, size = 2.5, radius, style = {}, scale = 1 }) => (
+  <div style={{ position: "relative", borderRadius: radius, ...style }}>
+    <BendayShadow offset={offset} size={size} scale={scale} />
+    {children}
+  </div>
+);
+
+const Tag = ({ label, color, dark = false }: { label: string; color: string; dark?: boolean }) => (
+  <Shadow offset={2} size={2} radius={DS.radius.pill} style={{ display: "inline-block" }}>
+    <div style={{ position: "relative", background: dark ? DS.ink : color, border: DS.border, borderRadius: DS.radius.pill, padding: "3px 13px" }}>
+      <span className="n" style={{ color: "#fff", fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>{label}</span>
+    </div>
+  </Shadow>
+);
+
+// Pokemon-style Profile Card Component
+const ProfileCard: React.FC<{ profile: typeof RETURNING_PROFILES[0]; isActive?: boolean; isReading?: boolean; scale?: number; onClick?: () => void }> = ({ profile, isActive, isReading, scale = 1, onClick }) => {
+  const currentScale = (isReading ? 1.5 : 1) * scale;
+  return (
+    <div className={isActive ? "bounce" : ""} style={{ width: "100%", height: "100%" }}>
+      <Shadow offset={4} size={2.5} radius={16} scale={currentScale}>
+        <div
+          style={{
+            position: "relative",
+            background: profile.color,
+            border: DS.border,
+            borderRadius: 16,
+            cursor: onClick ? "pointer" : "default",
+            transition: "transform 0.15s",
+            overflow: "visible",
+            width: 220,
+            height: 320,
+            padding: 10
+          }}
+          onClick={onClick}
+        >
+          {isActive && (
+            <div style={{ position: "absolute", top: -12, right: -4, zIndex: 20 }}>
+              <Shadow offset={2} size={2} radius={DS.radius.pill}>
+                <div className="fadeIn" style={{ position: "relative", background: "#FF6B6B", color: "#fff", fontSize: 8, fontWeight: 900, padding: "4px 8px", borderRadius: DS.radius.pill, border: DS.border, fontFamily: "Nunito,sans-serif", letterSpacing: .5 }}>ACTIVE</div>
+              </Shadow>
+            </div>
+          )}
+          {/* Inner white card with black border */}
+          <div style={{
+            width: "100%",
+            height: "100%",
+            background: "white",
+            borderRadius: 8,
+            border: "3px solid black",
+            overflow: "hidden"
+          }}>
+            {/* Name and Year at top */}
+            <div style={{
+              height: 28,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0 10px"
+            }}>
+              <span style={{
+                fontSize: 14,
+                fontWeight: "bold",
+                fontFamily: "Baloo 2, cursive, sans-serif",
+                color: profile.color,
+                textTransform: "uppercase",
+                letterSpacing: 1
+              }}>
+                {profile.name}
+              </span>
+              <span style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: "#333"
+              }}>
+                {profile.year}
+              </span>
+            </div>
+
+            {/* Rectangular image */}
+            <div style={{
+              width: 170,
+              height: 180,
+              margin: "0 auto",
+              border: "3px solid black",
+              borderRadius: 4,
+              overflow: "hidden",
+              background: "white"
+            }}>
+              <img
+                src={profile.image}
+                alt={profile.name}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover"
+                }}
+              />
+            </div>
+
+            {/* Metadata rectangle */}
+            <div style={{
+              margin: "0 0 6px 0",
+              background: "white",
+              padding: "8px"
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 3 }}>
+                Age: {profile.age}
+              </div>
+              <div style={{ fontSize: 12, fontFamily: "Nunito, sans-serif", color: "#666", lineHeight: 1.3 }}>
+                {profile.interests?.join(" · ")}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Shadow>
+    </div>
+  );
+};
+
+
 export const LandingView: React.FC = () => {
   const sophiaIndex = RETURNING_PROFILES.findIndex(p => p.id === 'sophia');
   const [activeIndex, setActiveIndex] = useState(sophiaIndex >= 0 ? sophiaIndex : TOTAL_RETURNING - 1);
@@ -185,7 +195,7 @@ export const LandingView: React.FC = () => {
   const [readingProfileId, setReadingProfileId] = useState<string | null>(null);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [footerVisible, setFooterVisible] = useState(false);
-  
+
   const isFiller = (id: string) => id.startsWith('filler');
   const p = RETURNING_PROFILES[activeIndex];
 
@@ -237,7 +247,7 @@ export const LandingView: React.FC = () => {
     if (isFiller(profileId)) return;
 
     const returningIndex = RETURNING_PROFILES.findIndex(p => p.id === profileId);
-    
+
     if (returningIndex === activeIndex) {
       setReadingProfileId(profileId);
       setTimeout(() => {
@@ -258,64 +268,76 @@ export const LandingView: React.FC = () => {
     setActiveIndex((activeIndex + 1) % TOTAL_RETURNING);
   };
 
-  const getCardStyle = (index: number, profileId: string): React.CSSProperties => {
+  const getCardStyle = (index: number, profileId: string): { style: React.CSSProperties; scale: number } => {
     const isFillerCard = isFiller(profileId);
-    
+
     // Handle "reading" mode - selected card scales up, others scale down
     if (readingProfileId) {
       if (profileId === readingProfileId) {
         return {
-          transform: `scale(1.5)`,
-          zIndex: 1000,
-          opacity: 1,
-          transition: "transform 0.5s cubic-bezier(.34,1.56,.64,1)",
+          style: {
+            transform: `scale(1.5)`,
+            zIndex: 1000,
+            opacity: 1,
+            transition: "transform 0.5s cubic-bezier(.34,1.56,.64,1)",
+          },
+          scale: 1,
         };
       }
       return {
-        transform: `scale(0.5)`,
-        zIndex: 0,
-        opacity: 0,
-        transition: "all 0.3s ease-out",
+        style: {
+          transform: `scale(0.5)`,
+          zIndex: 0,
+          opacity: 0,
+          transition: "all 0.3s ease-out",
+        },
+        scale: 1,
       };
     }
-    
+
     if (animationStage === 'stack') {
       const offsets = cardOffsets[index];
       return {
-        transform: `translateX(calc(-50% + ${offsets.x + 120}px)) translateY(${offsets.y}px) scale(1) rotate(${offsets.rotate}deg)`,
-        zIndex: ALL_CARDS.length - index,
-        opacity: 1,
-        transition: "all 0.5s cubic-bezier(.34,1.56,.64,1)",
+        style: {
+          transform: `translateX(calc(-50% + ${offsets.x + 120}px)) translateY(${offsets.y}px) scale(1) rotate(${offsets.rotate}deg)`,
+          zIndex: ALL_CARDS.length - index,
+          opacity: 1,
+          transition: "all 0.5s cubic-bezier(.34,1.56,.64,1)",
+        },
+        scale: 1,
       };
     }
 
     if (animationStage === 'dealing') {
       if (isFillerCard) {
         return {
-          transform: `translateX(calc(-50% + ${cardOffsets[index].dealX}px)) translateY(1000px) scale(0.5) rotate(${cardOffsets[index].dealRotate}deg)`,
-          zIndex: 0,
-          opacity: 0,
-          transition: "all 0.8s ease-in",
+          style: {
+            transform: `translateX(calc(-50% + ${cardOffsets[index].dealX}px)) translateY(1000px) scale(0.5) rotate(${cardOffsets[index].dealRotate}deg)`,
+            zIndex: 0,
+            opacity: 0,
+            transition: "all 0.8s ease-in",
+          },
+          scale: 0.5,
         };
       }
       return getCarouselStyle(index, profileId);
     }
 
     if (animationStage === 'carousel') {
-      if (isFillerCard) return { opacity: 0, scale: 0, zIndex: -1 };
-      
+      if (isFillerCard) return { style: { opacity: 0, transform: "scale(0)", zIndex: -1 }, scale: 0 };
+
       return getCarouselStyle(index, profileId);
     }
 
-    return {};
+    return { style: {}, scale: 1 };
   };
 
-  const getCarouselStyle = (index: number, profileId: string): React.CSSProperties => {
+  const getCarouselStyle = (index: number, profileId: string): { style: React.CSSProperties; scale: number } => {
     const returningIndex = RETURNING_PROFILES.findIndex(p => p.id === profileId);
     let offset = (returningIndex - activeIndex) % TOTAL_RETURNING;
     if (offset < 0) offset += TOTAL_RETURNING;
     if (offset > TOTAL_RETURNING / 2) offset -= TOTAL_RETURNING;
-    
+
     const absOffset = Math.abs(offset);
     const isVisible = absOffset <= 2;
 
@@ -328,11 +350,14 @@ export const LandingView: React.FC = () => {
     const messy = messyValues[returningIndex];
 
     return {
-      transform: `translateX(calc(-50% + ${xOffset}px)) translateY(${yOffset + messy.messyY}px) scale(${scale}) rotate(${rotate + messy.messyRotate}deg)`,
-      zIndex,
-      opacity: isVisible ? 1 : 0,
-      pointerEvents: isVisible ? 'auto' as const : 'none' as const,
-      transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
+      style: {
+        transform: `translateX(calc(-50% + ${xOffset}px)) translateY(${yOffset + messy.messyY}px) scale(${scale}) rotate(${rotate + messy.messyRotate}deg)`,
+        zIndex,
+        opacity: isVisible ? 1 : 0,
+        pointerEvents: isVisible ? 'auto' as const : 'none' as const,
+        transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
+      },
+      scale,
     };
   };
 
@@ -345,13 +370,23 @@ export const LandingView: React.FC = () => {
     return `${others} and ${last}`.toLowerCase();
   };
 
-  const headerStyle: React.CSSProperties = headerVisible 
-    ? { opacity: 1, transform: "translateY(0)", transition: "all 0.5s ease-out", marginBottom: 40, paddingTop: 25 }
-    : { opacity: 0, transform: "translateY(-50px)", transition: "all 0.5s ease-out", pointerEvents: "none" as const };
+  const headerStyle: React.CSSProperties = {
+    opacity: headerVisible ? 1 : 0,
+    transform: headerVisible ? "translateY(0)" : "translateY(-20px)",
+    transition: "all 0.5s ease-out",
+    marginBottom: 40,
+    paddingTop: 25,
+    pointerEvents: headerVisible ? "auto" : "none",
+  };
 
-  const footerStyle: React.CSSProperties = footerVisible
-    ? { opacity: 1, transform: "translateY(0)", transition: "all 0.5s ease-out 0.2s", marginTop: "auto", paddingBottom: 24 }
-    : { opacity: 0, transform: "translateY(50px)", transition: "all 0.5s ease-out", pointerEvents: "none" as const };
+  const footerStyle: React.CSSProperties = {
+    opacity: footerVisible ? 1 : 0,
+    transform: footerVisible ? "translateY(0)" : "translateY(20px)",
+    transition: "all 0.5s ease-out 0.2s",
+    marginTop: "auto",
+    paddingBottom: 24,
+    pointerEvents: footerVisible ? "auto" : "none",
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: DS.cream, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
@@ -374,7 +409,7 @@ export const LandingView: React.FC = () => {
       </nav>
 
       <main style={{ flex: 1, display: "flex", flexDirection: "column", padding: "16px 40px 24px", maxWidth: 1400, margin: "0 auto", width: "100%" }}>
-        
+
         <div style={headerStyle}>
           <div style={{ textAlign: "center" }}>
             <div style={{ display: "inline-block", transform: "rotate(-2deg)" }}>
@@ -396,7 +431,7 @@ export const LandingView: React.FC = () => {
             </>
           )}
           {ALL_CARDS.map((profile, index) => {
-            const style = getCardStyle(index, profile.id);
+            const { style, scale } = getCardStyle(index, profile.id);
             const isReturning = !isFiller(profile.id);
             const isActive = isReturning && RETURNING_PROFILES.findIndex(p => p.id === profile.id) === activeIndex;
             const isCentered = isActive && animationStage === 'carousel';
@@ -407,7 +442,7 @@ export const LandingView: React.FC = () => {
               <div
                 key={profile.id}
                 onClick={() => isReturning && handleCardClick(index, profile.id)}
-                style={{ 
+                style={{
                   position: "absolute",
                   top: "50%",
                   left: "50%",
@@ -421,9 +456,11 @@ export const LandingView: React.FC = () => {
                   ...style,
                 }}
               >
-                <ProfileCard 
-                  profile={profile} 
+                <ProfileCard
+                  profile={profile}
                   isActive={isCentered}
+                  isReading={profile.id === readingProfileId}
+                  scale={scale}
                   onClick={() => isReturning && handleCardClick(index, profile.id)}
                 />
               </div>
@@ -434,10 +471,10 @@ export const LandingView: React.FC = () => {
         <div style={footerStyle}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
             <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: 18, fontWeight: 700, color: DS.ink, maxWidth: 580, padding: "0 20px", textAlign: "center", minHeight: 56, lineHeight: 1.5 }}>
-              <span style={{ background: p.color, color: "#fff", padding: "4px 14px", borderRadius: 6, marginRight: 6, whiteSpace: "nowrap", display: "inline-block" }}>{p.name}</span> 
+              <span style={{ background: p.color, color: "#fff", padding: "4px 14px", borderRadius: 6, marginRight: 6, whiteSpace: "nowrap", display: "inline-block" }}>{p.name}</span>
               is a {p.year} Learner who loves {getInterestsText()}. A great match for ages {p.age}.
             </p>
-            
+
             <Shadow offset={4} size={3} radius={DS.radius.pill}>
               <button
                 onClick={() => handleCardClick(activeIndex, p.id)}
