@@ -4,6 +4,18 @@ import { ChildProfile } from '../types';
 import { DS } from '../components/design-system';
 import { getDummyProfiles } from '../src/data/dummyData';
 
+const GlobalStyles = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { font-family: 'Nunito Sans', sans-serif; background: #FAF6F0; color: #1A1A2E; }
+    .b  { font-family: 'Baloo 2', cursive; }
+    .n  { font-family: 'Nunito', sans-serif; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+    .bounce { animation: bounce 1.5s ease-in-out infinite; }
+  `}</style>
+);
+
 const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties }> = ({ children, offset = 3, size = 2.5, radius, style = {} }) => (
   <div style={{ position: "relative", borderRadius: radius, ...style }}>
     <div style={{
@@ -125,10 +137,12 @@ const ProfileCard: React.FC<CardProps> = ({
         duration: 0.5,
         ease: [0.34, 1.56, 0.64, 1],
       }}
+      whileTap={{ scale: isSelected ? 1.4 : 0.95 }}
       whileHover={!isSelected && !isOtherSelected && isRevealed ? {
         y: -4,
         transition: { duration: 0.2 }
       } : undefined}
+      className={isSelected ? "bounce" : ""}
       onClick={onClick}
       style={{
         width: 220,
@@ -357,6 +371,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
       position: "relative",
       overflow: "hidden",
     }}>
+      <GlobalStyles />
       {/* NAV */}
       <motion.nav
         initial={{ opacity: 0 }}

@@ -20,8 +20,10 @@ const GlobalStyles = () => (
     .b  { font-family: 'Baloo 2', cursive; }
     .n  { font-family: 'Nunito', sans-serif; }
     @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
     @keyframes fadeIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
     .float { animation: float 3s ease-in-out infinite; }
+    .bounce { animation: bounce 1.5s ease-in-out infinite; }
     .fadeIn { animation: fadeIn 0.3s ease-out both; }
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: #EDE8E0; }
@@ -58,6 +60,7 @@ const Tag = ({ label, color, dark = false }: { label: string; color: string; dar
 const ProfileCard: React.FC<{ profile: typeof RETURNING_PROFILES[0]; isActive?: boolean; onClick?: () => void }> = ({ profile, isActive, onClick }) => (
   <Shadow offset={isActive ? 5 : 3} size={isActive ? 3 : 2.5} radius={16}>
     <div 
+      className={isActive ? "bounce" : ""}
       style={{ 
         position: "relative", 
         background: profile.color, 
