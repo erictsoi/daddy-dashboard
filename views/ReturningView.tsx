@@ -65,11 +65,16 @@ interface CardProps {
   initialOffset: { x: number; y: number; rotation: number };
   finalX?: number;
   finalY?: number;
+  finalRotation?: number;
   zIndex?: number;
   onClick?: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
   isSelected?: boolean;
   isOtherSelected?: boolean;
   isRevealed?: boolean;
+  isBouncing?: boolean;
+  isHoverBouncing?: boolean;
 }
 
 const ProfileCard: React.FC<CardProps> = ({
@@ -87,11 +92,16 @@ const ProfileCard: React.FC<CardProps> = ({
   initialOffset,
   finalX = 0,
   finalY = 0,
+  finalRotation = 0,
   zIndex,
   onClick,
+  onMouseEnter,
+  onMouseLeave,
   isSelected,
   isOtherSelected,
   isRevealed,
+  isBouncing = false,
+  isHoverBouncing = false,
 }) => {
   if (isFiller) {
     return (
@@ -146,8 +156,8 @@ const ProfileCard: React.FC<CardProps> = ({
       }}
       animate={isRevealed ? {
         x: isSelected ? 0 : finalX,
-        y: isSelected ? 0 : finalY,
-        rotate: isSelected ? 0 : 0,
+        y: isSelected ? 0 : isHoverBouncing ? finalY - 16 : isBouncing ? finalY - 14 : finalY,
+        rotate: isSelected ? 0 : (finalRotation ?? 0),
         scale: isSelected ? 1.5 : isOtherSelected ? 0.8 : 1,
         opacity: isOtherSelected ? 0 : 1,
       } : {
@@ -157,15 +167,23 @@ const ProfileCard: React.FC<CardProps> = ({
         scale: 1,
         opacity: 1,
       }}
-      transition={{
+      transition={isSelected ? {
+        type: 'tween',
+        duration: 0.4,
+        ease: "easeOut",
+      } : isHoverBouncing ? {
+        y: { repeat: Infinity, repeatType: 'reverse', duration: 0.35, ease: 'easeInOut' },
+        default: { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] },
+      } : isBouncing ? {
+        duration: 0.35,
+        ease: [0.34, 1.56, 0.64, 1],
+      } : {
         duration: 0.5,
         ease: [0.34, 1.56, 0.64, 1],
       }}
       whileTap={{ scale: isSelected ? 1.4 : 0.95 }}
-      whileHover={!isSelected && !isOtherSelected && isRevealed ? {
-        y: -4,
-        transition: { duration: 0.2 }
-      } : undefined}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       onClick={onClick}
       style={{
         position: 'absolute',
@@ -300,6 +318,7 @@ interface CardItem {
   initialOffset: { x: number; y: number; rotation: number };
   finalX?: number;
   finalY?: number;
+  finalRotation?: number;
   zIndex?: number;
   age?: string;
   interests?: string[];
@@ -316,6 +335,15 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
   const [phase, setPhase] = useState<'stack' | 'reveal'>('stack');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [navigating, setNavigating] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(() => window.innerWidth);
+  const [bouncingIndex, setBouncingIndex] = useState<number>(-1);
+  const [hoveredIndex, setHoveredIndex] = useState<number>(-1);
+
+  useEffect(() => {
+    const onResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const DEMO_PROFILES = getDummyProfiles();
 
@@ -358,38 +386,51 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
     tint: '',
     isFiller: true,
     initialOffset: {
-      x: (Math.random() - 0.5) * 20,
-      y: (Math.random() - 0.5) * 20,
-      rotation: (Math.random() - 0.5) * 4,
+      x: (Math.random() - 0.5) * 10,
+      y: (Math.random() - 0.5) * 10,
+      rotation: (Math.random() - 0.5) * 2,
     },
   }));
 
   const CARD_WIDTH = 220;
-  const GAP = -25;
+  const MARGIN = 40;
+  const availableWidth = windowWidth - MARGIN * 2;
+  const GAP = Math.min(20, (availableWidth - CARD_WIDTH * PROFILES.length) / (PROFILES.length - 1));
   const totalWidth = PROFILES.length * CARD_WIDTH + (PROFILES.length - 1) * GAP;
   const startX = -totalWidth / 2 + CARD_WIDTH / 2;
+
+  // Pre-compute stable jitter values so they don't change on re-render.
+  // Rotations alternate direction by index to guarantee a visual mix.
+  const JITTER = React.useMemo(() => PROFILES.map((_, i) => ({
+    finalYOffset: ((i + 1) % 2 === 0 ? 1 : -1) * (2 + Math.random() * 6),
+    finalRotation: (i % 2 === 0 ? 1 : -1) * (0.5 + Math.random() * 2),
+    initX: (Math.random() - 0.5) * 12,
+    initY: (Math.random() - 0.5) * 12,
+    initRot: (Math.random() - 0.5) * 3,
+  })), []);
 
   const cards = PROFILES.map((profile, index) => ({
     ...profile,
     isFiller: false,
     initialOffset: {
-      x: (Math.random() - 0.5) * 20,
-      y: (Math.random() - 0.5) * 20,
-      rotation: (Math.random() - 0.5) * 4,
+      x: JITTER[index].initX,
+      y: JITTER[index].initY,
+      rotation: JITTER[index].initRot,
     },
     finalX: startX + index * (CARD_WIDTH + GAP),
-    finalY: 0,
+    finalY: JITTER[index].finalYOffset,
+    finalRotation: JITTER[index].finalRotation,
     zIndex: PROFILES.length - index,
   }));
 
-  const allCards = [...FILLERS.map(f => ({
+  const allCards = React.useMemo(() => [...FILLERS.map(f => ({
     ...f,
     color: f.color,
     tint: '',
     year: '',
     name: '',
     emoji: '',
-  })), ...cards];
+  })), ...cards], [cards]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -398,10 +439,32 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
     return () => clearTimeout(timer);
   }, []);
 
+  // Sequential bounce: after reveal starts, cycle through each card
+  useEffect(() => {
+    if (phase !== 'reveal' || selectedId) return;
+    // Start after cards have settled
+    const startDelay = setTimeout(() => {
+      setBouncingIndex(0);
+    }, 600);
+    return () => clearTimeout(startDelay);
+  }, [phase, selectedId]);
+
+  useEffect(() => {
+    // Pause sequential advance while a card is hovered
+    if (bouncingIndex < 0 || selectedId || hoveredIndex >= 0) return;
+    const numCards = cards.length;
+    const timer = setTimeout(() => {
+      setBouncingIndex(prev => (prev + 1) % numCards);
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [bouncingIndex, selectedId, hoveredIndex]);
+
   const handleCardClick = (card: typeof cards[0]) => {
     if (navigating) return;
     setSelectedId(card.id);
     setNavigating(true);
+    setHoveredIndex(-1);
+    setBouncingIndex(-1);
 
     setTimeout(() => {
       if (card.isAdmin) {
@@ -525,7 +588,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
         </AnimatePresence>
 
         {/* Cards Container */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '0 40px' }}>
           {allCards.map((card: CardItem) => (
             <ProfileCard
               key={card.id}
@@ -543,11 +606,23 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
               initialOffset={card.initialOffset}
               finalX={card.finalX}
               finalY={card.finalY}
+              finalRotation={(card as any).finalRotation}
               zIndex={card.zIndex}
               onClick={!card.isFiller && phase === 'reveal' ? () => handleCardClick(card as typeof cards[0]) : undefined}
+              onMouseEnter={!card.isFiller && phase === 'reveal' && !selectedId ? () => {
+                const idx = cards.findIndex(c => c.id === card.id);
+                setHoveredIndex(idx);
+              } : undefined}
+              onMouseLeave={!card.isFiller && phase === 'reveal' && !selectedId ? () => {
+                const idx = cards.findIndex(c => c.id === card.id);
+                setBouncingIndex(idx);
+                setHoveredIndex(-1);
+              } : undefined}
               isSelected={selectedId === card.id}
               isOtherSelected={selectedId !== null && selectedId !== card.id && !card.isFiller}
               isRevealed={phase === 'reveal'}
+              isBouncing={!card.isFiller && !selectedId && hoveredIndex < 0 && bouncingIndex === cards.findIndex(c => c.id === card.id)}
+              isHoverBouncing={!card.isFiller && !selectedId && hoveredIndex === cards.findIndex(c => c.id === card.id)}
             />
           ))}
         </div>

@@ -503,3 +503,190 @@ export const DropdownItem = ({ children, onClick, danger }: { children: React.Re
     {children}
   </button>
 );
+// ─── COMMAND PALETTE ──────────────────────────────────────────────────────────
+export const CommandPalette = ({
+  isOpen,
+  onClose,
+  query,
+  setQuery,
+  commands
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  query: string;
+  setQuery: (q: string) => void;
+  commands: { id: string; name: string; icon?: string; action: () => void; category?: string }[]
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "15vh", background: "rgba(26, 26, 46, 0.4)", backdropFilter: "blur(4px)" }} onClick={onClose}>
+      <div style={{ width: "100%", maxWidth: 600, padding: "0 20px" }} onClick={e => e.stopPropagation()}>
+        <Shadow offset={6} size={4} radius={DS.radius.lg}>
+          <div style={{ background: DS.card, border: DS.borderThick, borderRadius: DS.radius.lg, overflow: "hidden" }}>
+            <div style={{ padding: "20px", borderBottom: DS.border, display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 20 }}>🔍</span>
+              <input
+                autoFocus
+                placeholder="Type a command or search..."
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 18, fontFamily: "Nunito", color: DS.ink, background: "transparent" }}
+              />
+            </div>
+            <div style={{ maxHeight: "400px", overflowY: "auto", padding: "10px 0" }}>
+              {commands.length === 0 ? (
+                <div style={{ padding: "20px", textAlign: "center", color: DS.inkFade }}>No commands found</div>
+              ) : (
+                commands.map((cmd, i) => (
+                  <button
+                    key={cmd.id}
+                    onClick={() => { cmd.action(); onClose(); }}
+                    style={{
+                      width: "100%", padding: "12px 20px", border: "none", background: "none",
+                      display: "flex", alignItems: "center", gap: 15, cursor: "pointer",
+                      textAlign: "left"
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#F5F5F5"}
+                    onMouseLeave={e => e.currentTarget.style.background = "none"}
+                  >
+                    <span style={{ fontSize: 20 }}>{cmd.icon || "⚡"}</span>
+                    <div style={{ flex: 1 }}>
+                      <div className="n" style={{ fontWeight: 700, color: DS.ink }}>{cmd.name}</div>
+                      {cmd.category && <div className="t-label" style={{ color: DS.inkFade, fontSize: 9 }}>{cmd.category}</div>}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+            <div style={{ padding: "12px 20px", background: DS.cream, borderTop: DS.border, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="t-label" style={{ color: DS.inkFade }}>↑↓ to navigate · enter to select</div>
+              <div className="t-label" style={{ color: DS.inkFade }}>esc to close</div>
+            </div>
+          </div>
+        </Shadow>
+      </div>
+    </div>
+  );
+};
+
+// ─── AI CHAT SIDEBAR ──────────────────────────────────────────────────────────
+export const AIChatSidebar = ({
+  isOpen,
+  onClose,
+  messages,
+  onSendMessage,
+  isTyping,
+  models,
+  selectedModel,
+  onSelectModel
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  messages: { role: string; content: string }[];
+  onSendMessage: (content: string) => void;
+  isTyping: boolean;
+  models: { id: string; name: string }[];
+  selectedModel: string;
+  onSelectModel: (id: string) => void;
+}) => {
+  const [inputValue, setInputValue] = React.useState("");
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, isTyping]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 400, zIndex: 900, background: DS.cream, borderLeft: DS.borderThick, display: "flex", flexDirection: "column", animation: "slide .3s ease-out" }}>
+      <div style={{ padding: "20px", borderBottom: DS.border, display: "flex", alignItems: "center", justifyContent: "space-between", background: DS.card }}>
+        <div>
+          <h2 className="b t-h2" style={{ color: DS.ink }}>AI Chat</h2>
+          <select
+            value={selectedModel}
+            onChange={e => onSelectModel(e.target.value)}
+            style={{ border: "none", background: "none", fontSize: 10, fontWeight: 800, color: DS.inkSoft, cursor: "pointer", outline: "none", textTransform: "uppercase" }}
+          >
+            {models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
+        </div>
+        <IconButton onClick={onClose} size={32}>✕</IconButton>
+      </div>
+
+      <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: 15 }}>
+        {messages.map((msg, i) => (
+          <div key={i} style={{
+            alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+            maxWidth: '85%',
+            position: 'relative'
+          }}>
+            <Shadow offset={2} size={2} radius={12}>
+              <div style={{
+                background: msg.role === 'user' ? DS.ink : DS.card,
+                color: msg.role === 'user' ? '#fff' : DS.ink,
+                border: DS.border,
+                borderRadius: 12,
+                padding: "12px 16px",
+                fontSize: 14,
+                lineHeight: 1.5
+              }}>
+                {msg.content}
+              </div>
+            </Shadow>
+          </div>
+        ))}
+        {isTyping && (
+          <div style={{ alignSelf: 'flex-start', maxWidth: '85%', position: 'relative' }}>
+            <Shadow offset={2} size={2} radius={12}>
+              <div style={{ background: DS.card, border: DS.border, borderRadius: 12, padding: "12px 16px", display: "flex", gap: 4 }}>
+                <span className="blink" style={{ width: 6, height: 6, background: DS.inkFade, borderRadius: "50%" }} />
+                <span className="blink" style={{ width: 6, height: 6, background: DS.inkFade, borderRadius: "50%", animationDelay: "0.2s" }} />
+                <span className="blink" style={{ width: 6, height: 6, background: DS.inkFade, borderRadius: "50%", animationDelay: "0.4s" }} />
+              </div>
+            </Shadow>
+          </div>
+        )}
+      </div>
+
+      <div style={{ padding: "20px", background: DS.card, borderTop: DS.border }}>
+        <div style={{ display: "flex", gap: 10 }}>
+          <textarea
+            rows={1}
+            placeholder="Ask anything..."
+            value={inputValue}
+            onChange={e => setInputValue(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (inputValue.trim()) {
+                  onSendMessage(inputValue);
+                  setInputValue("");
+                }
+              }
+            }}
+            style={{
+              flex: 1, border: DS.border, borderRadius: DS.radius.sm, padding: "12px",
+              fontSize: 14, fontFamily: "Nunito Sans", outline: "none", resize: "none"
+            }}
+          />
+          <button
+            onClick={() => {
+              if (inputValue.trim()) {
+                onSendMessage(inputValue);
+                setInputValue("");
+              }
+            }}
+            style={{
+              width: 44, height: 44, background: DS.ink, color: "#fff", border: DS.border,
+              borderRadius: DS.radius.sm, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center"
+            }}
+          >
+            ➤
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
