@@ -1,3 +1,10 @@
+## 2026-02-27 - v3.14.2 - Admin Card Image
+
+### Added
+- **Admin Card Image**: Added profile image for admin card (`/profile-pics/Admin.jpg`)
+
+---
+
 ## 2026-02-27 - v3.14.1 - Card Alignment & Command Palette
 
 ### Added

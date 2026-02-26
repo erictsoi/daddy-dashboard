@@ -274,13 +274,12 @@ const ProfileCard: React.FC<CardProps> = ({
               flexShrink: 0
             }}>
               <img
-                src={isAdmin ? undefined : (image || `/profile-pics/${id}.jpg`)}
+                src={isAdmin ? "/profile-pics/Admin.jpg" : (image || `/profile-pics/${id}.jpg`)}
                 alt={name}
                 style={{
                   width: "100%",
                   height: "100%",
-                  objectFit: "cover",
-                  display: id === 'admin' ? 'none' : 'block'
+                  objectFit: "cover"
                 }}
               />
             </div>
