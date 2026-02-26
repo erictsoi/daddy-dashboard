@@ -1,3 +1,15 @@
+## 2026-02-27 - v3.14.1 - Card Alignment & Command Palette
+
+### Added
+- **CommandPalette Component**: New design system component with modal UI, search input, and command list
+- **useCommandPalette Hook**: React hook with keyboard shortcuts (Cmd+Shift+P / Ctrl+Shift+P), escape to close
+- **openRouter.ts**: New lib for OpenRouter AI API integration with model fetching and chat completions
+
+### Changed
+- **ReturningView Card Positions**: Reduced randomness - y offset from 4-16px to 2-8px, rotation from 1.5-6° to 0.5-2.5°, initial offsets halved
+
+---
+
 ## 2026-02-26 - v3.14.0 - Subject Categories & Colors
 
 ### Added
