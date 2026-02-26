@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { getDummyProfiles } from '../src/data/dummyData';
-import { getSubjectColor } from '../constants';
-import { getSubjectHexColor } from '../utils/subjects';
+import { getSubjectColor, getSubjectCategoryLabel } from '../constants';
+import { getSubjectHexColor, getSubjectCategory, SUBJECT_BUCKET_ORDER } from '../utils/subjects';
 
 const DS = {
   cream: "#FAF6F0",
@@ -441,8 +441,8 @@ export const AdminDash: React.FC = () => {
             </div>
             <div style={{ flex: 1, height: 2, background: "rgba(26, 26, 46, 0.094)", borderRadius: 100 }} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-            {kids[0].subjects.map((item: any, i: number) => (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14 }}>
+            {[...kids[0].subjects].sort((a: any, b: any) => SUBJECT_BUCKET_ORDER.indexOf(getSubjectCategory(a.subject)) - SUBJECT_BUCKET_ORDER.indexOf(getSubjectCategory(b.subject))).map((item: any, i: number) => (
               <div
                 key={i}
                 className={`card-${i}`}
@@ -493,7 +493,10 @@ export const AdminDash: React.FC = () => {
                       </div>
                     </div>
                     <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
-                    <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 10, fontWeight: 600 }}>{item.topic}</div>
+                    <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 6, fontWeight: 600 }}>{item.topic}</div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', background: `${item.color}15`, border: `1px solid ${item.color}40`, borderRadius: 4, marginBottom: 8 }}>
+                      <span className="n" style={{ fontSize: 9, fontWeight: 700, color: item.color, textTransform: 'uppercase' }}>{getSubjectCategoryLabel(item.subject)}</span>
+                    </div>
                     <div style={{ height: 7, background: "#EDE8E0", borderRadius: 100, overflow: "hidden", border: "1.5px solid #1A1A2E" }}>
                       <div style={{ height: "100%", width: `${(item.progress / item.total) * 100}%`, background: item.color, borderRadius: 100 }} />
                     </div>
@@ -530,8 +533,8 @@ export const AdminDash: React.FC = () => {
             </div>
             <div style={{ flex: 1, height: 2, background: "rgba(26, 26, 46, 0.094)", borderRadius: 100 }} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-            {kids[1].subjects.map((item: any, i: number) => (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14 }}>
+            {[...kids[1].subjects].sort((a: any, b: any) => SUBJECT_BUCKET_ORDER.indexOf(getSubjectCategory(a.subject)) - SUBJECT_BUCKET_ORDER.indexOf(getSubjectCategory(b.subject))).map((item: any, i: number) => (
               <div
                 key={i}
                 className={`card-${i}`}
@@ -582,7 +585,10 @@ export const AdminDash: React.FC = () => {
                       </div>
                     </div>
                     <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
-                    <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 10, fontWeight: 600 }}>{item.topic}</div>
+                    <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 6, fontWeight: 600 }}>{item.topic}</div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', background: `${item.color}15`, border: `1px solid ${item.color}40`, borderRadius: 4, marginBottom: 8 }}>
+                      <span className="n" style={{ fontSize: 9, fontWeight: 700, color: item.color, textTransform: 'uppercase' }}>{getSubjectCategoryLabel(item.subject)}</span>
+                    </div>
                     <div style={{ height: 7, background: "#EDE8E0", borderRadius: 100, overflow: "hidden", border: "1.5px solid #1A1A2E" }}>
                       <div style={{ height: "100%", width: `${(item.progress / item.total) * 100}%`, background: item.color, borderRadius: 100 }} />
                     </div>

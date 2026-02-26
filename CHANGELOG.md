@@ -1,3 +1,22 @@
+## 2026-02-26 - v3.14.0 - Subject Categories & Colors
+
+### Added
+- **7 Subject Categories**: Core Learning, Science, Languages, Creative, STEM & Digital, Physical & Life, Additional
+- **Category Badges**: Each subject card now displays its category label with colored background
+- **Category Sorting**: Subjects sorted by category order in admin dashboard
+- **Default Subjects List**: Ordered default subjects exported from `utils/subjects.ts`
+- **Extra Subjects Picker**: Preset options for additional subjects (Extra Languages, Economics, Media, Coding, Dance, Debate, Exam Prep, Custom)
+
+### Changed
+- **Saturated Colors**: More vibrant subject colors (red, blue, orange, purple, green, yellow)
+- **Grid Layout**: 5-column grid for subject cards in admin dashboard
+
+### Technical
+- **New Exports**: `getSubjectCategory`, `getSubjectCategoryLabel`, `SUBJECT_BUCKET_ORDER`, `DEFAULT_SUBJECTS`, `EXTRA_SUBJECTS`
+- **Category Colors**: Updated `CATEGORY_COLORS` with saturated palette
+
+---
+
 ## 2026-02-26 - v3.13.8 - Faux Bold & Animation Fixes
 - **Faux Bold**: Applied `text-shadow` to child names for extra thickness (~125% boost).
 - **Animation Fix**: Removed `bounce-card` CSS conflict in `ReturningView.tsx`.

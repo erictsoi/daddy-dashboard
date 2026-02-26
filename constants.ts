@@ -1,8 +1,12 @@
 import { ChildProfile } from './types';
-import { getSubjectHexColor as getColor } from './utils/subjects';
+import { getSubjectHexColor as getColor, getSubjectCategoryLabel as getCategoryLabel } from './utils/subjects';
 
 export const getSubjectColor = (subjectName: string): string => {
   return getColor(subjectName);
+};
+
+export const getSubjectCategoryLabel = (subjectName: string): string => {
+  return getCategoryLabel(subjectName);
 };
 
 export const INITIAL_DATA: ChildProfile[] = [
