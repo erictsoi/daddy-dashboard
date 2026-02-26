@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspens
 import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
 import { ChildProfile, YearGroup, Subject, Topic, Lesson, ScheduleBlock, ParsedRow } from './types';
 import { INITIAL_DATA } from './constants';
-import { AuthProvider, useAuth } from './src/lib/AuthContext';
-import { auth as firebaseAuth, googleProvider, signInWithGoogle, logOut as firebaseLogOut } from './src/lib/firebase'
-import { fetchChildren, fetchChildByEmail, fetchChildById, getLocalData, saveFullCurriculum, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, hardDeleteTopicFromFirebase, migrateChildToTopicStructure, fetchUserSettings, saveUserSettings, UserSettings } from './src/lib/dataService';
-import { getSubjectWeight, STEM_SUBJECTS, CORE_SUBJECTS } from './src/lib/scheduleUtils';
-import { usePersistentTimer } from './src/lib/useTimer';
-import { saveData, generateUuid, exportDataToFile } from './src/lib/helpers';
+import { AuthProvider, useAuth } from './lib/AuthContext';
+import { auth as firebaseAuth, googleProvider, signInWithGoogle, logOut as firebaseLogOut } from './lib/firebase'
+import { fetchChildren, fetchChildByEmail, fetchChildById, getLocalData, saveFullCurriculum, softDeleteLessonInFirebase, hardDeleteLessonFromFirebase, hardDeleteSubjectFromFirebase, hardDeleteTopicFromFirebase, migrateChildToTopicStructure, fetchUserSettings, saveUserSettings, UserSettings } from './lib/dataService';
+import { getSubjectWeight, STEM_SUBJECTS, CORE_SUBJECTS } from './lib/scheduleUtils';
+import { usePersistentTimer } from './lib/useTimer';
+import { saveData, generateUuid, exportDataToFile } from './lib/helpers';
 const CurriculumBuilder = lazy(() => import('./components/CurriculumBuilder').then(m => ({ default: m.CurriculumBuilder })));
 const AdminDash = lazy(() => import('./views/AdminDash').then(m => ({ default: m.AdminDash })));
 const KidDash = lazy(() => import('./views/KidDash').then(m => ({ default: m.KidDash })));

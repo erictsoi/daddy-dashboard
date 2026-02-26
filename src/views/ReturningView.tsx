@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChildProfile } from '../types';
 import { DS } from '../components/design-system';
-import { getDummyProfiles } from '../src/data/dummyData';
+import { getDummyProfiles } from '../data/dummyData';
 
 const GlobalStyles = () => (
   <style>{`

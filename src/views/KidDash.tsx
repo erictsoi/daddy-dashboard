@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getDummyChild } from '../src/data/dummyData';
+import { getDummyChild } from '../data/dummyData';
 import { getSubjectHexColor, getSubjectIcon } from '../utils/subjects';
 
 interface KidDashProps {

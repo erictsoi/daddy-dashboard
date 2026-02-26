@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getDummyProfiles } from '../src/data/dummyData';
+import { getDummyProfiles } from '../data/dummyData';
 
 const DS = {
   cream: "#FAF6F0",

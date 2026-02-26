@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getDummyProfiles } from '../src/data/dummyData';
+import { getDummyProfiles } from '../data/dummyData';
 import { getSubjectColor, getSubjectCategoryLabel } from '../constants';
 import { getSubjectHexColor, getSubjectCategory, SUBJECT_BUCKET_ORDER } from '../utils/subjects';
 

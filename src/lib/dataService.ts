@@ -1,8 +1,8 @@
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  getDocs, 
+import {
+  doc,
+  getDoc,
+  setDoc,
+  getDocs,
   collection,
   deleteDoc,
   query,
@@ -11,7 +11,7 @@ import {
   deleteField
 } from 'firebase/firestore'
 import { db } from './firebase'
-import { ChildProfile, YearGroup, Subject, Topic, Lesson } from '../../types'
+import { ChildProfile, YearGroup, Subject, Topic, Lesson } from '../types'
 
 const STORAGE_KEY = 'daddy_dashboard_data'
 
@@ -51,23 +51,23 @@ export const saveLocalData = (data: ChildProfile[]) => {
 }
 
 export const saveFullCurriculum = async (
-  children: ChildProfile[], 
+  children: ChildProfile[],
   userId: string
 ): Promise<void> => {
   console.log('saveFullCurriculum: saving', children.length, 'children for userId', userId)
-  
+
   for (const child of children) {
     const childRef = doc(db, 'users', userId, 'children', ensureUuid(child.id))
-    
+
     const childData = {
       ...child,
       id: ensureUuid(child.id),
       userId,
       updatedAt: new Date().toISOString()
     }
-    
+
     await setDoc(childRef, childData, { merge: true })
-    
+
     // Create/update linked account if child has googleEmail
     if (child.googleEmail) {
       const linkRef = doc(db, 'linkedAccounts', child.googleEmail.toLowerCase())
@@ -80,20 +80,20 @@ export const saveFullCurriculum = async (
       }, { merge: true })
     }
   }
-  
+
   console.log('saveFullCurriculum: complete')
 }
 
 export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => {
   console.log('fetchChildren: loading for userId', userId)
-  
+
   const childrenRef = collection(db, 'users', userId, 'children')
   const snapshot = await getDocs(childrenRef)
-  
+
   console.log('fetchChildren: found', snapshot.size, 'children')
-  
+
   if (snapshot.empty) return []
-  
+
   const children = snapshot.docs.map(doc => {
     const data = doc.data()
     return {
@@ -101,23 +101,23 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
       id: doc.id
     } as ChildProfile
   })
-  
+
   console.log('fetchChildren: returning', children.length, 'children with full data')
   return children
 }
 
 export const fetchChildById = async (parentUid: string, childId: string): Promise<ChildProfile | null> => {
   console.log('fetchChildById: loading child', childId, 'from parent', parentUid)
-  
+
   try {
     const childRef = doc(db, 'users', parentUid, 'children', childId)
     const childSnap = await getDoc(childRef)
-    
+
     if (!childSnap.exists()) {
       console.log('fetchChildById: child not found')
       return null
     }
-    
+
     return {
       ...childSnap.data(),
       id: childSnap.id
@@ -130,38 +130,38 @@ export const fetchChildById = async (parentUid: string, childId: string): Promis
 
 export const fetchChildByEmail = async (email: string): Promise<{ child: ChildProfile[]; allChildren: ChildProfile[]; parentUid: string }> => {
   console.log('fetchChildByEmail: looking for email', email)
-  
+
   if (!email) return { child: [], allChildren: [], parentUid: '' }
-  
+
   try {
     // First, look up which parent this child is linked to
     const linkRef = collection(db, 'linkedAccounts')
     const linkQuery = query(linkRef, where('childEmail', '==', email.toLowerCase()))
     const linkSnapshot = await getDocs(linkQuery)
-    
+
     if (linkSnapshot.empty) {
       console.log('fetchChildByEmail: no linked account found')
       return { child: [], allChildren: [], parentUid: '' }
     }
-    
+
     const linkData = linkSnapshot.docs[0].data()
     const parentUid = linkData.parentUid
     console.log('fetchChildByEmail: found parentUid', parentUid)
-    
+
     // Fetch ALL children from parent's collection (for profile switching)
     const childrenRef = collection(db, 'users', parentUid, 'children')
     const allChildrenSnapshot = await getDocs(childrenRef)
-    
+
     const allChildren = allChildrenSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id
     })) as ChildProfile[]
-    
+
     // Filter to find the signed-in child
     const child = allChildren.filter(c => c.googleEmail?.toLowerCase() === email.toLowerCase())
-    
+
     console.log('fetchChildByEmail: found', allChildren.length, 'children, matching child:', child.length)
-    
+
     return { child, allChildren, parentUid }
   } catch (error) {
     console.error('fetchChildByEmail error:', error)
@@ -170,15 +170,15 @@ export const fetchChildByEmail = async (email: string): Promise<{ child: ChildPr
 }
 
 export const uploadToFirebase = async (
-  userId: string, 
+  userId: string,
   currentData?: ChildProfile[]
 ): Promise<{ success: boolean; message: string }> => {
   const dataToUpload = currentData || getLocalData()
-  
+
   if (!dataToUpload.length) {
     return { success: false, message: 'No data found. Import curriculum first.' }
   }
-  
+
   try {
     await saveFullCurriculum(dataToUpload, userId)
     return { success: true, message: `Uploaded ${dataToUpload.length} children to Firebase` }
@@ -198,10 +198,10 @@ export const loadFromFirebase = async (userId: string): Promise<{
     if (children.length === 0) {
       return { success: false, message: 'No data found in Firebase' }
     }
-    return { 
-      success: true, 
-      message: `Loaded ${children.length} children from Firebase`, 
-      data: children 
+    return {
+      success: true,
+      message: `Loaded ${children.length} children from Firebase`,
+      data: children
     }
   } catch (error) {
     console.error('Load error:', error)
@@ -215,19 +215,19 @@ export const updateChildGoogleEmail = async (childId: string, email: string, use
 }
 
 export const softDeleteLessonInFirebase = async (
-  childId: string, 
+  childId: string,
   lessonId: string,
   userId: string
 ): Promise<void> => {
   // With full document structure, need to find and update
   const childRef = doc(db, 'users', userId, 'children', childId)
   const childDoc = await getDoc(childRef)
-  
+
   if (!childDoc.exists()) return
-  
+
   const childData = childDoc.data() as ChildProfile
   const updated = { ...childData }
-  
+
   // Find and update the lesson
   for (const yg of updated.yearGroups || []) {
     for (const sub of yg.subjects || []) {
@@ -240,24 +240,24 @@ export const softDeleteLessonInFirebase = async (
       }
     }
   }
-  
+
   await setDoc(childRef, updated, { merge: true })
 }
 
 export const hardDeleteLessonFromFirebase = async (
-  childId: string, 
+  childId: string,
   lessonId: string,
   userId: string
 ): Promise<void> => {
   // Similar to soft delete but remove entirely
   const childRef = doc(db, 'users', userId, 'children', childId)
   const childDoc = await getDoc(childRef)
-  
+
   if (!childDoc.exists()) return
-  
+
   const childData = childDoc.data() as ChildProfile
   const updated = { ...childData }
-  
+
   for (const yg of updated.yearGroups || []) {
     for (const sub of yg.subjects || []) {
       for (const topic of sub.topics || []) {
@@ -265,7 +265,7 @@ export const hardDeleteLessonFromFirebase = async (
       }
     }
   }
-  
+
   await setDoc(childRef, updated, { merge: true })
 }
 
@@ -276,16 +276,16 @@ export const hardDeleteSubjectFromFirebase = async (
 ): Promise<void> => {
   const childRef = doc(db, 'users', userId, 'children', childId)
   const childDoc = await getDoc(childRef)
-  
+
   if (!childDoc.exists()) return
-  
+
   const childData = childDoc.data() as ChildProfile
   const updated = { ...childData }
-  
+
   for (const yg of updated.yearGroups || []) {
     yg.subjects = yg.subjects?.filter(s => s.id !== subjectId) || []
   }
-  
+
   await setDoc(childRef, updated, { merge: true })
 }
 
@@ -296,18 +296,18 @@ export const hardDeleteTopicFromFirebase = async (
 ): Promise<void> => {
   const childRef = doc(db, 'users', userId, 'children', childId)
   const childDoc = await getDoc(childRef)
-  
+
   if (!childDoc.exists()) return
-  
+
   const childData = childDoc.data() as ChildProfile
   const updated = { ...childData }
-  
+
   for (const yg of updated.yearGroups || []) {
     for (const subj of yg.subjects || []) {
       subj.topics = subj.topics?.filter(t => t.id !== topicId) || []
     }
   }
-  
+
   await setDoc(childRef, updated, { merge: true })
 }
 
@@ -321,10 +321,10 @@ export const migrateChildToTopicStructure = (child: ChildProfile): ChildProfile 
           return sub
         }
         const existingLessons = Array.isArray((sub as any).lessons) ? (sub as any).lessons : []
-        const topicName = sub.name && sub.name.includes(':') 
-          ? sub.name.split(':')[1].trim() 
+        const topicName = sub.name && sub.name.includes(':')
+          ? sub.name.split(':')[1].trim()
           : (sub.name || 'General')
-        
+
         return {
           ...sub,
           topics: [{
@@ -359,7 +359,7 @@ export const fetchUserSettings = async (userId: string): Promise<UserSettings> =
   try {
     const settingsRef = doc(db, 'users', userId, 'settings', 'profile')
     const snapshot = await getDoc(settingsRef)
-    
+
     if (snapshot.exists()) {
       const data = snapshot.data()
       console.log('fetchUserSettings: found settings', data)
@@ -368,7 +368,7 @@ export const fetchUserSettings = async (userId: string): Promise<UserSettings> =
         ...data
       }
     }
-    
+
     console.log('fetchUserSettings: no settings found, using defaults')
     return DEFAULT_SETTINGS
   } catch (error) {

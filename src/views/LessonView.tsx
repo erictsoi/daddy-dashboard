@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getDummyChild } from '../src/data/dummyData';
+import { getDummyChild } from '../data/dummyData';
 
 interface LessonViewProps {
     childId: string;

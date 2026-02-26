@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChildProfile, YearGroup } from '../../types';
+import { ChildProfile, YearGroup } from '../types';
 import { saveFullCurriculum, saveLocalData } from './dataService';
 
 export interface HandlerDeps {
@@ -42,7 +42,7 @@ export const createHandlers = (deps: HandlerDeps) => {
 
   const handleUpdateChild = (id: string, updates: Partial<ChildProfile>) => {
     setData(prev => {
-      const newData = prev.map(child => 
+      const newData = prev.map(child =>
         child.id === id ? { ...child, ...updates } : child
       );
       if (user) {

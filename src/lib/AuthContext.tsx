@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { 
-  User, 
+import {
+  User,
   onAuthStateChanged,
   signInWithPopup,
-  signOut as firebaseSignOut 
+  signOut as firebaseSignOut
 } from 'firebase/auth'
 import { auth, googleProvider } from './firebase'
-import { INITIAL_DATA } from '../../constants'
+import { INITIAL_DATA } from '../constants'
 
 export type UserRole = 'daddy' | 'child' | 'guest'
 
