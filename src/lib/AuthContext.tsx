@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import {
   User,
@@ -27,7 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log('AuthContext: Firebase user:', firebaseUser?.email || 'none')
+      logger.log('AuthContext: Firebase user:', firebaseUser?.email || 'none')
       setUser(firebaseUser)
       setLoading(false)
     })
@@ -39,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await signInWithPopup(auth, googleProvider)
     } catch (error) {
-      console.error('Error signing in with Google:', error)
+      logger.error('Error signing in with Google:', error)
     }
   }
 
@@ -49,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserRole('guest')
       window.location.reload()
     } catch (error) {
-      console.error('Error signing out:', error)
+      logger.error('Error signing out:', error)
     }
   }
 

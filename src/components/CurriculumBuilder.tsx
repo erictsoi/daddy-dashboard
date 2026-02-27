@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { ArrowLeft, Save, AlertCircle, FileText, CheckCircle, Link, Copy, Youtube, Loader2, ChevronRight } from 'lucide-react';
 import { fetchPlaylistVideos, processYouTubeUrl } from '../utils/youtube';
@@ -42,12 +43,12 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
     setPlaylistError('');
 
     try {
-      console.log('[CurriculumBuilder] Loading playlist:', playlistUrl);
+      logger.log('[CurriculumBuilder] Loading playlist:', playlistUrl);
       const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
-      console.log('[CurriculumBuilder] API Key available:', !!apiKey);
+      logger.log('[CurriculumBuilder] API Key available:', !!apiKey);
       
       const videos = await fetchPlaylistVideos(playlistUrl);
-      console.log('[CurriculumBuilder] Loaded', videos.length, 'videos');
+      logger.log('[CurriculumBuilder] Loaded', videos.length, 'videos');
 
       const cleanUrl = cleanPlaylistUrl(playlistUrl);
       // Get playlist title from first video
@@ -73,7 +74,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
       };
       setParsedRows([newRow]);
     } catch (error) {
-      console.error('[CurriculumBuilder] Error loading playlist:', error);
+      logger.error('[CurriculumBuilder] Error loading playlist:', error);
       setPlaylistError(`Failed to load playlist: ${error instanceof Error ? error.message : 'Unknown error'}. Check the URL and try again.`);
     } finally {
       setIsLoadingPlaylist(false);
@@ -216,7 +217,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
 
   const handleImport = useCallback(() => {
     if (isImporting) {
-      console.log('[CurriculumBuilder] Import already in progress');
+      logger.log('[CurriculumBuilder] Import already in progress');
       return;
     }
     
@@ -226,11 +227,11 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
     }));
     
     if (finalRows.length === 0) {
-      console.log('[CurriculumBuilder] No valid rows to import');
+      logger.log('[CurriculumBuilder] No valid rows to import');
       return;
     }
     
-    console.log('[CurriculumBuilder] Calling onImport with', finalRows.length, 'rows');
+    logger.log('[CurriculumBuilder] Calling onImport with', finalRows.length, 'rows');
     setIsImporting(true);
     onImport(finalRows);
     

@@ -1,3 +1,4 @@
+import { logger } from './lib/logger';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -5,7 +6,7 @@ import App from './App';
 import './index.css';
 import { AuthProvider } from './lib/AuthContext';
 
-console.log('Starting app...');
+logger.log('Starting app...');
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -13,9 +14,9 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-console.log('Creating root...');
+logger.log('Creating root...');
 const root = ReactDOM.createRoot(rootElement);
-console.log('Rendering app...');
+logger.log('Rendering app...');
 root.render(
   <React.StrictMode>
     <BrowserRouter>
@@ -25,4 +26,4 @@ root.render(
     </BrowserRouter>
   </React.StrictMode>
 );
-console.log('App rendered');
+logger.log('App rendered');

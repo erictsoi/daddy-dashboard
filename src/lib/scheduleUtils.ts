@@ -15,20 +15,19 @@ export const getSubjectWeight = (
   subjectName: string,
   childIndex: number,
   childFreqMode: FrequencyMode[],
-  freqModeSophia: SubjectFrequencyWeights,
-  freqModeAdrian: SubjectFrequencyWeights
+  perSubjectWeightsMap: Record<number, SubjectFrequencyWeights> = {}
 ): number => {
-  // First check for per-subject override
-  const perSubjectWeights = childIndex === 0 ? freqModeSophia : freqModeAdrian;
+  // First check for per-subject override for this specific child
+  const perSubjectWeights = perSubjectWeightsMap[childIndex] || {};
   if (perSubjectWeights[subjectName]) {
     return perSubjectWeights[subjectName];
   }
-  
+
   // Fall back to child-level mode
   const mode = childFreqMode[childIndex] || 'balanced';
   const isSTEM = STEM_SUBJECTS.some(s => subjectName.toLowerCase().includes(s.toLowerCase()));
   const isCore = CORE_SUBJECTS.some(s => subjectName.toLowerCase().includes(s.toLowerCase()));
-  
+
   if (mode === 'balanced') return 2;
   if (mode === 'stem') return isSTEM ? 3 : 1;
   if (mode === 'arts') {
