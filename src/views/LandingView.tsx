@@ -4,6 +4,7 @@ import { DS } from '../components/design-system';
 import { DEMO_PROFILES } from '../data/demoProfiles';
 import { useAppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
+import { getLocalData } from '../lib/dataService';
 
 // Constants
 const CARD_WIDTH = 220;
@@ -188,6 +189,20 @@ export const LandingView: React.FC = () => {
         emoji: child.emoji,
         image: child.image,
         interests: child.interests
+      }));
+    }
+    // Check localStorage for saved data (when not logged in)
+    const localData = getLocalData();
+    if (localData && localData.length > 0) {
+      return localData.map(child => ({
+        id: child.id,
+        name: child.name,
+        year: child.yearGroups[0]?.name || 'Year ?',
+        age: undefined,
+        color: child.themeColor,
+        emoji: child.avatar,
+        image: undefined,
+        interests: undefined
       }));
     }
     return DEMO_PROFILES;
