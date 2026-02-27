@@ -2,24 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDummyChild } from '../data/dummyData';
 import { ChildProfile } from '../types';
+import { DS } from '../components/design-system';
 
 interface LessonViewProps {
     childId: string;
     lessonId: string;
     data?: ChildProfile[];
 }
-
-const DS = {
-    cream: "#FAF6F0",
-    card: "#FFFFFF",
-    ink: "#1A1A2E",
-    inkSoft: "#6B6580",
-    inkFade: "#B0A8C0",
-    dotBrown: "#3D2B1F",
-    border: "2.5px solid #1A1A2E",
-    borderThick: "3px solid #1A1A2E",
-    radius: { sm: 10, md: 16, lg: 22, pill: 100 },
-};
 
 const GlobalStyles = () => (
     <style>{`
