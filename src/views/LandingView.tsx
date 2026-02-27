@@ -174,7 +174,6 @@ export const LandingView: React.FC = () => {
   const [headerVisible, setHeaderVisible] = useState(true);
   const [footerVisible, setFooterVisible] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const [isExpanding, setIsExpanding] = useState(false);
 
   const isFiller = (id: string) => id.startsWith('filler');
 
@@ -256,25 +255,16 @@ export const LandingView: React.FC = () => {
     const returningIndex = RETURNING_PROFILES.findIndex(p => p.id === profileId);
 
     if (returningIndex === activeIndex) {
-      // Hide header/footer immediately
       setReadingProfileId(profileId);
-      
-      // Wait for footer to fade out, then expand card
       setTimeout(() => {
-        setIsExpanding(true);
-        
-        // Wait for card expansion, then navigate
-        setTimeout(() => {
-          if (profileId === 'admin') {
-            onNavigate({ type: 'ADMIN' });
-          } else {
-            onNavigate({ type: 'KIDSDASH', childId: profileId });
-          }
-          // Cleanup
-          setReadingProfileId(null);
-          setIsExpanding(false);
-        }, NAVIGATE_TIMEOUT);
-      }, 400);
+        if (profileId === 'admin') {
+          onNavigate({ type: 'ADMIN' });
+        } else {
+          onNavigate({ type: 'KIDSDASH', childId: profileId });
+        }
+        // Cleanup reading state in case navigation takes time or user stays on page
+        setReadingProfileId(null);
+      }, NAVIGATE_TIMEOUT);
     } else {
       setActiveIndex(returningIndex);
     }
@@ -324,8 +314,8 @@ export const LandingView: React.FC = () => {
   const getCardStyle = useCallback((index: number, profileId: string): { style: React.CSSProperties; scale: number } => {
     const isFillerCard = isFiller(profileId);
 
-    // Handle "expanding" mode - selected card scales up, others scale down (after footer fades)
-    if (isExpanding) {
+    // Handle "reading" mode - selected card scales up, others scale down
+    if (readingProfileId) {
       if (profileId === readingProfileId) {
         return {
           style: {
