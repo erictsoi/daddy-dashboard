@@ -2,6 +2,7 @@ import React from 'react';
 import { ChildProfile, YearGroup } from '../types';
 import { saveFullCurriculum, saveLocalData } from './dataService';
 import { logger } from './logger';
+import { generateUuid } from './helpers';
 
 export interface HandlerDeps {
   data: ChildProfile[];
@@ -15,7 +16,7 @@ export const createHandlers = (deps: HandlerDeps) => {
   const handleAddChild = (childData: Omit<ChildProfile, 'id' | 'yearGroups'>) => {
     const newChild: ChildProfile = {
       ...childData,
-      id: Math.random().toString(36).substr(2, 9),
+      id: generateUuid(),
       yearGroups: [],
     };
     setData(prev => {
@@ -57,7 +58,7 @@ export const createHandlers = (deps: HandlerDeps) => {
 
   const handleAddYearGroup = (childId: string, name: string) => {
     const newYg: YearGroup = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: generateUuid(),
       name,
       subjects: [],
     };
