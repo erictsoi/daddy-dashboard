@@ -18,6 +18,7 @@ const KidDash = lazy(() => import('./views/KidDash').then(m => ({ default: m.Kid
 const LessonView = lazy(() => import('./views/LessonView').then(m => ({ default: m.LessonView })));
 const ReturningView = lazy(() => import('./views/ReturningView').then(m => ({ default: m.ReturningView })));
 const Marketplace = lazy(() => import('./views/Marketplace').then(m => ({ default: m.Marketplace })));
+const CurriculumBuilder = lazy(() => import('./components/CurriculumBuilder').then(m => ({ default: m.CurriculumBuilder })));
 
 const AppInner: React.FC = () => {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ const AppInner: React.FC = () => {
     handleAddYearGroup,
     handleRemoveYearGroup,
     handleUpdateChildProfile,
+    handleBulkImport,
     setAdminAvatar
   } = useAppContext();
 
@@ -65,11 +67,18 @@ const AppInner: React.FC = () => {
         </Suspense>} />
 
         <Route path="/marketplace" element={<Suspense fallback={<div>Loading...</div>}><Marketplace /></Suspense>} />
+        <Route path="/curriculumbuilder" element={<Suspense fallback={<div>Loading...</div>}>
+          <CurriculumBuilder
+            onBack={() => navigate('/admindash')}
+            onImport={handleBulkImport}
+            onImportComplete={() => navigate('/admindash')}
+          />
+        </Suspense>} />
         {/* <Route path="/temp-grid" element={<Suspense fallback={<div>Loading...</div>}><TempGridView /></Suspense>} /> */}
 
         {/* Redirects */}
         <Route path="/admin" element={<Navigate to="/admindash" replace />} />
-        <Route path="/curriculum" element={<Navigate to="/admindash" replace />} />
+        <Route path="/curriculum" element={<Navigate to="/curriculumbuilder" replace />} />
         <Route path="/manage" element={<Navigate to="/admindash" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

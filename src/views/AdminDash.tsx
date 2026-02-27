@@ -48,7 +48,7 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
     else if (view.type === 'ADMIN' || view.type === 'HOME') navigate('/admindash');
     else if (view.type === 'LANDING') navigate('/');
     else if (view.type === 'MARKETPLACE') navigate('/marketplace');
-    else if (view.type === 'CURRICULUM') navigate('/admindash');
+    else if (view.type === 'CURRICULUM') navigate('/curriculumbuilder');
     else if (view.type === 'PROFILES') navigate('/returningview');
   };
 
