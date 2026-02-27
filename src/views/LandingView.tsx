@@ -125,17 +125,25 @@ const ProfileCard: React.FC<{ profile: any; isActive?: boolean; isReading?: bool
               border: "3px solid black",
               borderRadius: 4,
               overflow: "hidden",
-              background: "white"
+              background: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 80
             }}>
-              <img
-                src={profile.image}
-                alt={profile.name}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover"
-                }}
-              />
+              {profile.image ? (
+                <img
+                  src={profile.image}
+                  alt={profile.name}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover"
+                  }}
+                />
+              ) : (
+                <span>{profile.emoji}</span>
+              )}
             </div>
 
             {/* Metadata rectangle */}
