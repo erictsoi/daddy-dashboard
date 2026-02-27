@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { useAppData } from '../hooks/useAppData';
-import { ChildProfile, TopicFrequency, ParsedRow } from '../types';
+import { ChildProfile, TopicFrequency, ParsedRow, ParsedTemplateRow } from '../types';
 
 interface AppContextValue {
     children: ChildProfile[];
@@ -35,6 +35,7 @@ interface AppContextValue {
 
     handleCompleteLesson: (childId: string, subjectId: string, topicId: string, lessonId: string, timeSpentSeconds: number) => void;
     handleBulkImport: (rows: ParsedRow[]) => void;
+    handleTemplateImport: (rows: ParsedTemplateRow[]) => void;
     handleDeleteSubject: (childId: string, subjectId: string) => void;
 
     handleAddLesson: (childId: string, subjectId: string, topicId: string, title: string) => void;
@@ -83,6 +84,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         handleCompleteLesson: appData.handleCompleteLesson,
         handleBulkImport: appData.handleBulkImport,
+        handleTemplateImport: appData.handleTemplateImport,
         handleDeleteSubject: appData.handleDeleteSubject,
 
         handleAddLesson: appData.handleAddLesson,

@@ -76,6 +76,7 @@ export interface CurriculumCard {
   backupPlaylist1?: string;
   backupPlaylist2?: string;
   notes?: string;
+  outcomes?: string;
   approved: boolean;
 }
 
@@ -154,7 +155,7 @@ export interface ParsedRow {
   videoPosition?: number;
 }
 
-// Template Mode - 7 column import format
+// Template Mode - 8 column import format
 export interface ParsedTemplateRow {
   profile: string;
   subject: string;
@@ -163,6 +164,7 @@ export interface ParsedTemplateRow {
   backupPlaylist1?: string;
   backupPlaylist2?: string;
   notes: string;
+  outcomes?: string;
   isValid: boolean;
 }
 

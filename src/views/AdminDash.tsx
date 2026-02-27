@@ -88,16 +88,40 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
 
   const kids = useMemo(() => {
     return children.map((child) => {
-      // Map currency subjects to the dashboard format
-      const subjects = (child.yearGroups[0]?.subjects || []).map(s => ({
-        subject: s.name,
-        topic: s.topics[0]?.name || 'No Topic',
-        icon: '📚',
-        color: getSubjectColor(s.name),
-        progress: s.topics[0]?.lessons.filter(l => l.completed).length || 0,
-        total: s.topics[0]?.lessons.length || 1,
-        category: s.category || getSubjectCategory(s.name)
-      }));
+      // Use profileData.stacks if available, otherwise fall back to yearGroups
+      let subjects: any[] = [];
+      
+      if (child.profileData?.stacks?.length > 0) {
+        // New template format: show each subject as its own stack with 3 cards
+        subjects = child.profileData.stacks
+          .filter(stack => stack.cards.length > 0)
+          .map(stack => {
+            const cardProgress = stack.cards.filter(c => c.approved).length;
+            return {
+              subject: stack.type, // Use subject name directly (English, Maths, etc.)
+              topic: `${stack.cards.length} cards`,
+              icon: '📚',
+              color: getSubjectColor(stack.type),
+              progress: cardProgress,
+              total: stack.cards.length,
+              category: stack.type,
+              isStack: true,
+              cards: stack.cards
+            };
+          });
+      } else {
+        // Old format: use yearGroups
+        subjects = (child.yearGroups[0]?.subjects || []).map(s => ({
+          subject: s.name,
+          topic: s.topics[0]?.name || 'No Topic',
+          icon: '📚',
+          color: getSubjectColor(s.name),
+          progress: s.topics[0]?.lessons.filter(l => l.completed).length || 0,
+          total: s.topics[0]?.lessons.length || 1,
+          category: s.category || getSubjectCategory(s.name),
+          isStack: false
+        }));
+      }
 
       // Mock schedule for now based on subjects
       const schedule = subjects.slice(0, 5).map((s, i) => ({
@@ -110,10 +134,10 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
       return {
         profile: {
           id: child.id,
-          name: child.name,
+          name: child.profileData?.customName || child.name,
           emoji: child.avatar,
           color: getGlobalSubjectColor(child.themeColor as any),
-          year: child.yearGroups[0]?.name || 'N/A'
+          year: child.profileData?.template || child.yearGroups[0]?.name || 'N/A'
         },
         schedule: [
           ...schedule.slice(0, 2),
@@ -449,6 +473,42 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
                       </div>
                       <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
                       <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 6, fontWeight: 600 }}>{item.topic}</div>
+                      {/* Show 3 stacked cards for template mode */}
+                      {item.cards && item.cards.length > 0 && (
+                        <div style={{ position: 'relative', height: 85, marginBottom: 8, marginLeft: 10 }}>
+                          {item.cards.slice(0, 3).map((card: any, ci: number) => (
+                            <div key={ci} style={{
+                              position: 'absolute',
+                              left: ci * 10,
+                              top: ci * 12,
+                              width: 70,
+                              height: 52,
+                              background: card.approved ? item.color : '#FFF',
+                              border: `2.5px solid ${item.color}`,
+                              borderRadius: 8,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '4px 2px',
+                              fontSize: 7,
+                              color: card.approved ? '#FFF' : item.color,
+                              fontWeight: 600,
+                              boxShadow: `${ci + 1}px ${ci + 1}px 0 rgba(0,0,0,0.15)`,
+                              zIndex: 10 - ci,
+                              overflow: 'hidden'
+                            }}>
+                              <div style={{ fontSize: 10, marginBottom: 2 }}>▶</div>
+                              <div style={{ textAlign: 'center', lineHeight: 1.1 }}>
+                                {card.focus?.replace(' (Primary)', '').replace(' (Backup 1)', '').replace(' (Backup 2)', '').substring(0, 12)}
+                              </div>
+                              <div style={{ fontSize: 5, opacity: 0.7, marginTop: 2 }}>
+                                {card.focus?.includes('Primary') ? '1' : card.focus?.includes('Backup 1') ? '2' : '3'}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', background: `${item.color}15`, border: `1px solid ${item.color}40`, borderRadius: 4, marginBottom: 8 }}>
                         <span className="n" style={{ fontSize: 9, fontWeight: 700, color: item.color, textTransform: 'uppercase' }}>{getSubjectCategoryLabel(item.subject)}</span>
                       </div>

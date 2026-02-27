@@ -33,6 +33,7 @@ const AppInner: React.FC = () => {
     handleRemoveYearGroup,
     handleUpdateChildProfile,
     handleBulkImport,
+    handleTemplateImport,
     setAdminAvatar
   } = useAppContext();
 
@@ -72,6 +73,7 @@ const AppInner: React.FC = () => {
             onBack={() => navigate('/admindash')}
             onImport={handleBulkImport}
             onImportComplete={() => navigate('/admindash')}
+            onTemplateImport={handleTemplateImport}
           />
         </Suspense>} />
         {/* <Route path="/temp-grid" element={<Suspense fallback={<div>Loading...</div>}><TempGridView /></Suspense>} /> */}

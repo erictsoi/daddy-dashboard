@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChildProfile, YearGroup, Subject, Topic, Lesson, ParsedRow, TopicFrequency, UserSettings } from '../types';
+import { ChildProfile, YearGroup, Subject, Topic, Lesson, ParsedRow, ParsedTemplateRow, TopicFrequency, UserSettings } from '../types';
 import {
     fetchChildren, fetchChildByEmail, getLocalData,
     saveFullCurriculum, hardDeleteSubjectFromFirebase,
@@ -316,6 +316,151 @@ export const useAppData = (user: any, authLoading: boolean) => {
         navigate('/admindash');
     }, [data, user, navigate]);
 
+    const handleTemplateImport = useCallback((rows: ParsedTemplateRow[]) => {
+        if (isBulkImportingRef.current) return;
+        isBulkImportingRef.current = true;
+
+        const newData = [...data];
+
+        rows.forEach(row => {
+            if (!row.isValid) return;
+
+            logger.log('[handleTemplateImport] Processing row:', row.profile, row.subject, row.focus);
+
+            // Map profile string to profile template
+            const profileMap: Record<string, string> = {
+                'y1/2 child': 'Y1-2',
+                'y1/2': 'Y1-2',
+                'y3/4 child': 'Y3-4',
+                'y3/4': 'Y3-4',
+                'y5/6 child': 'Y5-6',
+                'y5/6': 'Y5-6',
+                'y7/8 child': 'Y7-8',
+                'y7/8': 'Y7-8',
+                'y9/10 child': 'Y9-10',
+                'y9/10': 'Y9-10',
+                'y11/12 child': 'Y11-12',
+                'y11/12': 'Y11-12'
+            };
+            const profileTemplate = profileMap[row.profile.toLowerCase()] || 'Y5-6';
+
+            // Map profile to year group name
+            const profileToYear: Record<string, string> = {
+                'Y1-2': 'Year 1',
+                'Y3-4': 'Year 3',
+                'Y5-6': 'Year 5',
+                'Y7-8': 'Year 7',
+                'Y9-10': 'Year 9',
+                'Y11-12': 'Year 11'
+            };
+            const defaultYear = profileToYear[profileTemplate] || 'Year 5';
+
+            let child = newData.find(c => c.name.toLowerCase() === row.profile.toLowerCase());
+            
+            if (!child) {
+                child = {
+                    id: `child-${row.profile.toLowerCase().replace(/\s+/g, '-')}`,
+                    name: row.profile,
+                    dob: '',
+                    avatar: '👶',
+                    themeColor: 'blue',
+                    yearGroups: [{ id: `yg-${row.profile.toLowerCase().replace(/\s+/g, '-')}`, name: defaultYear, subjects: [] }],
+                    profileTemplate,
+                    profileData: {
+                        template: profileTemplate,
+                        customName: row.profile,
+                        interests: [],
+                        stacks: [],
+                        approved: false,
+                        createdAt: new Date().toISOString()
+                    }
+                };
+                newData.push(child);
+                logger.log('[handleTemplateImport] Created new child');
+            }
+
+            // Create/update profileData.stacks with the template data
+            if (!child.profileData) {
+                child.profileData = {
+                    template: profileTemplate,
+                    customName: child.name,
+                    interests: [],
+                    stacks: [],
+                    approved: false,
+                    createdAt: new Date().toISOString()
+                };
+            }
+
+            // Map subject to stack type
+            const subjectStackMap: Record<string, string> = {
+                'english': 'coreAcademics',
+                'maths': 'coreAcademics',
+                'science': 'coreAcademics',
+                'languages': 'languages',
+                'french': 'languages',
+                'spanish': 'languages',
+                'german': 'languages',
+                'modern foreign languages': 'languages',
+                'art': 'creativePerforming',
+                'art & design': 'creativePerforming',
+                'music': 'creativePerforming',
+                'design & technology': 'creativePerforming',
+                'dt': 'creativePerforming',
+                'computing': 'stemDigital',
+                'computer science': 'stemDigital',
+                'pe': 'physicalWellbeing',
+                'physical education': 'physicalWellbeing',
+                'pshe': 'characterEnrichment',
+                'citizenship': 'characterEnrichment',
+                're': 'characterEnrichment',
+                'religious education': 'characterEnrichment',
+                'history': 'additionalSubjects',
+                'geography': 'additionalSubjects'
+            };
+            const stackType = row.subject; // Use subject name directly as stack (English, Maths, etc.)
+
+            // Find or create the stack by subject name (not category)
+            let stack = child.profileData.stacks.find(s => s.type === stackType);
+            if (!stack) {
+                stack = { type: stackType as any, cards: [] };
+                child.profileData.stacks.push(stack);
+            }
+
+            // Add 3 cards to stack - one for each playlist (Primary, Backup1, Backup2)
+            const playlists = [
+                { label: 'Primary', url: row.primaryPlaylist },
+                { label: 'Backup 1', url: row.backupPlaylist1 },
+                { label: 'Backup 2', url: row.backupPlaylist2 }
+            ];
+
+            playlists.forEach((playlist, idx) => {
+                if (!playlist.url) return;
+                
+                const cardId = `${row.subject.toLowerCase().replace(/\s+/g, '-')}-${row.focus.toLowerCase().replace(/\s+/g, '-')}-${idx}`;
+                const existingCard = stack.cards.find(c => c.id === cardId);
+                if (!existingCard) {
+                    stack.cards.push({
+                        id: cardId,
+                        focus: `${row.focus} (${playlist.label})`,
+                        primaryPlaylist: playlist.url,
+                        backupPlaylist1: undefined,
+                        backupPlaylist2: undefined,
+                        notes: row.notes,
+                        outcomes: row.outcomes,
+                        approved: false
+                    });
+                }
+            });
+        });
+
+        setData(newData);
+        logger.log('[handleTemplateImport] New data:', newData);
+        saveData(newData, user);
+        logger.log('[handleTemplateImport] Saved, navigating to admindash');
+        isBulkImportingRef.current = false;
+        navigate('/admindash');
+    }, [data, user, navigate]);
+
     const handleDeleteSubject = useCallback(async (childId: string, subjectId: string) => {
         if (user) {
             await hardDeleteSubjectFromFirebase(subjectId, childId, user.uid).catch(logger.error);
@@ -504,6 +649,7 @@ export const useAppData = (user: any, authLoading: boolean) => {
         handleRemoveYearGroup,
         handleCompleteLesson,
         handleBulkImport,
+        handleTemplateImport,
         handleDeleteSubject,
         handleAddLesson,
         handleRestoreLesson,

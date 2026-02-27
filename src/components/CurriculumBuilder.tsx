@@ -124,6 +124,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
       const backupPlaylist1 = cols[4]?.trim() || '';
       const backupPlaylist2 = cols[5]?.trim() || '';
       const notes = cols[6]?.trim() || '';
+      const outcomes = cols[7]?.trim() || '';
 
       const isValid = !!(profile && subject && focus);
 
@@ -135,6 +136,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
         backupPlaylist1: backupPlaylist1 || undefined,
         backupPlaylist2: backupPlaylist2 || undefined,
         notes,
+        outcomes: outcomes || undefined,
         isValid,
       };
     });
@@ -255,6 +257,10 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
     }, 0);
   }, [parsedRows]);
 
+  const totalTemplateRows = useMemo(() => {
+    return templateRows.filter(r => r.isValid).length;
+  }, [templateRows]);
+
   const handleImport = useCallback(() => {
     if (isImporting) {
       logger.log('[CurriculumBuilder] Import already in progress');
@@ -368,10 +374,10 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
                 {playlistRows.length > 0 ? `Expand ${playlistRows.length} Playlists` : 'Playlists Expanded'}
               </button>
             </Shadow>
-            <Shadow offset={2} size={2} radius={DS.radius.pill} style={{ display: 'inline-block', opacity: totalLessons > 0 && !isProcessing && !isImporting ? 1 : 0.5 }}>
+            <Shadow offset={2} size={2} radius={DS.radius.pill} style={{ display: 'inline-block', opacity: (inputMode === 'template' ? totalTemplateRows : totalLessons) > 0 && !isProcessing && !isImporting ? 1 : 0.5 }}>
               <button
                 onClick={handleImport}
-                disabled={totalLessons === 0 || isProcessing || isImporting}
+                disabled={(inputMode === 'template' ? totalTemplateRows : totalLessons) === 0 || isProcessing || isImporting}
                 style={{
                   position: 'relative',
                   background: totalLessons > 0 && !isProcessing && !isImporting ? '#2563EB' : '#E5E7EB',
@@ -389,7 +395,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
                 title="Save all lessons to curriculum"
               >
                 <Save size={18} />
-                {isImporting ? 'Importing...' : `Import ${totalLessons} Lessons`}
+                {isImporting ? 'Importing...' : `Import ${inputMode === 'template' ? totalTemplateRows : totalLessons} ${inputMode === 'template' ? 'Cards' : 'Lessons'}`}
               </button>
             </Shadow>
           </div>

@@ -202,8 +202,32 @@ export const LandingView: React.FC = () => {
     // Check localStorage for saved data (when not logged in)
     const localData = getLocalData();
     if (localData && localData.length > 0) {
+      const fallbackImages: Record<string, string> = {
+        amara: '/profile-pics/amara.jpg',
+        marcus: '/profile-pics/marcus.jpg',
+        sophia: '/profile-pics/sophia.jpg',
+        kai: '/profile-pics/kai.jpg',
+        adrian: '/profile-pics/adrian.jpg',
+        rohan: '/profile-pics/rohan.jpg'
+      };
+      const defaultInterests: Record<string, string[]> = {
+        'year 1': ['Reading', 'Drawing', 'Play'],
+        'year 2': ['Reading', 'Drawing', 'Play'],
+        'year 3': ['Sports', 'Games', 'Reading'],
+        'year 4': ['Sports', 'Games', 'Reading'],
+        'year 5': ['Art', 'Music', 'Sports'],
+        'year 6': ['Art', 'Music', 'Sports'],
+        'year 7': ['Gaming', 'Sports', 'Music'],
+        'year 8': ['Gaming', 'Sports', 'Music'],
+        'year 9': ['Gaming', 'Sports', 'Music'],
+        'year 10': ['Gaming', 'Sports', 'Music'],
+        'year 11': ['Study', 'Sports', 'Music'],
+        'year 12': ['Study', 'Sports', 'Music'],
+      };
       return localData.map(child => {
         const themeColor = child.themeColor || 'blue';
+        const nameLower = child.name.toLowerCase();
+        const yearName = child.yearGroups[0]?.name?.toLowerCase() || '';
         const colorMap: Record<string, string> = {
           purple: '#9B6DD6',
           blue: '#2B8ED4',
@@ -213,16 +237,20 @@ export const LandingView: React.FC = () => {
           orange: '#F5A623',
           emerald: '#4CAF8A'
         };
+        // Extract year number for age
+        const yearMatch = yearName.match(/year\s*(\d+)/i);
+        const yearNum = yearMatch ? parseInt(yearMatch[1]) : 5;
+        const age = `${yearNum + 4}–${yearNum + 5}`;
         return {
           id: child.id,
           name: child.name,
           year: child.yearGroups[0]?.name || 'Year ?',
-          age: undefined,
+          age,
           color: colorMap[themeColor] || '#9B6DD6',
           tint: colorMap[themeColor] ? colorMap[themeColor] + '20' : '#F3EEFF',
           emoji: child.avatar || '👶',
-          image: undefined,
-          interests: undefined
+          image: fallbackImages[nameLower] || undefined,
+          interests: defaultInterests[yearName] || ['Learning', 'Play', 'Fun']
         };
       });
     }
