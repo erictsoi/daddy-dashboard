@@ -1,3 +1,37 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
 
 /* Daddy Dashboard Custom Styles */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: 'Nunito Sans', sans-serif;
+  background: #FAF6F0;
+  color: #1A1A2E;
+}
+
+.b { font-family: 'Baloo 2', cursive; }
+.n { font-family: 'Nunito', sans-serif; }
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.bounce-card {
+  animation: bounce 0.75s ease-in-out infinite;
+}
+
+.card-shadow {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: -5px;
+  bottom: -5px;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #3D2B1F 2.5px, transparent 2.5px);
+  background-size: 5.5px 5.5px;
+  border-radius: 16px;
+  opacity: 0.35;
+}

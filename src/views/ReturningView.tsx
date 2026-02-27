@@ -1,33 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChildProfile } from '../types';
 import { DS } from '../components/design-system';
-import { getDummyProfiles } from '../data/dummyData';
 
-const GlobalStyles = () => (
-  <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { font-family: 'Nunito Sans', sans-serif; background: #FAF6F0; color: #1A1A2E; }
-    .b  { font-family: 'Baloo 2', cursive; }
-    .n  { font-family: 'Nunito', sans-serif; }
-    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-    .bounce-card { animation: bounce 0.75s ease-in-out infinite; }
-    .card-shadow {
-      position: absolute;
-      top: 5px;
-      left: 5px;
-      right: -5px;
-      bottom: -5px;
-      z-index: -1;
-      pointer-events: none;
-      background-image: radial-gradient(circle, #3D2B1F 2.5px, transparent 2.5px);
-      background-size: 5.5px 5.5px;
-      border-radius: 16px;
-      opacity: 0.35;
-    }
-  `}</style>
-);
+// Constants
+const CARD_WIDTH = 220;
+const CARD_HEIGHT = 320;
+const CARD_MARGIN_TOP = -CARD_HEIGHT / 2;
+const CARD_MARGIN_LEFT = -CARD_WIDTH / 2;
+const DELAY_REVEAL = 800;
+const BOUNCE_INTERVAL = 700;
+const BOUNCE_DELAY_START = 600;
+const NAVIGATE_TIMEOUT = 1500;
+const FILLER_COUNT = 6;
+const FILLER_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
+
 const BendayShadow = ({ offset = 3, size = 3, scale = 1 }: { offset?: number; size?: number; scale?: number }) => (
   <div style={{
     position: "absolute",
@@ -113,9 +101,9 @@ const ProfileCard: React.FC<CardProps> = ({
           opacity: 1,
         }}
         animate={isRevealed ? {
-          x: (Math.random() - 0.5) * 100,
-          y: 400,
-          rotate: initialOffset.rotation + (Math.random() * 30 - 15),
+          x: initialOffset.x + (Math.sin(parseInt(id.split('-')[1]) || 0) * 100),
+          y: 600,
+          rotate: initialOffset.rotation + 45,
           opacity: 0,
         } : {
           x: initialOffset.x,
@@ -128,16 +116,16 @@ const ProfileCard: React.FC<CardProps> = ({
           ease: "easeIn",
         }}
         style={{
-          width: 220,
-          height: 320,
+          width: CARD_WIDTH,
+          height: CARD_HEIGHT,
           background: color,
           border: '2.5px solid #1A1A2E',
           borderRadius: 16,
           position: 'absolute',
           top: '50%',
           left: '50%',
-          marginTop: -160,
-          marginLeft: -110,
+          marginTop: CARD_MARGIN_TOP,
+          marginLeft: CARD_MARGIN_LEFT,
           boxShadow: '3px 3px #3D2B1F',
         }}
       />
@@ -189,10 +177,10 @@ const ProfileCard: React.FC<CardProps> = ({
         position: 'absolute',
         top: '50%',
         left: '50%',
-        marginTop: -160,
-        marginLeft: -110,
-        width: 220,
-        height: 320,
+        marginTop: CARD_MARGIN_TOP,
+        marginLeft: CARD_MARGIN_LEFT,
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
         cursor: 'pointer',
         zIndex: isSelected ? 100 : (zIndex || 10),
         background: 'none',
@@ -327,10 +315,11 @@ interface CardItem {
 interface ReturningViewProps {
   childProfile: ChildProfile | null;
   data: ChildProfile[];
-  onNavigate: (view: { type: 'LANDING' } | { type: 'KIDSDASH'; childId: string } | { type: 'ADMIN' }) => void;
+  onNavigate: (view: { type: 'LANDING' } | { type: 'KIDSDASH'; childId: string } | { type: 'ADMIN' } | { type: 'HOME' }) => void;
 }
 
 export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data, onNavigate }) => {
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<'stack' | 'reveal'>('stack');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [navigating, setNavigating] = useState(false);
@@ -344,11 +333,9 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  const DEMO_PROFILES = getDummyProfiles();
-
-  const PROFILES = [
+  const PROFILES = useMemo(() => [
     { id: "admin", name: "Daddy", year: "Admin", age: "", color: "#1A1A2E", tint: "#E8E8E8", emoji: "👨", image: undefined, interests: ["Dashboard", "Settings"], isAdmin: true },
-    ...DEMO_PROFILES.map(child => ({
+    ...(data || []).map(child => ({
       id: child.id,
       name: child.name,
       year: child.year,
@@ -360,81 +347,65 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
       interests: child.interests,
       isAdmin: false,
     })),
-  ];
+  ], [data]);
 
-  const FILLER_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
-
-  const FILLERS: ({
-    id: string;
-    name: string;
-    year: string;
-    emoji: string;
-    color: string;
-    tint: string;
-    isFiller: boolean;
-    isAdmin?: boolean;
-    initialOffset: { x: number; y: number; rotation: number };
-    finalX?: number;
-    finalY?: number;
-  })[] = Array.from({ length: 6 }, (_, i) => ({
+  const FILLERS = useMemo(() => Array.from({ length: FILLER_COUNT }, (_, i) => ({
     id: `filler-${i}`,
     name: '',
     year: '',
     emoji: '',
-    color: FILLER_COLORS[i],
+    color: FILLER_COLORS[i % FILLER_COLORS.length],
     tint: '',
     isFiller: true,
     initialOffset: {
-      x: (Math.random() - 0.5) * 10,
-      y: (Math.random() - 0.5) * 10,
-      rotation: (Math.random() - 0.5) * 2,
+      x: (Math.sin(i * 1.5) * 8),
+      y: (Math.cos(i * 1.5) * 8),
+      rotation: (Math.sin(i * 3) * 3),
     },
-  }));
+  })), []);
 
-  const CARD_WIDTH = 220;
   const MARGIN = 40;
   const availableWidth = windowWidth - MARGIN * 2;
-  const GAP = Math.min(20, (availableWidth - CARD_WIDTH * PROFILES.length) / (PROFILES.length - 1));
+  const GAP = useMemo(() => Math.min(20, (availableWidth - CARD_WIDTH * PROFILES.length) / Math.max(1, PROFILES.length - 1)), [availableWidth, PROFILES.length]);
   const totalWidth = PROFILES.length * CARD_WIDTH + (PROFILES.length - 1) * GAP;
   const startX = -totalWidth / 2 + CARD_WIDTH / 2;
 
   // Pre-compute stable jitter values so they don't change on re-render.
-  // Rotations alternate direction by index to guarantee a visual mix.
-  const JITTER = React.useMemo(() => PROFILES.map((_, i) => ({
-    finalYOffset: ((i + 1) % 2 === 0 ? 1 : -1) * (2 + Math.random() * 6),
-    finalRotation: (i % 2 === 0 ? 1 : -1) * (0.5 + Math.random() * 2),
-    initX: (Math.random() - 0.5) * 12,
-    initY: (Math.random() - 0.5) * 12,
-    initRot: (Math.random() - 0.5) * 3,
-  })), []);
+  const JITTER = useMemo(() => PROFILES.map((_, i) => ({
+    finalYOffset: ((i + 1) % 2 === 0 ? 1 : -1) * (2 + (Math.abs(Math.sin(i)) * 6)),
+    finalRotation: (i % 2 === 0 ? 1 : -1) * (0.5 + (Math.abs(Math.cos(i)) * 2)),
+    initX: (Math.sin(i * 1.2) * 6),
+    initY: (Math.cos(i * 1.2) * 6),
+    initRot: (Math.sin(i * 2.5) * 2),
+  })), [PROFILES.length]);
 
-  const cards = PROFILES.map((profile, index) => ({
+  const cards = useMemo(() => PROFILES.map((profile, index) => ({
     ...profile,
     isFiller: false,
     initialOffset: {
-      x: JITTER[index].initX,
-      y: JITTER[index].initY,
-      rotation: JITTER[index].initRot,
+      x: JITTER[index]?.initX || 0,
+      y: JITTER[index]?.initY || 0,
+      rotation: JITTER[index]?.initRot || 0,
     },
     finalX: startX + index * (CARD_WIDTH + GAP),
-    finalY: JITTER[index].finalYOffset,
-    finalRotation: JITTER[index].finalRotation,
+    finalY: JITTER[index]?.finalYOffset || 0,
+    finalRotation: JITTER[index]?.finalRotation || 0,
     zIndex: PROFILES.length - index,
-  }));
+  })), [PROFILES, JITTER, startX, GAP]);
 
-  const allCards = React.useMemo(() => [...FILLERS.map(f => ({
+  const allCards = useMemo(() => [...FILLERS.map(f => ({
     ...f,
     color: f.color,
     tint: '',
     year: '',
     name: '',
     emoji: '',
-  })), ...cards], [cards]);
+  })), ...cards], [FILLERS, cards]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setPhase('reveal');
-    }, 800);
+    }, DELAY_REVEAL);
     return () => clearTimeout(timer);
   }, []);
 
@@ -444,7 +415,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
     // Start after cards have settled
     const startDelay = setTimeout(() => {
       setBouncingIndex(0);
-    }, 600);
+    }, BOUNCE_DELAY_START);
     return () => clearTimeout(startDelay);
   }, [phase, selectedId]);
 
@@ -454,11 +425,11 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
     const numCards = cards.length;
     const timer = setTimeout(() => {
       setBouncingIndex(prev => (prev + 1) % numCards);
-    }, 700);
+    }, BOUNCE_INTERVAL);
     return () => clearTimeout(timer);
-  }, [bouncingIndex, selectedId, hoveredIndex]);
+  }, [bouncingIndex, selectedId, hoveredIndex, cards.length]);
 
-  const handleCardClick = (card: typeof cards[0]) => {
+  const handleCardClick = useCallback((card: typeof cards[0]) => {
     if (navigating) return;
     setSelectedId(card.id);
     setNavigating(true);
@@ -467,12 +438,25 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
 
     setTimeout(() => {
       if (card.isAdmin) {
-        window.location.href = '/admindash';
+        onNavigate({ type: 'ADMIN' });
       } else {
-        window.location.href = '/kiddash?child=' + card.id;
+        onNavigate({ type: 'KIDSDASH', childId: card.id });
       }
-    }, 1500);
-  };
+    }, NAVIGATE_TIMEOUT);
+  }, [navigating, onNavigate]);
+
+  const handleMouseEnter = useCallback((id: string) => {
+    if (phase !== 'reveal' || selectedId) return;
+    const idx = cards.findIndex(c => c.id === id);
+    setHoveredIndex(idx);
+  }, [phase, selectedId, cards]);
+
+  const handleMouseLeave = useCallback((id: string) => {
+    if (phase !== 'reveal' || selectedId) return;
+    const idx = cards.findIndex(c => c.id === id);
+    setBouncingIndex(idx);
+    setHoveredIndex(-1);
+  }, [phase, selectedId, cards]);
 
   return (
     <div style={{
@@ -481,7 +465,6 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
       position: "relative",
       overflow: "hidden",
     }}>
-      <GlobalStyles />
       {/* NAV */}
       <motion.nav
         initial={{ opacity: 0 }}
@@ -516,7 +499,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
         </div>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
           <button
-            onClick={() => window.location.href = '/landingview'}
+            onClick={() => onNavigate({ type: 'LANDING' })}
             style={{
               color: DS.inkSoft,
               cursor: "pointer",
@@ -528,7 +511,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
             Landing
           </button>
           <button
-            onClick={() => window.location.href = '/admindash'}
+            onClick={() => onNavigate({ type: 'ADMIN' })}
             style={{
               color: DS.ink,
               cursor: "pointer",
@@ -588,35 +571,13 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
 
         {/* Cards Container */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '0 40px' }}>
-          {allCards.map((card: CardItem) => (
+          {allCards.map((card, index) => (
             <ProfileCard
-              key={card.id}
-              id={card.id}
-              name={card.name}
-              year={card.year}
-              emoji={card.emoji}
-              color={card.color}
-              tint={card.tint}
-              age={card.age}
-              interests={card.interests}
-              image={card.image}
-              isAdmin={card.isAdmin}
-              isFiller={card.isFiller}
-              initialOffset={card.initialOffset}
-              finalX={card.finalX}
-              finalY={card.finalY}
-              finalRotation={(card as any).finalRotation}
-              zIndex={card.zIndex}
-              onClick={!card.isFiller && phase === 'reveal' ? () => handleCardClick(card as typeof cards[0]) : undefined}
-              onMouseEnter={!card.isFiller && phase === 'reveal' && !selectedId ? () => {
-                const idx = cards.findIndex(c => c.id === card.id);
-                setHoveredIndex(idx);
-              } : undefined}
-              onMouseLeave={!card.isFiller && phase === 'reveal' && !selectedId ? () => {
-                const idx = cards.findIndex(c => c.id === card.id);
-                setBouncingIndex(idx);
-                setHoveredIndex(-1);
-              } : undefined}
+              key={card.id || index}
+              {...card}
+              onClick={!card.isFiller && phase === 'reveal' ? () => handleCardClick(card as any) : undefined}
+              onMouseEnter={!card.isFiller ? () => handleMouseEnter(card.id) : undefined}
+              onMouseLeave={!card.isFiller ? () => handleMouseLeave(card.id) : undefined}
               isSelected={selectedId === card.id}
               isOtherSelected={selectedId !== null && selectedId !== card.id && !card.isFiller}
               isRevealed={phase === 'reveal'}
@@ -643,7 +604,7 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
               }}
             >
               <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: DS.inkFade, marginTop: 4 }}>
-                Already have an account? <span style={{ color: DS.ink, cursor: "pointer", textDecoration: "underline" }} onClick={() => window.location.href = '/landingview'}>Sign in here</span>
+                Already have an account? <span style={{ color: DS.ink, cursor: "pointer", textDecoration: "underline" }} onClick={() => onNavigate({ type: 'LANDING' })}>Sign in here</span>
               </div>
             </motion.div>
           )}
