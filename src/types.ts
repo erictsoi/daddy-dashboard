@@ -79,6 +79,22 @@ export interface ExpandedLesson {
   position: number; // Position in playlist (1, 2, 3...)
 }
 
+export interface UserSettings {
+  adminName: string;
+  adminAvatar: string;
+  adminColor: string;
+  adminDob: string;
+  parentEmail: string;
+}
+
+export const DEFAULT_SETTINGS: UserSettings = {
+  adminName: '',
+  adminAvatar: '👨‍🏫',
+  adminColor: 'blue',
+  adminDob: '',
+  parentEmail: ''
+};
+
 export interface ParsedRow {
   childName: string;
   yearGroup: string;

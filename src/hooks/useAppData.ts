@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChildProfile, YearGroup, Subject, Topic, Lesson, ParsedRow, TopicFrequency } from '../types';
+import { ChildProfile, YearGroup, Subject, Topic, Lesson, ParsedRow, TopicFrequency, UserSettings } from '../types';
 import {
     fetchChildren, fetchChildByEmail, getLocalData,
     saveFullCurriculum, hardDeleteSubjectFromFirebase,

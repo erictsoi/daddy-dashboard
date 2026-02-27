@@ -4,24 +4,18 @@ import {
   setDoc,
   getDocs,
   collection,
-  deleteDoc,
   query,
-  where,
-  orderBy,
-  deleteField
+  where
 } from 'firebase/firestore'
 import { db } from './firebase'
-import { ChildProfile, YearGroup, Subject, Topic, Lesson } from '../types'
+import {
+  ChildProfile, YearGroup, Subject, Topic, Lesson,
+  UserSettings, DEFAULT_SETTINGS
+} from '../types'
 import { generateUuid } from './helpers'
+import { logger } from './logger'
 
 const STORAGE_KEY = 'daddy_dashboard_data'
-
-function ensureUuid(id: string): string {
-  if (!id || id.length < 10) {
-    return `${id || 'id'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-  }
-  return id
-}
 
 // --- Data Mappers ---
 
@@ -83,20 +77,21 @@ export const toChildProfile = (data: any): ChildProfile => ({
 
 export const getLocalData = (): ChildProfile[] => {
   const stored = localStorage.getItem(STORAGE_KEY)
-  console.log('getLocalData: key=', STORAGE_KEY, 'has data=', !!stored)
+  logger.log('[dataService] getLocalData: key=', STORAGE_KEY, 'has data=', !!stored)
   if (stored) {
     try {
       const parsed = JSON.parse(stored)
       return parsed
     } catch (e) {
-      console.error('Failed to parse localStorage:', e)
+      logger.error('[dataService] Failed to parse localStorage:', e)
+      alert("Oops! We couldn't load your saved data. It might be corrupted.")
     }
   }
   return []
 }
 
 export const saveLocalData = (data: ChildProfile[]) => {
-  console.log('saveLocalData: saving', data.length, 'children')
+  logger.log('[dataService] saveLocalData: saving', data.length, 'children')
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
 }
 
@@ -104,43 +99,48 @@ export const saveFullCurriculum = async (
   children: ChildProfile[],
   userId: string
 ): Promise<void> => {
-  console.log('saveFullCurriculum: saving', children.length, 'children for userId', userId)
+  logger.log('[dataService] saveFullCurriculum: saving', children.length, 'children')
 
-  for (const child of children) {
-    const childRef = doc(db, 'users', userId, 'children', ensureUuid(child.id))
+  try {
+    for (const child of children) {
+      const childId = child.id?.length > 10 ? child.id : generateUuid()
+      const childRef = doc(db, 'users', userId, 'children', childId)
 
-    const childData = {
-      ...child,
-      id: ensureUuid(child.id),
-      userId,
-      updatedAt: new Date().toISOString()
-    }
-
-    await setDoc(childRef, childData, { merge: true })
-
-    // Create/update linked account if child has googleEmail
-    if (child.googleEmail) {
-      const linkRef = doc(db, 'linkedAccounts', child.googleEmail.toLowerCase())
-      await setDoc(linkRef, {
-        childEmail: child.googleEmail.toLowerCase(),
-        parentUid: userId,
-        childId: child.id,
-        childName: child.name,
+      const childData = {
+        ...child,
+        id: childId,
+        userId,
         updatedAt: new Date().toISOString()
-      }, { merge: true })
-    }
-  }
+      }
 
-  console.log('saveFullCurriculum: complete')
+      await setDoc(childRef, childData, { merge: true })
+
+      // Create/update linked account if child has googleEmail
+      if (child.googleEmail) {
+        const linkRef = doc(db, 'linkedAccounts', child.googleEmail.toLowerCase())
+        await setDoc(linkRef, {
+          childEmail: child.googleEmail.toLowerCase(),
+          parentUid: userId,
+          childId: childId,
+          childName: child.name,
+          updatedAt: new Date().toISOString()
+        }, { merge: true })
+      }
+    }
+    logger.log('[dataService] saveFullCurriculum: complete')
+  } catch (error) {
+    logger.error('[dataService] saveFullCurriculum error:', error)
+    throw new Error('Failed to save curriculum to cloud storage')
+  }
 }
 
 export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => {
-  console.log('fetchChildren: loading for userId', userId)
+  logger.log('[dataService] fetchChildren loading')
 
   const childrenRef = collection(db, 'users', userId, 'children')
   const snapshot = await getDocs(childrenRef)
 
-  console.log('fetchChildren: found', snapshot.size, 'children')
+  logger.log('[dataService] fetchChildren: found', snapshot.size, 'documents')
 
   if (snapshot.empty) return []
 
@@ -148,48 +148,41 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
     return toChildProfile({ ...doc.data(), id: doc.id })
   })
 
-  console.log('fetchChildren: returning', children.length, 'children with full data')
   return children
 }
 
 export const fetchChildById = async (parentUid: string, childId: string): Promise<ChildProfile | null> => {
-  console.log('fetchChildById: loading child', childId, 'from parent', parentUid)
-
   try {
     const childRef = doc(db, 'users', parentUid, 'children', childId)
     const childSnap = await getDoc(childRef)
 
     if (!childSnap.exists()) {
-      console.log('fetchChildById: child not found')
+      logger.warn('[dataService] fetchChildById: child not found', childId)
       return null
     }
 
     return toChildProfile({ ...childSnap.data(), id: childSnap.id })
   } catch (error) {
-    console.error('fetchChildById error:', error)
+    logger.error('[dataService] fetchChildById error:', error)
     return null
   }
 }
 
 export const fetchChildByEmail = async (email: string): Promise<{ child: ChildProfile[]; allChildren: ChildProfile[]; parentUid: string }> => {
-  console.log('fetchChildByEmail: looking for email', email)
-
   if (!email) return { child: [], allChildren: [], parentUid: '' }
 
   try {
-    // First, look up which parent this child is linked to
     const linkRef = collection(db, 'linkedAccounts')
     const linkQuery = query(linkRef, where('childEmail', '==', email.toLowerCase()))
     const linkSnapshot = await getDocs(linkQuery)
 
     if (linkSnapshot.empty) {
-      console.log('fetchChildByEmail: no linked account found')
+      logger.log('[dataService] fetchChildByEmail: no linked account found')
       return { child: [], allChildren: [], parentUid: '' }
     }
 
     const linkData = linkSnapshot.docs[0].data()
     const parentUid = linkData.parentUid
-    console.log('fetchChildByEmail: found parentUid', parentUid)
 
     // Fetch ALL children from parent's collection (for profile switching)
     const childrenRef = collection(db, 'users', parentUid, 'children')
@@ -203,11 +196,9 @@ export const fetchChildByEmail = async (email: string): Promise<{ child: ChildPr
     // Filter to find the signed-in child
     const child = allChildren.filter(c => c.googleEmail?.toLowerCase() === email.toLowerCase())
 
-    console.log('fetchChildByEmail: found', allChildren.length, 'children, matching child:', child.length)
-
     return { child, allChildren, parentUid }
   } catch (error) {
-    console.error('fetchChildByEmail error:', error)
+    logger.error('[dataService] fetchChildByEmail error:', error)
     return { child: [], allChildren: [], parentUid: '' }
   }
 }
@@ -226,7 +217,7 @@ export const uploadToFirebase = async (
     await saveFullCurriculum(dataToUpload, userId)
     return { success: true, message: `Uploaded ${dataToUpload.length} children to Firebase` }
   } catch (error) {
-    console.error('Upload error:', error)
+    logger.error('[dataService] uploadToFirebase error:', error)
     return { success: false, message: error instanceof Error ? error.message : 'Upload failed' }
   }
 }
@@ -247,7 +238,7 @@ export const loadFromFirebase = async (userId: string): Promise<{
       data: children
     }
   } catch (error) {
-    console.error('Load error:', error)
+    logger.error('[dataService] loadFromFirebase error:', error)
     return { success: false, message: error instanceof Error ? error.message : 'Load failed' }
   }
 }
@@ -262,16 +253,14 @@ export const softDeleteLessonInFirebase = async (
   lessonId: string,
   userId: string
 ): Promise<void> => {
-  // With full document structure, need to find and update
   const childRef = doc(db, 'users', userId, 'children', childId)
   const childDoc = await getDoc(childRef)
 
   if (!childDoc.exists()) return
 
-  const childData = childDoc.data() as ChildProfile
-  const updated = { ...childData }
+  // Fix: Deep clone using structuredClone to avoid head-scratching mutation bugs
+  const updated = structuredClone(childDoc.data() as ChildProfile)
 
-  // Find and update the lesson
   for (const yg of updated.yearGroups || []) {
     for (const sub of yg.subjects || []) {
       for (const topic of sub.topics || []) {
@@ -292,14 +281,12 @@ export const hardDeleteLessonFromFirebase = async (
   lessonId: string,
   userId: string
 ): Promise<void> => {
-  // Similar to soft delete but remove entirely
   const childRef = doc(db, 'users', userId, 'children', childId)
   const childDoc = await getDoc(childRef)
 
   if (!childDoc.exists()) return
 
-  const childData = childDoc.data() as ChildProfile
-  const updated = { ...childData }
+  const updated = structuredClone(childDoc.data() as ChildProfile)
 
   for (const yg of updated.yearGroups || []) {
     for (const sub of yg.subjects || []) {
@@ -322,8 +309,7 @@ export const hardDeleteSubjectFromFirebase = async (
 
   if (!childDoc.exists()) return
 
-  const childData = childDoc.data() as ChildProfile
-  const updated = { ...childData }
+  const updated = structuredClone(childDoc.data() as ChildProfile)
 
   for (const yg of updated.yearGroups || []) {
     yg.subjects = yg.subjects?.filter(s => s.id !== subjectId) || []
@@ -342,8 +328,7 @@ export const hardDeleteTopicFromFirebase = async (
 
   if (!childDoc.exists()) return
 
-  const childData = childDoc.data() as ChildProfile
-  const updated = { ...childData }
+  const updated = structuredClone(childDoc.data() as ChildProfile)
 
   for (const yg of updated.yearGroups || []) {
     for (const subj of yg.subjects || []) {
@@ -354,83 +339,34 @@ export const hardDeleteTopicFromFirebase = async (
   await setDoc(childRef, updated, { merge: true })
 }
 
-export const migrateChildToTopicStructure = (child: ChildProfile): ChildProfile => {
-  return {
-    ...child,
-    yearGroups: (child.yearGroups || []).map(yg => ({
-      ...yg,
-      subjects: (yg.subjects || []).map(sub => {
-        if (Array.isArray((sub as any).topics) && (sub as any).topics.length > 0) {
-          return sub
-        }
-        const existingLessons = Array.isArray((sub as any).lessons) ? (sub as any).lessons : []
-        const topicName = sub.name && sub.name.includes(':')
-          ? sub.name.split(':')[1].trim()
-          : (sub.name || 'General')
-
-        return {
-          ...sub,
-          topics: [{
-            id: `${sub.id}-topic-${Date.now()}`,
-            name: topicName,
-            lessons: existingLessons
-          }]
-        }
-      })
-    }))
-  }
-}
-
-export interface UserSettings {
-  adminName: string
-  adminAvatar: string
-  adminColor: string
-  adminDob: string
-  parentEmail: string
-}
-
-const DEFAULT_SETTINGS: UserSettings = {
-  adminName: '',
-  adminAvatar: '👨‍🏫',
-  adminColor: 'blue',
-  adminDob: '',
-  parentEmail: ''
-}
-
 export const fetchUserSettings = async (userId: string): Promise<UserSettings> => {
-  console.log('fetchUserSettings: loading for userId', userId)
   try {
     const settingsRef = doc(db, 'users', userId, 'settings', 'profile')
     const snapshot = await getDoc(settingsRef)
 
     if (snapshot.exists()) {
-      const data = snapshot.data()
-      console.log('fetchUserSettings: found settings', data)
       return {
         ...DEFAULT_SETTINGS,
-        ...data
+        ...snapshot.data()
       }
     }
 
-    console.log('fetchUserSettings: no settings found, using defaults')
     return DEFAULT_SETTINGS
   } catch (error) {
-    console.error('fetchUserSettings error:', error)
+    logger.error('[dataService] fetchUserSettings error:', error)
     return DEFAULT_SETTINGS
   }
 }
 
 export const saveUserSettings = async (userId: string, settings: Partial<UserSettings>): Promise<void> => {
-  console.log('saveUserSettings: saving for userId', userId, settings)
   try {
     const settingsRef = doc(db, 'users', userId, 'settings', 'profile')
     await setDoc(settingsRef, {
       ...settings,
       updatedAt: new Date().toISOString()
     }, { merge: true })
-    console.log('saveUserSettings: complete')
   } catch (error) {
-    console.error('saveUserSettings error:', error)
+    logger.error('[dataService] saveUserSettings error:', error)
     throw error
   }
 }
