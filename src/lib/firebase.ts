@@ -12,12 +12,12 @@ import {
 } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAmw_heQa656b5U6HuofGlL_b2xvZCFnyY",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "daddy-dashboard.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "daddy-dashboard",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "daddy-dashboard.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "533240281488",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:533240281488:web:8baf9450681390bcd29b15"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 }
 
 export const app = initializeApp(firebaseConfig)
