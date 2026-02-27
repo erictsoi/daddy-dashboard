@@ -12,9 +12,10 @@ interface Props {
   onBack: () => void;
   onImport: (rows: ParsedRow[]) => void;
   onImportComplete?: () => void;
+  onTemplateImport?: (rows: ParsedTemplateRow[]) => void;
 }
 
-export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportComplete }) => {
+export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportComplete, onTemplateImport }) => {
   const [inputText, setInputText] = useState('');
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [templateRows, setTemplateRows] = useState<ParsedTemplateRow[]>([]);
@@ -154,6 +155,8 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
     }
     if (inputMode === 'template') {
       setTemplateRows(parseTemplateInput(inputText));
+    } else {
+      setTemplateRows([]);
     }
   }, [inputText, inputMode, parseTemplateInput]);
 
@@ -257,6 +260,24 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
       logger.log('[CurriculumBuilder] Import already in progress');
       return;
     }
+
+    if (inputMode === 'template') {
+      const validTemplateRows = templateRows.filter(r => r.isValid);
+      if (validTemplateRows.length === 0) {
+        logger.log('[CurriculumBuilder] No valid template rows to import');
+        return;
+      }
+      logger.log('[CurriculumBuilder] Calling onTemplateImport with', validTemplateRows.length, 'rows');
+      setIsImporting(true);
+      if (onTemplateImport) {
+        onTemplateImport(validTemplateRows);
+      }
+      setTimeout(() => {
+        setIsImporting(false);
+        if (onImportComplete) onImportComplete();
+      }, 2000);
+      return;
+    }
     
     const finalRows = parsedRows.filter(r => r.isValid).map(row => ({
       ...row,
@@ -276,7 +297,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
       setIsImporting(false);
       if (onImportComplete) onImportComplete();
     }, 2000);
-  }, [isImporting, parsedRows, onImport, onImportComplete]);
+  }, [isImporting, parsedRows, templateRows, inputMode, onImport, onTemplateImport, onImportComplete]);
 
   return (
     <div style={{ minHeight: '100vh', background: DS.cream, display: 'flex', flexDirection: 'column' }}>
