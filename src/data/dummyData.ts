@@ -1,15 +1,15 @@
 import { ChildProfile } from '../types';
-import { DEMO_DISPLAY_PROFILES } from './demoProfiles';
+import { DEMO_PROFILES } from './demoProfiles';
 
 export { DUMMY_PROFILES } from './demoProfiles';
 
 const THEME_COLOR_NAMES: Record<string, string> = {
-  demo_amara: 'rose',
-  demo_marcus: 'green',
-  demo_sophia: 'purple',
-  demo_kai: 'amber',
-  demo_adrian: 'blue',
-  demo_rohan: 'rose',
+  'demo-amara': 'rose',
+  'demo-marcus': 'green',
+  'demo-sophia': 'purple',
+  'demo-kai': 'amber',
+  'demo-adrian': 'blue',
+  'demo-rohan': 'rose',
 };
 
 const GET_SUBJECT_TEMPLATES = (isSecondary: boolean) => [
@@ -26,7 +26,7 @@ const GET_SUBJECT_TEMPLATES = (isSecondary: boolean) => [
   { name: "PSHE", category: "PSHE", topic: "Wellbeing", lesson: "Mental Health Awareness" },
 ];
 
-const createDummyChild = (profile: typeof DEMO_DISPLAY_PROFILES[0]): ChildProfile => {
+const createDummyChild = (profile: typeof DEMO_PROFILES[0]): ChildProfile => {
   const colorName = THEME_COLOR_NAMES[profile.id] || 'blue';
   const yearNum = parseInt(profile.year.replace("Year ", ""));
   const isSecondary = yearNum >= 7;
@@ -64,7 +64,7 @@ const createDummyChild = (profile: typeof DEMO_DISPLAY_PROFILES[0]): ChildProfil
   };
 };
 
-export const DUMMY_CHILDREN: ChildProfile[] = DEMO_DISPLAY_PROFILES.map(createDummyChild);
+export const DUMMY_CHILDREN: ChildProfile[] = DEMO_PROFILES.map(createDummyChild);
 
 export const getDummyChild = (childId: string): ChildProfile | undefined => {
   return DUMMY_CHILDREN.find(c => c.id === childId);

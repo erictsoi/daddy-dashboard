@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChildProfile } from '../types';
 import { DS } from '../components/design-system';
-import { DEMO_DISPLAY_PROFILES } from '../data/demoProfiles';
+import { DEMO_PROFILES } from '../data/demoProfiles';
 import { useAppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -190,7 +190,7 @@ export const LandingView: React.FC = () => {
         interests: child.interests
       }));
     }
-    return DEMO_DISPLAY_PROFILES;
+    return DEMO_PROFILES;
   }, [user, children]);
 
   const INITIAL_PROFILES = useMemo(() => Array.from({ length: FILLER_COUNT }, (_, i) => ({

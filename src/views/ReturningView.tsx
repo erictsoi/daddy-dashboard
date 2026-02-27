@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChildProfile } from '../types';
 import { DS } from '../components/design-system';
 import { useAppContext } from '../context/AppContext';
-import { DEMO_DISPLAY_PROFILES } from '../data/demoProfiles';
+import { DEMO_PROFILES } from '../data/demoProfiles';
 
 // Constants
 const CARD_WIDTH = 220;
@@ -338,7 +338,7 @@ export const ReturningView: React.FC = () => {
 
   const PROFILES = useMemo(() => {
     const adminProfile = { id: "admin", name: settings.adminName || "Daddy", year: "Admin", age: "", color: settings.adminColor || "#1A1A2E", tint: "#E8E8E8", emoji: settings.adminAvatar || "👨", image: undefined, interests: ["Dashboard", "Settings"], isAdmin: true };
-    const kids = (user && contextChildren && contextChildren.length > 0) ? contextChildren : DEMO_DISPLAY_PROFILES;
+    const kids = (user && contextChildren && contextChildren.length > 0) ? contextChildren : DEMO_PROFILES;
     return [
       adminProfile,
       ...kids.map(child => ({
