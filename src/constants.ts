@@ -1,4 +1,4 @@
-import { ChildProfile } from './types';
+import { ChildProfile, ProfileTemplate, StackType, CurriculumStack } from './types';
 import { getSubjectHexColor as getColor, getSubjectCategoryLabel as getCategoryLabel } from './utils/subjects';
 
 export const getSubjectColor = (subjectName: string): string => {
@@ -132,4 +132,30 @@ export const SUGGESTED_TOPICS: Record<string, string[]> = {
   'History': ['Ancient Civilizations', 'World Wars', 'Local History', 'Historical Figures'],
   'Geography': ['Maps & Globes', 'Climate', 'Countries', 'Natural Resources'],
   'Languages': ['Vocabulary', 'Grammar', 'Conversation', 'Reading', 'Writing'],
+};
+
+// 7 Subject Stack Types
+export const STACK_TYPES: StackType[] = [
+  'coreAcademics',
+  'languages',
+  'creativePerforming',
+  'stemDigital',
+  'physicalWellbeing',
+  'characterEnrichment',
+  'additionalSubjects'
+];
+
+// Profile Templates (6 UK Year Groups)
+export const PROFILE_TEMPLATES: { id: ProfileTemplate; label: string; ageRange: string; avatar: string }[] = [
+  { id: 'Y1-2', label: 'Y1/2 Child', ageRange: '5-7 years', avatar: '🧒' },
+  { id: 'Y3-4', label: 'Y3/4 Child', ageRange: '7-9 years', avatar: '👦' },
+  { id: 'Y5-6', label: 'Y5/6 Child', ageRange: '9-11 years', avatar: '👧' },
+  { id: 'Y7-8', label: 'Y7/8 Child', ageRange: '11-13 years', avatar: '🧑' },
+  { id: 'Y9-10', label: 'Y9/10 Child', ageRange: '13-15 years', avatar: '👱' },
+  { id: 'Y11-12', label: 'Y11/12 Child', ageRange: '15-17 years', avatar: '🎓' }
+];
+
+// Create empty stacks for a profile
+export const createEmptyStacks = (): CurriculumStack[] => {
+  return STACK_TYPES.map(type => ({ type, cards: [] }));
 };

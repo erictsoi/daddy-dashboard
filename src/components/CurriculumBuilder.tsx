@@ -2,7 +2,7 @@ import { logger } from '../lib/logger';
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { ArrowLeft, Save, AlertCircle, FileText, CheckCircle, Link, Copy, Youtube, Loader2, ChevronRight } from 'lucide-react';
 import { fetchPlaylistVideos, processYouTubeUrl } from '../utils/youtube';
-import { ParsedRow } from '../types';
+import { ParsedRow, ParsedTemplateRow } from '../types';
 import { DS, Shadow, Card } from './design-system';
 
 const YOUTUBE_REGEX = /(?:youtube\.com|youtu\.be)/i;
@@ -17,7 +17,8 @@ interface Props {
 export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportComplete }) => {
   const [inputText, setInputText] = useState('');
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
-  const [inputMode, setInputMode] = useState<'paste' | 'playlist'>('paste');
+  const [templateRows, setTemplateRows] = useState<ParsedTemplateRow[]>([]);
+  const [inputMode, setInputMode] = useState<'paste' | 'playlist' | 'template'>('paste');
   const [playlistUrl, setPlaylistUrl] = useState('');
   const [isLoadingPlaylist, setIsLoadingPlaylist] = useState(false);
   const [playlistError, setPlaylistError] = useState('');
@@ -112,6 +113,32 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
     });
   }, []);
 
+  const parseTemplateInput = useCallback((text: string): ParsedTemplateRow[] => {
+    return text.split(/\r?\n/).filter(line => line.trim() !== '').map(line => {
+      const cols = line.split('\t');
+      const profile = cols[0]?.trim() || '';
+      const subject = cols[1]?.trim() || '';
+      const focus = cols[2]?.trim() || '';
+      const primaryPlaylist = cols[3]?.trim() || '';
+      const backupPlaylist1 = cols[4]?.trim() || '';
+      const backupPlaylist2 = cols[5]?.trim() || '';
+      const notes = cols[6]?.trim() || '';
+
+      const isValid = !!(profile && subject && focus);
+
+      return {
+        profile,
+        subject,
+        focus,
+        primaryPlaylist,
+        backupPlaylist1: backupPlaylist1 || undefined,
+        backupPlaylist2: backupPlaylist2 || undefined,
+        notes,
+        isValid,
+      };
+    });
+  }, []);
+
   useEffect(() => {
     if (!inputText.trim()) {
       setParsedRows([]);
@@ -119,6 +146,16 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
     }
     setParsedRows(parseInput(inputText));
   }, [inputText, parseInput]);
+
+  useEffect(() => {
+    if (!inputText.trim()) {
+      setTemplateRows([]);
+      return;
+    }
+    if (inputMode === 'template') {
+      setTemplateRows(parseTemplateInput(inputText));
+    }
+  }, [inputText, inputMode, parseTemplateInput]);
 
   const cleanPlaylistUrl = useCallback((url: string): string => {
     const playlistIdMatch = url.match(PLAYLIST_ID_REGEX);
@@ -358,6 +395,14 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
               >
                 <Link size={16} /> Paste Playlist URL
               </button>
+              <button
+                onClick={() => setInputMode('template')}
+                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition ${
+                  inputMode === 'template' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <FileText size={16} /> Template Import
+              </button>
             </div>
 
             {inputMode === 'paste' ? (
@@ -385,7 +430,7 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
                   onChange={(e) => setInputText(e.target.value)}
                 />
               </>
-            ) : (
+            ) : inputMode === 'playlist' ? (
               <>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                   <h3 className="font-semibold text-blue-800 mb-2">Playlist Mode</h3>
@@ -464,6 +509,28 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
                   />
                 </div>
               </>
+            ) : (
+              <>
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
+                  <h3 className="font-semibold text-purple-800 mb-2">Template Import Mode</h3>
+                  <p className="text-xs text-purple-700">
+                    Import curriculum stacks from 7-column spreadsheet. Maps Profile → Subject → Focus → 3 Playlists per card.
+                  </p>
+                </div>
+                <h2 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                  <FileText size={18} className="text-purple-500" /> Paste Template Data
+                </h2>
+                <p className="text-xs text-gray-500 mb-3">
+                  Copy columns from Excel/Sheets:<br />
+                  <span className="font-mono bg-gray-100 px-1">Profile | Subject | Focus | Primary Playlist | Backup 1 | Backup 2 | Notes</span>
+                </p>
+                <textarea
+                  className="w-full h-64 p-3 text-xs font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none resize-none whitespace-nowrap overflow-auto"
+                  placeholder={`Y1/2 Child\tEnglish\tPhonics & stories\thttps://youtube.com/playlist?list=...\thttps://...\thttps://...\tBlending sounds...`}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                />
+              </>
             )}
           </div>
 
@@ -480,21 +547,41 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
                 <span className="font-bold bg-blue-200 px-1.5 rounded text-xs">2</span>
                 <span><span className="font-semibold">Playlist URL:</span> Paste a YouTube playlist link with default values</span>
               </div>
+              <div className="flex items-start gap-2">
+                <span className="font-bold bg-purple-200 px-1.5 rounded text-xs">3</span>
+                <span><span className="font-semibold">Template Import:</span> Import 7-column curriculum stacks with Primary + 2 Backups</span>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
           <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center flex-wrap gap-4">
-            <h2 className="font-semibold text-gray-800">Preview Data</h2>
+            <h2 className="font-semibold text-gray-800">
+              {inputMode === 'template' ? 'Template Preview' : 'Preview Data'}
+            </h2>
             <div className="flex gap-4 text-xs font-medium flex-wrap">
-              <span className="flex items-center gap-1 text-gray-600">{parsedRows.length} rows</span>
-              <span className="flex items-center gap-1 text-green-600">
-                <CheckCircle size={14} /> {validRows.length} valid
-              </span>
-              <span className="flex items-center gap-1 text-red-500">
-                <AlertCircle size={14} /> {parsedRows.length - validRows.length} invalid
-              </span>
+              {inputMode === 'template' ? (
+                <>
+                  <span className="flex items-center gap-1 text-gray-600">{templateRows.length} rows</span>
+                  <span className="flex items-center gap-1 text-green-600">
+                    <CheckCircle size={14} /> {templateRows.filter(r => r.isValid).length} valid
+                  </span>
+                  <span className="flex items-center gap-1 text-red-500">
+                    <AlertCircle size={14} /> {templateRows.filter(r => !r.isValid).length} invalid
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="flex items-center gap-1 text-gray-600">{parsedRows.length} rows</span>
+                  <span className="flex items-center gap-1 text-green-600">
+                    <CheckCircle size={14} /> {validRows.length} valid
+                  </span>
+                  <span className="flex items-center gap-1 text-red-500">
+                    <AlertCircle size={14} /> {parsedRows.length - validRows.length} invalid
+                  </span>
+                </>
+              )}
               {expandedCount > 0 && (
                 <span className="flex items-center gap-1 text-purple-600">
                   <Link size={14} /> +{expandedCount} expanded
@@ -503,7 +590,11 @@ export const CurriculumBuilder: React.FC<Props> = ({ onBack, onImport, onImportC
             </div>
           </div>
 
-          <PreviewTable rows={parsedRows} />
+          {inputMode === 'template' ? (
+            <TemplatePreviewTable rows={templateRows} />
+          ) : (
+            <PreviewTable rows={parsedRows} />
+          )}
         </div>
       </div>
     </div>
@@ -556,6 +647,60 @@ const PreviewTable = memo(function PreviewTable({ rows }: PreviewTableProps) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+});
+
+interface TemplatePreviewTableProps {
+  rows: ParsedTemplateRow[];
+}
+
+const TemplatePreviewTable = memo(function TemplatePreviewTable({ rows }: TemplatePreviewTableProps) {
+  if (rows.length === 0) {
+    return (
+      <div className="flex-1 overflow-auto max-h-[600px]">
+        <div className="p-12 text-center text-gray-400 italic">Paste template data to see preview...</div>
+      </div>
+    );
+  }
+
+  const validRows = rows.filter(r => r.isValid);
+
+  return (
+    <div className="flex-1 overflow-auto max-h-[600px]">
+      <div className="divide-y divide-gray-200">
+        {rows.map((row, idx) => (
+          <div key={idx} className={`px-4 py-3 ${row.isValid ? 'bg-white' : 'bg-red-50'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-medium text-purple-700">{row.profile}</span>
+              <ChevronRight size={14} className="text-gray-400" />
+              <span className="font-medium text-indigo-700">{row.subject}</span>
+              <ChevronRight size={14} className="text-gray-400" />
+              <span className="font-medium text-gray-800">{row.focus}</span>
+              {!row.isValid && <AlertCircle size={14} className="text-red-500 ml-auto" />}
+            </div>
+            <div className="text-xs text-gray-500 flex items-center gap-2">
+              <Youtube size={12} className="text-red-500" />
+              <span className="truncate">{row.primaryPlaylist || 'No playlist'}</span>
+              {row.backupPlaylist1 && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-400">Backup 1: {row.backupPlaylist1}</span>
+                </>
+              )}
+              {row.backupPlaylist2 && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-400">Backup 2: {row.backupPlaylist2}</span>
+                </>
+              )}
+            </div>
+            {row.notes && (
+              <div className="text-xs text-gray-400 mt-1 italic">{row.notes}</div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

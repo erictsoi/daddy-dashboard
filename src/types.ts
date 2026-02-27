@@ -50,6 +50,49 @@ export interface ChildProfile {
   themeColor: string;
   googleEmail?: string;
   yearGroups: YearGroup[];
+  // Profile template fields (new)
+  profileTemplate?: ProfileTemplate;
+  profileData?: ProfileTemplateData;
+}
+
+// Profile Templates (6 UK Year Groups)
+export type ProfileTemplate = 'Y1-2' | 'Y3-4' | 'Y5-6' | 'Y7-8' | 'Y9-10' | 'Y11-12';
+
+// Stack Types (7 Subject Stacks)
+export type StackType = 
+  | 'coreAcademics' 
+  | 'languages' 
+  | 'creativePerforming' 
+  | 'stemDigital' 
+  | 'physicalWellbeing' 
+  | 'characterEnrichment' 
+  | 'additionalSubjects';
+
+// Curriculum Card (for template mode)
+export interface CurriculumCard {
+  id: string;
+  focus: string;
+  primaryPlaylist: string;
+  backupPlaylist1?: string;
+  backupPlaylist2?: string;
+  notes?: string;
+  approved: boolean;
+}
+
+// Stack (group of cards)
+export interface CurriculumStack {
+  type: StackType;
+  cards: CurriculumCard[];
+}
+
+// Profile Template Data
+export interface ProfileTemplateData {
+  template: ProfileTemplate;
+  customName?: string;
+  interests?: string[];
+  stacks: CurriculumStack[];
+  approved: boolean;
+  createdAt: string;
 }
 
 // View types were migrated to URL routing in App.tsx
@@ -109,6 +152,18 @@ export interface ParsedRow {
   youTubeType?: 'video' | 'playlist';
   expandedLessons?: ExpandedLesson[];
   videoPosition?: number;
+}
+
+// Template Mode - 7 column import format
+export interface ParsedTemplateRow {
+  profile: string;
+  subject: string;
+  focus: string;
+  primaryPlaylist: string;
+  backupPlaylist1?: string;
+  backupPlaylist2?: string;
+  notes: string;
+  isValid: boolean;
 }
 
 // Database Types

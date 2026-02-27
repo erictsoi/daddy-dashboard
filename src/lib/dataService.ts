@@ -10,10 +10,11 @@ import {
 import { db } from './firebase'
 import {
   ChildProfile, YearGroup, Subject, Topic, Lesson,
-  UserSettings, DEFAULT_SETTINGS
+  UserSettings, DEFAULT_SETTINGS, ProfileTemplateData
 } from '../types'
 import { generateUuid } from './helpers'
 import { logger } from './logger'
+import { createEmptyStacks } from '../constants'
 
 const STORAGE_KEY = 'daddy_dashboard_data'
 
@@ -72,8 +73,22 @@ export const toChildProfile = (data: any): ChildProfile => ({
   avatar: data.avatar || '👶',
   themeColor: data.themeColor || data.theme_color || 'blue',
   googleEmail: data.googleEmail || data.google_email || undefined,
-  yearGroups: Array.isArray(data.yearGroups) ? data.yearGroups.map(toYearGroup) : []
+  yearGroups: Array.isArray(data.yearGroups) ? data.yearGroups.map(toYearGroup) : [],
+  profileTemplate: data.profileTemplate,
+  profileData: data.profileData ? toProfileTemplateData(data.profileData) : undefined
 });
+
+const toProfileTemplateData = (data: any): ProfileTemplateData | undefined => {
+  if (!data) return undefined;
+  return {
+    template: data.template,
+    customName: data.customName,
+    interests: data.interests,
+    stacks: Array.isArray(data.stacks) ? data.stacks : createEmptyStacks(),
+    approved: !!data.approved,
+    createdAt: data.createdAt || new Date().toISOString()
+  };
+};
 
 export const getLocalData = (): ChildProfile[] => {
   const stored = localStorage.getItem(STORAGE_KEY)
@@ -370,3 +385,65 @@ export const saveUserSettings = async (userId: string, settings: Partial<UserSet
     throw error
   }
 }
+
+// --- Profile Template Functions ---
+
+export const setChildProfileTemplate = async (
+  userId: string,
+  childId: string,
+  template: string,
+  customName?: string,
+  interests?: string[]
+): Promise<void> => {
+  const childRef = doc(db, 'users', userId, 'children', childId);
+  await setDoc(childRef, {
+    profileTemplate: template,
+    profileData: {
+      template,
+      customName: customName || '',
+      interests: interests || [],
+      stacks: createEmptyStacks(),
+      approved: false,
+      createdAt: new Date().toISOString()
+    },
+    updatedAt: new Date().toISOString()
+  }, { merge: true });
+  logger.log('[dataService] Set profile template:', template, 'for child:', childId);
+};
+
+export const updateChildProfileData = async (
+  userId: string,
+  childId: string,
+  profileData: ProfileTemplateData
+): Promise<void> => {
+  const childRef = doc(db, 'users', userId, 'children', childId);
+  await setDoc(childRef, {
+    profileData,
+    updatedAt: new Date().toISOString()
+  }, { merge: true });
+  logger.log('[dataService] Updated profileData for child:', childId);
+};
+
+export const approveChildProfile = async (
+  userId: string,
+  childId: string
+): Promise<void> => {
+  const childRef = doc(db, 'users', userId, 'children', childId);
+  const childDoc = await getDoc(childRef);
+  
+  if (!childDoc.exists()) {
+    throw new Error('Child not found');
+  }
+  
+  const data = childDoc.data();
+  const currentProfileData = data.profileData || {};
+  
+  await setDoc(childRef, {
+    profileData: {
+      ...currentProfileData,
+      approved: true
+    },
+    updatedAt: new Date().toISOString()
+  }, { merge: true });
+  logger.log('[dataService] Approved profile for child:', childId);
+};
