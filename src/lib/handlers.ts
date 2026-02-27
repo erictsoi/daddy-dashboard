@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChildProfile, YearGroup } from '../types';
 import { saveFullCurriculum, saveLocalData } from './dataService';
+import { logger } from './logger';
 
 export interface HandlerDeps {
   data: ChildProfile[];
@@ -20,7 +21,7 @@ export const createHandlers = (deps: HandlerDeps) => {
     setData(prev => {
       const newData = [...prev, newChild];
       if (user) {
-        saveFullCurriculum(newData, user.uid).catch(console.error);
+        saveFullCurriculum(newData, user.uid).catch(logger.error);
       } else {
         saveLocalData(newData);
       }
@@ -32,7 +33,7 @@ export const createHandlers = (deps: HandlerDeps) => {
     setData(prev => {
       const newData = prev.filter(child => child.id !== id);
       if (user) {
-        saveFullCurriculum(newData, user.uid).catch(console.error);
+        saveFullCurriculum(newData, user.uid).catch(logger.error);
       } else {
         saveLocalData(newData);
       }
@@ -46,7 +47,7 @@ export const createHandlers = (deps: HandlerDeps) => {
         child.id === id ? { ...child, ...updates } : child
       );
       if (user) {
-        saveFullCurriculum(newData, user.uid).catch(console.error);
+        saveFullCurriculum(newData, user.uid).catch(logger.error);
       } else {
         saveLocalData(newData);
       }
@@ -69,7 +70,7 @@ export const createHandlers = (deps: HandlerDeps) => {
         };
       });
       if (user) {
-        saveFullCurriculum(newData, user.uid).catch(console.error);
+        saveFullCurriculum(newData, user.uid).catch(logger.error);
       } else {
         saveLocalData(newData);
       }
@@ -87,7 +88,7 @@ export const createHandlers = (deps: HandlerDeps) => {
         };
       });
       if (user) {
-        saveFullCurriculum(newData, user.uid).catch(console.error);
+        saveFullCurriculum(newData, user.uid).catch(logger.error);
       } else {
         saveLocalData(newData);
       }

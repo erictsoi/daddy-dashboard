@@ -1,5 +1,6 @@
 import { ChildProfile, YearGroup, Subject, Topic, Lesson } from '../types';
 import { saveFullCurriculum, saveLocalData } from './dataService';
+import { logger } from './logger';
 
 export const findChildById = (data: ChildProfile[], childId: string): ChildProfile | undefined => {
   return data.find(c => c.id === childId);
@@ -58,7 +59,7 @@ export const generateUuid = (): string => {
 
 export const saveData = (data: ChildProfile[], user: any) => {
   if (user) {
-    saveFullCurriculum(data, user.uid).catch(console.error);
+    saveFullCurriculum(data, user.uid).catch(logger.error);
   } else {
     saveLocalData(data);
   }

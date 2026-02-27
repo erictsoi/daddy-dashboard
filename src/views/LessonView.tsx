@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getDummyChild } from '../data/dummyData';
 import { ChildProfile } from '../types';
 
@@ -71,8 +72,9 @@ const Blobs = ({ color }: { color: string }) => (
 );
 
 export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data = [] }) => {
+    const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const child = data.find(c => c.id === childId) || getDummyChild(childId) || getDummyChild(`demo_${childId}`);
+    const child = data.find(c => c.id === childId) || getDummyChild(childId) || getDummyChild(`demo-${childId}`);
 
     const playlist = [
         { title: "What is an Ecosystem?", duration: "7:20", completed: true, active: false },
@@ -172,7 +174,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
                     <Shadow offset={1} size={1} radius={DS.radius.pill}>
                         <button
                             className="b"
-                            onClick={() => window.location.href = `/kiddash?child=${childId}`}
+                            onClick={() => navigate(`/kiddash?child=${childId}`)}
                             style={{
                                 position: "relative",
                                 display: "flex",
@@ -395,7 +397,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
                                 {playlist.map((item, i) => (
                                     <div
                                         key={i}
-                                        onClick={() => item.active ? {} : window.location.reload()}
+                                        onClick={() => {}}
                                         style={{
                                             display: "flex",
                                             alignItems: "center",

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getSubjectColor } from '../constants';
 
 const DS = {
@@ -61,6 +62,7 @@ const MARKETPLACE_ITEMS = [
 const CATEGORIES = ["All", "Maths", "Science", "English", "History", "Art", "Music"];
 
 export const Marketplace: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = React.useState("All");
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
@@ -86,7 +88,7 @@ export const Marketplace: React.FC = () => {
         zIndex: 100
       }}>
         <button
-          onClick={() => window.location.href = '/admindash'}
+          onClick={() => navigate('/admindash')}
           style={{
             padding: "8px 16px",
             borderRadius: DS.radius.md,
