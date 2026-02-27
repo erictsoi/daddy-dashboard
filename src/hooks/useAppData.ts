@@ -80,7 +80,7 @@ export const useAppData = (user: any, authLoading: boolean) => {
                     }
                 } else {
                     setChildProfile(null);
-                    setData([]);
+                    setData(getLocalData());
                 }
             } catch (err) {
                 logger.error('Error loading data:', err);

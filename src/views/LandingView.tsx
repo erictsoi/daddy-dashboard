@@ -194,16 +194,29 @@ export const LandingView: React.FC = () => {
     // Check localStorage for saved data (when not logged in)
     const localData = getLocalData();
     if (localData && localData.length > 0) {
-      return localData.map(child => ({
-        id: child.id,
-        name: child.name,
-        year: child.yearGroups[0]?.name || 'Year ?',
-        age: undefined,
-        color: child.themeColor,
-        emoji: child.avatar,
-        image: undefined,
-        interests: undefined
-      }));
+      return localData.map(child => {
+        const themeColor = child.themeColor || 'blue';
+        const colorMap: Record<string, string> = {
+          purple: '#9B6DD6',
+          blue: '#2B8ED4',
+          green: '#4CAF8A',
+          amber: '#F5A623',
+          rose: '#FF6B6B',
+          orange: '#F5A623',
+          emerald: '#4CAF8A'
+        };
+        return {
+          id: child.id,
+          name: child.name,
+          year: child.yearGroups[0]?.name || 'Year ?',
+          age: undefined,
+          color: colorMap[themeColor] || '#9B6DD6',
+          tint: colorMap[themeColor] ? colorMap[themeColor] + '20' : '#F3EEFF',
+          emoji: child.avatar || '👶',
+          image: undefined,
+          interests: undefined
+        };
+      });
     }
     return DEMO_PROFILES;
   }, [user, children]);
