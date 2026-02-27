@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { ChildProfile, ScheduleBlock } from '../types';
-import { getSubjectWeight } from '../lib/scheduleUtils';
+import { ChildProfile, ScheduleBlock, TopicFrequency } from '../types';
+import { frequencyToWeight, getSubjectWeight } from '../lib/scheduleUtils';
 
 export const useSchedule = (data: ChildProfile[]) => {
     const [schedule, setSchedule] = useState<ScheduleBlock[]>([]);
@@ -47,7 +47,7 @@ export const useSchedule = (data: ChildProfile[]) => {
             const allTopics: any[] = [];
             subjects.forEach((s: any) => {
                 s.topics.forEach((t: any) => {
-                    const topicFreq = t.frequency || getSubjectWeight(s.name, childIdx, childFreqMode, perSubjectWeightsMap);
+                    const topicFreq = frequencyToWeight(t.frequency) || getSubjectWeight(s.name, childIdx, childFreqMode, perSubjectWeightsMap);
                     for (let i = 0; i < topicFreq; i++) {
                         allTopics.push({ ...t, subjectId: s.id, subjectName: s.name, subjectColor: s.color });
                     }

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChildProfile, YearGroup, Subject, Topic, Lesson, ParsedRow } from '../types';
+import { ChildProfile, YearGroup, Subject, Topic, Lesson, ParsedRow, TopicFrequency } from '../types';
 import {
     fetchChildren, fetchChildByEmail, getLocalData,
     saveFullCurriculum, hardDeleteSubjectFromFirebase,
@@ -454,7 +454,7 @@ export const useAppData = (user: any, authLoading: boolean) => {
         });
     }, [user]);
 
-    const handleUpdateTopicFrequency = useCallback((childId: string, subjectId: string, topicId: string, frequency: number) => {
+    const handleUpdateTopicFrequency = useCallback((childId: string, subjectId: string, topicId: string, frequency: TopicFrequency) => {
         setData(prev => {
             const newData = prev.map(child => {
                 if (child.id !== childId) return child;

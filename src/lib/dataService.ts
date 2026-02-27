@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { ChildProfile, YearGroup, Subject, Topic, Lesson } from '../types'
+import { generateUuid } from './helpers'
 
 const STORAGE_KEY = 'daddy_dashboard_data'
 
@@ -22,14 +23,63 @@ function ensureUuid(id: string): string {
   return id
 }
 
-function formatDateForDb(dateStr: string | null | undefined): string | null {
-  if (!dateStr) return null
-  const parts = dateStr.split('/')
-  if (parts.length === 3) {
-    return `${parts[2]}-${parts[1]}-${parts[0]}`
-  }
-  return dateStr
-}
+// --- Data Mappers ---
+
+export const mapFrequencyToType = (freq: any): 'low' | 'balanced' | 'high' => {
+  if (freq === 1 || freq === 'low') return 'low';
+  if (freq === 3 || freq === 'high') return 'high';
+  return 'balanced';
+};
+
+export const toLesson = (data: any): Lesson => ({
+  id: data.id || data.lessonId || generateUuid(),
+  title: data.title || data.lessonTitle || 'Untitled Lesson',
+  durationMinutes: data.durationMinutes || data.duration_minutes || 45,
+  completed: !!data.completed,
+  videoUrl: data.videoUrl || data.video_url || '',
+  outcomes: Array.isArray(data.outcomes) ? data.outcomes : [],
+  lessonFocus: data.lessonFocus || data.lesson_focus || '',
+  lessonNotes: data.lessonNotes || data.lesson_notes || '',
+  deleted: !!data.deleted,
+  timeSpentSeconds: data.timeSpentSeconds || data.time_spent_seconds || 0,
+  videoPosition: data.videoPosition || data.video_position || 0,
+  orderIndex: data.orderIndex || data.order_index || 0
+});
+
+export const toTopic = (data: any): Topic => ({
+  id: data.id || generateUuid(),
+  name: data.name || 'Untitled Topic',
+  lessons: Array.isArray(data.lessons) ? data.lessons.map(toLesson) : [],
+  youtubeUrls: Array.isArray(data.youtubeUrls) ? data.youtubeUrls : [],
+  focus: data.focus || '',
+  notes: data.notes || '',
+  timeSpentSeconds: data.timeSpentSeconds || 0,
+  frequency: mapFrequencyToType(data.frequency)
+});
+
+export const toSubject = (data: any): Subject => ({
+  id: data.id || generateUuid(),
+  name: data.name || 'Untitled Subject',
+  topics: Array.isArray(data.topics) ? data.topics.map(toTopic) : [],
+  category: data.category || 'General',
+  color: data.color || 'bg-gray-100 text-gray-800'
+});
+
+export const toYearGroup = (data: any): YearGroup => ({
+  id: data.id || generateUuid(),
+  name: data.name || 'Untitled Year Group',
+  subjects: Array.isArray(data.subjects) ? data.subjects.map(toSubject) : []
+});
+
+export const toChildProfile = (data: any): ChildProfile => ({
+  id: data.id || generateUuid(),
+  name: data.name || 'Unnamed Child',
+  dob: data.dob || '',
+  avatar: data.avatar || '👶',
+  themeColor: data.themeColor || data.theme_color || 'blue',
+  googleEmail: data.googleEmail || data.google_email || undefined,
+  yearGroups: Array.isArray(data.yearGroups) ? data.yearGroups.map(toYearGroup) : []
+});
 
 export const getLocalData = (): ChildProfile[] => {
   const stored = localStorage.getItem(STORAGE_KEY)
@@ -95,11 +145,7 @@ export const fetchChildren = async (userId: string): Promise<ChildProfile[]> => 
   if (snapshot.empty) return []
 
   const children = snapshot.docs.map(doc => {
-    const data = doc.data()
-    return {
-      ...data,
-      id: doc.id
-    } as ChildProfile
+    return toChildProfile({ ...doc.data(), id: doc.id })
   })
 
   console.log('fetchChildren: returning', children.length, 'children with full data')
@@ -118,10 +164,7 @@ export const fetchChildById = async (parentUid: string, childId: string): Promis
       return null
     }
 
-    return {
-      ...childSnap.data(),
-      id: childSnap.id
-    } as ChildProfile
+    return toChildProfile({ ...childSnap.data(), id: childSnap.id })
   } catch (error) {
     console.error('fetchChildById error:', error)
     return null
@@ -152,10 +195,10 @@ export const fetchChildByEmail = async (email: string): Promise<{ child: ChildPr
     const childrenRef = collection(db, 'users', parentUid, 'children')
     const allChildrenSnapshot = await getDocs(childrenRef)
 
-    const allChildren = allChildrenSnapshot.docs.map(doc => ({
+    const allChildren = allChildrenSnapshot.docs.map(doc => toChildProfile({
       ...doc.data(),
       id: doc.id
-    })) as ChildProfile[]
+    }))
 
     // Filter to find the signed-in child
     const child = allChildren.filter(c => c.googleEmail?.toLowerCase() === email.toLowerCase())

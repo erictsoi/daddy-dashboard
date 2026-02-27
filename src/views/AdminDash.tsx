@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { getDummyProfiles } from '../data/dummyData';
 import { getSubjectColor, getSubjectCategoryLabel } from '../constants';
 import { getSubjectHexColor, getSubjectCategory, SUBJECT_BUCKET_ORDER } from '../utils/subjects';
+import { TopicFrequency } from '../types';
 
 const DS = {
   cream: "#FAF6F0",
@@ -134,11 +135,11 @@ export const AdminDash: React.FC = () => {
     const saved = localStorage.getItem('subjectColors');
     return saved ? JSON.parse(saved) : {};
   });
-  const [freqModeSophia, setFreqModeSophia] = React.useState<Record<string, 1 | 2 | 3>>(() => {
+  const [freqModeSophia, setFreqModeSophia] = React.useState<Record<string, TopicFrequency>>(() => {
     const saved = localStorage.getItem('freqModeSophia');
     return saved ? JSON.parse(saved) : {};
   });
-  const [freqModeAdrian, setFreqModeAdrian] = React.useState<Record<string, 1 | 2 | 3>>(() => {
+  const [freqModeAdrian, setFreqModeAdrian] = React.useState<Record<string, TopicFrequency>>(() => {
     const saved = localStorage.getItem('freqModeAdrian');
     return saved ? JSON.parse(saved) : {};
   });
@@ -174,8 +175,11 @@ export const AdminDash: React.FC = () => {
   }));
 
   const cycleFreqMode = (kidIndex: number, subjectName: string) => {
+    const frequencies: TopicFrequency[] = ['low', 'balanced', 'high'];
     const current = kidIndex === 0 ? freqModeSophia[subjectName] : freqModeAdrian[subjectName];
-    const next = ((current || 2) % 3) + 1 as 1 | 2 | 3;
+    const currentIndex = frequencies.indexOf(current || 'balanced');
+    const next = frequencies[(currentIndex + 1) % frequencies.length];
+
     if (kidIndex === 0) {
       setFreqModeSophia(prev => ({ ...prev, [subjectName]: next }));
     } else {
@@ -196,7 +200,7 @@ export const AdminDash: React.FC = () => {
 
     // Update all subject cards based on category and weighting
     const subjects = kidIndex === 0 ? kids[0].subjects : kids[1].subjects;
-    const newFreqModes: Record<string, 1 | 2 | 3> = {};
+    const newFreqModes: Record<string, TopicFrequency> = {};
 
     const isCoreSubject = (subj: string) => {
       const core = ['Maths', 'English', 'Science'];
@@ -208,30 +212,22 @@ export const AdminDash: React.FC = () => {
 
     subjects.forEach((subj: any) => {
       if (next === 'balanced') {
-        newFreqModes[subj.subject] = 2;
+        newFreqModes[subj.subject] = 'balanced';
       } else if (next === 'stem') {
-        // STEM: stem subjects get 3 stars, arts get 1 star
-        if (isStemSubject(subj)) {
-          newFreqModes[subj.subject] = 3;
-        } else {
-          newFreqModes[subj.subject] = 1;
-        }
+        newFreqModes[subj.subject] = isStemSubject(subj) ? 'high' : 'low';
       } else if (next === 'arts') {
-        // Arts: Core (Maths/English/Science) at 2 stars, arts subjects at 3, STEM at 1
         if (isCoreSubject(subj.subject)) {
-          newFreqModes[subj.subject] = 2;
-        } else if (isArtsSubject(subj)) {
-          newFreqModes[subj.subject] = 3;
+          newFreqModes[subj.subject] = 'balanced';
         } else {
-          newFreqModes[subj.subject] = 1;
+          newFreqModes[subj.subject] = isArtsSubject(subj) ? 'high' : 'low';
         }
       }
     });
 
     if (kidIndex === 0) {
-      setFreqModeSophia(newFreqModes as any);
+      setFreqModeSophia(newFreqModes);
     } else {
-      setFreqModeAdrian(newFreqModes as any);
+      setFreqModeAdrian(newFreqModes);
     }
   };
 
@@ -473,17 +469,23 @@ export const AdminDash: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); cycleFreqMode(0, item.subject); }}
                           style={{ cursor: "pointer", display: "flex", gap: 1 }}
                         >
-                          {[1, 2, 3].map((star) => (
-                            <span
-                              key={star}
-                              style={{
-                                fontSize: 14,
-                                color: star >= (4 - (freqModeSophia[item.subject] || 2)) ? "#F5A623" : "transparent"
-                              }}
-                            >
-                              ★
-                            </span>
-                          ))}
+                          {['low', 'balanced', 'high'].map((lvl) => {
+                            const current = freqModeSophia[item.subject] || 'balanced';
+                            const active = lvl === 'low' ||
+                              (lvl === 'balanced' && (current === 'balanced' || current === 'high')) ||
+                              (lvl === 'high' && current === 'high');
+                            return (
+                              <span
+                                key={lvl}
+                                style={{
+                                  fontSize: 14,
+                                  color: active ? "#F5A623" : "rgba(26, 26, 46, 0.1)"
+                                }}
+                              >
+                                ★
+                              </span>
+                            );
+                          })}
                         </div>
                         <Shadow offset={3} size={1} radius={DS.radius.pill}>
                           <div style={{ position: "relative", background: item.color, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 8px" }}>
@@ -565,17 +567,23 @@ export const AdminDash: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); cycleFreqMode(1, item.subject); }}
                           style={{ cursor: "pointer", display: "flex", gap: 1 }}
                         >
-                          {[1, 2, 3].map((star) => (
-                            <span
-                              key={star}
-                              style={{
-                                fontSize: 14,
-                                color: star >= (4 - (freqModeAdrian[item.subject] || 2)) ? "#F5A623" : "transparent"
-                              }}
-                            >
-                              ★
-                            </span>
-                          ))}
+                          {['low', 'balanced', 'high'].map((lvl) => {
+                            const current = freqModeAdrian[item.subject] || 'balanced';
+                            const active = lvl === 'low' ||
+                              (lvl === 'balanced' && (current === 'balanced' || current === 'high')) ||
+                              (lvl === 'high' && current === 'high');
+                            return (
+                              <span
+                                key={lvl}
+                                style={{
+                                  fontSize: 14,
+                                  color: active ? "#F5A623" : "rgba(26, 26, 46, 0.1)"
+                                }}
+                              >
+                                ★
+                              </span>
+                            );
+                          })}
                         </div>
                         <Shadow offset={3} size={1} radius={DS.radius.pill}>
                           <div style={{ position: "relative", background: item.color, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 8px" }}>

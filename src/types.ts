@@ -13,6 +13,8 @@ export interface Lesson {
   orderIndex?: number;
 }
 
+export type TopicFrequency = 'low' | 'balanced' | 'high';
+
 export interface Topic {
   id: string;
   name: string;
@@ -21,16 +23,17 @@ export interface Topic {
   focus?: string;          // "YT Playlist Focus" from table
   notes?: string;          // Notes from table
   timeSpentSeconds?: number;
-  frequency?: 1 | 2 | 3;   // 1=low, 2=balanced(3x), 3=high(5x)
+  frequency?: TopicFrequency;
 }
+
+export type SubjectCategory = 'Maths' | 'English' | 'Science' | 'Humanities' | 'Creative' | (string & {});
 
 export interface Subject {
   id: string;
   name: string; // Subject (e.g., "English", "Maths", "Science")
   topics: Topic[];
-  category: string;
+  category: SubjectCategory;
   color: string;
-  youtubeUrl?: string;  // Legacy field, now stored in topics
 }
 
 export interface YearGroup {
@@ -49,20 +52,7 @@ export interface ChildProfile {
   yearGroups: YearGroup[];
 }
 
-export type ViewOrigin = 'ADMIN' | 'KIDSDASH' | 'HOME';
-
-export type ViewState =
-  | { type: 'LANDING' }
-  | { type: 'RETURNING' }
-  | { type: 'ADMIN' }
-  | { type: 'HOME' }
-  | { type: 'CURRICULUM_BUILDER' }
-  | { type: 'KIDSDASH'; childId: string }
-  | { type: 'CHILD_DASHBOARD'; childId: string }
-  | { type: 'SUBJECT_DETAIL'; childId: string; subjectId: string; origin: ViewOrigin }
-  | { type: 'LESSON'; childId: string; subjectId: string; topicId: string; lessonId: string; origin: ViewOrigin }
-  | { type: 'LESSON_PLAYER'; childId: string; subjectId: string; topicId: string; lessonId: string; origin: ViewOrigin }
-  | { type: 'MANAGE_PROFILES' };
+// View types were migrated to URL routing in App.tsx
 
 export interface ScheduleBlock {
   id: string;
@@ -92,7 +82,7 @@ export interface ExpandedLesson {
 export interface ParsedRow {
   childName: string;
   yearGroup: string;
-  subjectCategory: string; // Subject (English, Maths, Science)
+  subjectCategory: SubjectCategory; // Subject (English, Maths, Science)
   subjectName: string; // Topic (Reading Comprehension, Algebra)
   lessonTitle: string;
   lessonFocus?: string;
