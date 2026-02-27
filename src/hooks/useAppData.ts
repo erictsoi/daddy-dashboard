@@ -82,12 +82,12 @@ export const useAppData = (user: any, authLoading: boolean) => {
                 } else {
                     setChildProfile(null);
                     const demoChildren = [
-                        getDummyChild('demo_amara'),
-                        getDummyChild('demo_marcus'),
-                        getDummyChild('demo_sophia'),
-                        getDummyChild('demo_kai'),
-                        getDummyChild('demo_adrian'),
-                        getDummyChild('demo_rohan'),
+                        getDummyChild('demo-amara'),
+                        getDummyChild('demo-marcus'),
+                        getDummyChild('demo-sophia'),
+                        getDummyChild('demo-kai'),
+                        getDummyChild('demo-adrian'),
+                        getDummyChild('demo-rohan'),
                     ].filter((c): c is ChildProfile => c !== undefined);
                     setData(demoChildren);
                 }

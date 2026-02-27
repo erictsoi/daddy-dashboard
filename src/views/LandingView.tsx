@@ -292,7 +292,9 @@ export const LandingView: React.FC = () => {
     const xOffset = offset * CAROUSEL_OFFSET + 120;
     const yOffset = 0;
     const scale = 1 - absOffset * SCALE_STEP;
-    const zIndex = CAROUSEL_Z_INDEX_BASE - absOffset;
+    // Cards further from center should be behind. Use absOffset but ensure left side
+    // is always behind right side at same distance (offset < 0 gets -1 to z-index)
+    const zIndex = CAROUSEL_Z_INDEX_BASE - absOffset + (offset < 0 ? -1 : 0);
     const rotate = offset * ROTATION_STEP;
 
     const messy = messyValues[returningIndex];
