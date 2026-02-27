@@ -18,7 +18,7 @@ const KidDash = lazy(() => import('./views/KidDash').then(m => ({ default: m.Kid
 const LessonView = lazy(() => import('./views/LessonView').then(m => ({ default: m.LessonView })));
 const ReturningView = lazy(() => import('./views/ReturningView').then(m => ({ default: m.ReturningView })));
 const Marketplace = lazy(() => import('./views/Marketplace').then(m => ({ default: m.Marketplace })));
-const TempGridView = lazy(() => import('./views/TempGridView').then(m => ({ default: m.TempGridView })));
+// const TempGridView = lazy(() => import('./views/TempGridView').then(m => ({ default: m.TempGridView })));
 
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -66,19 +66,27 @@ const App: React.FC = () => {
           }} />
         </Suspense>} />
 
-        <Route path="/admindash" element={<Suspense fallback={<div>Loading...</div>}><AdminDash /></Suspense>} />
+        <Route path="/admindash" element={<Suspense fallback={<div>Loading...</div>}><AdminDash data={data} onNavigate={(nav) => {
+          if (nav.type === 'KIDSDASH') navigate(`/kiddash?child=${nav.childId}`);
+          else if (nav.type === 'ADMIN' || nav.type === 'HOME') navigate('/admindash');
+          else if (nav.type === 'LANDING') navigate('/');
+          else if (nav.type === 'MARKETPLACE') navigate('/marketplace');
+          else if (nav.type === 'CURRICULUM') navigate('/admindash'); // Redirect to admin for now
+          else if (nav.type === 'PROFILES') navigate('/returningview');
+        }} /></Suspense>} />
         <Route path="/kiddash" element={<Suspense fallback={<div>Loading...</div>}>
-          <KidDash childId={new URLSearchParams(window.location.search).get('child') || (data[0]?.id || '')} />
+          <KidDash childId={new URLSearchParams(window.location.search).get('child') || (data[0]?.id || '')} data={data} />
         </Suspense>} />
         <Route path="/lessonview" element={<Suspense fallback={<div>Loading...</div>}>
           <LessonView
             childId={new URLSearchParams(window.location.search).get('child') || (data[0]?.id || '')}
             lessonId={new URLSearchParams(window.location.search).get('lesson') || ''}
+            data={data}
           />
         </Suspense>} />
 
         <Route path="/marketplace" element={<Suspense fallback={<div>Loading...</div>}><Marketplace /></Suspense>} />
-        <Route path="/temp-grid" element={<Suspense fallback={<div>Loading...</div>}><TempGridView /></Suspense>} />
+        {/* <Route path="/temp-grid" element={<Suspense fallback={<div>Loading...</div>}><TempGridView /></Suspense>} /> */}
 
         {/* Redirects */}
         <Route path="/admin" element={<Navigate to="/admindash" replace />} />

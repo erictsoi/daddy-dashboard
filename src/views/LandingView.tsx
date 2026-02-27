@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChildProfile } from '../types';
 import { DS } from '../components/design-system';
+import { DUMMY_PROFILES } from '../data/dummyData';
 
 // Constants
 const CARD_WIDTH = 220;
@@ -170,19 +171,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ data, onNavigate }) =>
 
   const isFiller = (id: string) => id.startsWith('filler');
 
-  const RETURNING_PROFILES = useMemo(() => [
-    { id: "admin", name: "Daddy", year: "Admin", age: "", color: "#1A1A2E", tint: "#E8E8E8", emoji: "👨", interests: ["Dashboard", "Settings"] },
-    ...(data || []).map(child => ({
-      id: child.id,
-      name: child.name,
-      year: child.year,
-      age: child.age,
-      color: child.color,
-      tint: child.tint,
-      emoji: child.emoji,
-      interests: child.interests,
-    })),
-  ], [data]);
+  const RETURNING_PROFILES = useMemo(() => DUMMY_PROFILES, []);
 
   const INITIAL_PROFILES = useMemo(() => Array.from({ length: FILLER_COUNT }, (_, i) => ({
     id: `filler${i + 1}`,

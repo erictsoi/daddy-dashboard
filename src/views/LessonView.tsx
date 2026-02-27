@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { getDummyChild } from '../data/dummyData';
+import { ChildProfile } from '../types';
 
 interface LessonViewProps {
     childId: string;
     lessonId: string;
+    data?: ChildProfile[];
 }
 
 const DS = {
@@ -68,9 +70,9 @@ const Blobs = ({ color }: { color: string }) => (
     </div>
 );
 
-export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId }) => {
+export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data = [] }) => {
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const child = getDummyChild(childId);
+    const child = data.find(c => c.id === childId) || getDummyChild(childId) || getDummyChild(`demo_${childId}`);
 
     const playlist = [
         { title: "What is an Ecosystem?", duration: "7:20", completed: true, active: false },

@@ -1,56 +1,15 @@
-import React, { useState } from 'react';
-import { getDummyProfiles } from '../data/dummyData';
-import { getSubjectColor, getSubjectCategoryLabel } from '../constants';
+import React, { useState, useMemo, useEffect } from 'react';
+import { DS } from '../components/design-system';
+import { ChildProfile, TopicFrequency, Subject } from '../types';
 import { getSubjectHexColor, getSubjectCategory, SUBJECT_BUCKET_ORDER } from '../utils/subjects';
-import { TopicFrequency } from '../types';
+import { getSubjectColor as getGlobalSubjectColor, getSubjectCategoryLabel } from '../constants';
 
-const DS = {
-  cream: "#FAF6F0",
-  card: "#FFFFFF",
-  ink: "#1A1A2E",
-  inkSoft: "#6B6580",
-  inkFade: "#B0A8C0",
-  dotBrown: "#3D2B1F",
-  border: "2.5px solid #1A1A2E",
-  borderThick: "3px solid #1A1A2E",
-  radius: { sm: 10, md: 16, lg: 22, pill: 100 },
-};
+interface AdminDashProps {
+  data: ChildProfile[];
+  onNavigate: (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'MARKETPLACE' | 'CURRICULUM' | 'PROFILES'; childId?: string }) => void;
+}
 
-const GlobalStyles = () => (
-  <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { font-family: 'Nunito Sans', sans-serif; background: #FAF6F0; color: #1A1A2E; }
-    .b  { font-family: 'Baloo 2', cursive; }
-    .n  { font-family: 'Nunito', sans-serif; }
-    .t-h1    { font-size: 32px; font-weight: 800; line-height: 1.15; }
-    .t-h2    { font-size: 22px; font-weight: 800; line-height: 1.2; }
-    .t-small { font-size: 12px; font-weight: 600; line-height: 1.5; }
-    .t-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
-    @keyframes fadeUp { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
-    .blink { animation: blink 2s ease-in-out infinite; }
-    .subject-card { transition: transform 0.15s ease; }
-    .subject-card:hover { transform: translate(-2px, -2px) !important; }
-    .subject-card-inner { transition: border-color 0.15s; }
-    .subject-card:hover .subject-card-inner { border-color: #1A1A2E !important; }
-    .card-0  { animation: fadeUp .28s .00s ease-out both; }
-    .card-1  { animation: fadeUp .28s .03s ease-out both; }
-    .card-2  { animation: fadeUp .28s .06s ease-out both; }
-    .card-3  { animation: fadeUp .28s .09s ease-out both; }
-    .card-4  { animation: fadeUp .28s .12s ease-out both; }
-    .card-5  { animation: fadeUp .28s .15s ease-out both; }
-    .card-6  { animation: fadeUp .28s .18s ease-out both; }
-    .card-7  { animation: fadeUp .28s .21s ease-out both; }
-    .card-8  { animation: fadeUp .28s .24s ease-out both; }
-    .card-9  { animation: fadeUp .28s .27s ease-out both; }
-    .card-10 { animation: fadeUp .28s .30s ease-out both; }
-    .card-11 { animation: fadeUp .28s .33s ease-out both; }
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: #EDE8E0; }
-    ::-webkit-scrollbar-thumb { background: #C4BBAF; border-radius: 3px; }
-  `}</style>
-);
+// Removed local GlobalStyles - now in index.css
 
 const BendayShadow = ({ offset = 3, size = 3 }: { offset?: number; size?: number }) => (
   <div style={{
@@ -77,57 +36,9 @@ const Texture = () => (
   }} />
 );
 
-const PROFILES = getDummyProfiles();
+// Derive kids from data prop
 
-const SCHEDULES: Record<string, any[]> = {
-  sophia: [
-    { subject: "Maths", topic: "Fractions", icon: "📐", status: "done" },
-    { subject: "English", topic: "Creative Writing", icon: "📖", status: "done" },
-    { subject: "LUNCH", topic: "", icon: "🍽️", status: "lunch" },
-    { subject: "Science", topic: "Ecosystems", icon: "🔬", status: "active" },
-    { subject: "Art", topic: "Watercolour", icon: "🎨", status: "stretch" },
-  ],
-  adrian: [
-    { subject: "Maths", topic: "Algebra II", icon: "📐", status: "done" },
-    { subject: "Science", topic: "Chemical Reactions", icon: "🔬", status: "done" },
-    { subject: "LUNCH", topic: "", icon: "🍽️", status: "lunch" },
-    { subject: "English", topic: "Essay Writing", icon: "📖", status: "active" },
-    { subject: "Design", topic: "Graphic Design", icon: "✏️", status: "stretch" },
-  ],
-};
-
-const SUBJECTS: Record<string, any[]> = {
-  sophia: [
-    { subject: "Maths", topic: "Fractions", icon: "📐", color: getSubjectColor("Maths"), progress: 1, total: 1, category: "stem" },
-    { subject: "English", topic: "Creative Writing", icon: "📖", color: getSubjectColor("English"), progress: 1, total: 1, category: "arts" },
-    { subject: "Science", topic: "Ecosystems", icon: "🔬", color: getSubjectColor("Science"), progress: 0, total: 1, category: "stem" },
-    { subject: "Art", topic: "Watercolour", icon: "🎨", color: getSubjectColor("Art"), progress: 0, total: 1, category: "arts" },
-    { subject: "Music", topic: "Rhythm & Beat", icon: "🎵", color: getSubjectColor("Music"), progress: 0, total: 1, category: "arts" },
-    { subject: "PE", topic: "Gymnastics", icon: "⚽", color: getSubjectColor("PE"), progress: 0, total: 1, category: "arts" },
-    { subject: "History", topic: "Ancient Egypt", icon: "📜", color: getSubjectColor("History"), progress: 0, total: 1, category: "arts" },
-    { subject: "Geography", topic: "Weather Systems", icon: "🌍", color: getSubjectColor("Geography"), progress: 0, total: 1, category: "arts" },
-    { subject: "Drama", topic: "Improvisation", icon: "🎭", color: getSubjectColor("Drama"), progress: 0, total: 1, category: "arts" },
-    { subject: "Technology", topic: "Intro to Coding", icon: "✏️", color: getSubjectColor("Technology"), progress: 0, total: 1, category: "stem" },
-    { subject: "Languages", topic: "French Basics", icon: "🗣️", color: getSubjectColor("Languages"), progress: 0, total: 1, category: "arts" },
-    { subject: "PSHE", topic: "Wellbeing", icon: "💛", color: getSubjectColor("PSHE"), progress: 0, total: 1, category: "arts" },
-  ],
-  adrian: [
-    { subject: "Maths", topic: "Algebra II", icon: "📐", color: getSubjectColor("Maths"), progress: 1, total: 1, category: "stem" },
-    { subject: "Science", topic: "Chemical Reactions", icon: "🔬", color: getSubjectColor("Science"), progress: 1, total: 1, category: "stem" },
-    { subject: "English", topic: "Essay Writing", icon: "📖", color: getSubjectColor("English"), progress: 0, total: 1, category: "arts" },
-    { subject: "Design", topic: "Graphic Design", icon: "✏️", color: getSubjectColor("Design"), progress: 0, total: 1, category: "stem" },
-    { subject: "Physics", topic: "Mechanics", icon: "⚡", color: getSubjectColor("Physics"), progress: 0, total: 1, category: "stem" },
-    { subject: "History", topic: "World Wars", icon: "📜", color: getSubjectColor("History"), progress: 0, total: 1, category: "arts" },
-    { subject: "Geography", topic: "Climate Change", icon: "🌍", color: getSubjectColor("Geography"), progress: 0, total: 1, category: "arts" },
-    { subject: "Computer Science", topic: "Python Programming", icon: "💻", color: getSubjectColor("Computer Science"), progress: 0, total: 1, category: "stem" },
-    { subject: "Art", topic: "Digital Art", icon: "🎨", color: getSubjectColor("Art"), progress: 0, total: 1, category: "arts" },
-    { subject: "Music", topic: "Music Theory", icon: "🎵", color: getSubjectColor("Music"), progress: 0, total: 1, category: "arts" },
-    { subject: "PE", topic: "Basketball", icon: "🏀", color: getSubjectColor("PE"), progress: 0, total: 1, category: "arts" },
-    { subject: "Languages", topic: "Spanish Basics", icon: "🗣️", color: getSubjectColor("Languages"), progress: 0, total: 1, category: "arts" },
-  ],
-};
-
-export const AdminDash: React.FC = () => {
+export const AdminDash: React.FC<AdminDashProps> = ({ data, onNavigate }) => {
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const [hoveredSophia, setHoveredSophia] = React.useState<number | null>(null);
   const [hoveredAdrian, setHoveredAdrian] = React.useState<number | null>(null);
@@ -135,12 +46,15 @@ export const AdminDash: React.FC = () => {
     const saved = localStorage.getItem('subjectColors');
     return saved ? JSON.parse(saved) : {};
   });
-  const [freqModeSophia, setFreqModeSophia] = React.useState<Record<string, TopicFrequency>>(() => {
-    const saved = localStorage.getItem('freqModeSophia');
+
+  // Frequency modes per child
+  const [freqModes, setFreqModes] = useState<Record<string, Record<string, TopicFrequency>>>(() => {
+    const saved = localStorage.getItem('child_freq_modes');
     return saved ? JSON.parse(saved) : {};
   });
-  const [freqModeAdrian, setFreqModeAdrian] = React.useState<Record<string, TopicFrequency>>(() => {
-    const saved = localStorage.getItem('freqModeAdrian');
+
+  const [childFreqWeights, setChildFreqWeights] = useState<Record<string, 'balanced' | 'stem' | 'arts'>>(() => {
+    const saved = localStorage.getItem('child_freq_weights');
     return saved ? JSON.parse(saved) : {};
   });
 
@@ -153,53 +67,85 @@ export const AdminDash: React.FC = () => {
   const getSubjectColor = (subject: string): string => {
     return subjectColors[subject] || getSubjectHexColor(subject);
   };
-  const [childFreqMode, setChildFreqMode] = React.useState<[('balanced' | 'stem' | 'arts'), ('balanced' | 'stem' | 'arts')]>(() => {
-    const saved = localStorage.getItem('childFreqMode');
-    return saved ? JSON.parse(saved) : ['balanced', 'balanced'];
-  });
 
   // Save to localStorage when state changes
   React.useEffect(() => {
-    localStorage.setItem('freqModeSophia', JSON.stringify(freqModeSophia));
-    localStorage.setItem('freqModeAdrian', JSON.stringify(freqModeAdrian));
-    localStorage.setItem('childFreqMode', JSON.stringify(childFreqMode));
-  }, [freqModeSophia, freqModeAdrian, childFreqMode]);
+    localStorage.setItem('child_freq_modes', JSON.stringify(freqModes));
+    localStorage.setItem('child_freq_weights', JSON.stringify(childFreqWeights));
+  }, [freqModes, childFreqWeights]);
 
-  const kids = [PROFILES[2], PROFILES[4]].map((profile, i) => ({
-    profile,
-    schedule: SCHEDULES[profile.id] || SCHEDULES.sophia,
-    subjects: SUBJECTS[profile.id] || SUBJECTS.sophia,
-    done: 2,
-    total: 4,
-    streak: i === 0 ? 5 : 8,
-  }));
+  const kids = useMemo(() => {
+    return data.map((child) => {
+      // Map currency subjects to the dashboard format
+      const subjects = (child.yearGroups[0]?.subjects || []).map(s => ({
+        subject: s.name,
+        topic: s.topics[0]?.name || 'No Topic',
+        icon: '📚',
+        color: getSubjectColor(s.name),
+        progress: s.topics[0]?.lessons.filter(l => l.completed).length || 0,
+        total: s.topics[0]?.lessons.length || 1,
+        category: s.category || getSubjectCategory(s.name)
+      }));
+
+      // Mock schedule for now based on subjects
+      const schedule = subjects.slice(0, 5).map((s, i) => ({
+        subject: s.subject,
+        topic: s.topic,
+        icon: s.icon,
+        status: i === 0 ? 'done' : i === 2 ? 'active' : 'upcoming'
+      }));
+
+      return {
+        profile: {
+          id: child.id,
+          name: child.name,
+          emoji: child.avatar,
+          color: getGlobalSubjectColor(child.themeColor as any),
+          year: child.yearGroups[0]?.name || 'N/A'
+        },
+        schedule: [
+          ...schedule.slice(0, 2),
+          { subject: "LUNCH", topic: "", icon: "🍽️", status: "lunch" },
+          ...schedule.slice(2)
+        ],
+        subjects,
+        done: subjects.filter(s => s.progress === s.total).length,
+        total: subjects.length,
+        streak: 5
+      };
+    });
+  }, [data, subjectColors]);
 
   const cycleFreqMode = (kidIndex: number, subjectName: string) => {
+    const kid = kids[kidIndex];
+    if (!kid) return;
+
+    const kidId = kid.profile.id;
     const frequencies: TopicFrequency[] = ['low', 'balanced', 'high'];
-    const current = kidIndex === 0 ? freqModeSophia[subjectName] : freqModeAdrian[subjectName];
-    const currentIndex = frequencies.indexOf(current || 'balanced');
+    const current = (freqModes[kidId] && freqModes[kidId][subjectName]) || 'balanced';
+    const currentIndex = frequencies.indexOf(current);
     const next = frequencies[(currentIndex + 1) % frequencies.length];
 
-    if (kidIndex === 0) {
-      setFreqModeSophia(prev => ({ ...prev, [subjectName]: next }));
-    } else {
-      setFreqModeAdrian(prev => ({ ...prev, [subjectName]: next }));
-    }
+    setFreqModes(prev => ({
+      ...prev,
+      [kidId]: { ...(prev[kidId] || {}), [subjectName]: next }
+    }));
   };
 
   const cycleChildFreqMode = (kidIndex: number) => {
+    const kid = kids[kidIndex];
+    if (!kid) return;
+
+    const kidId = kid.profile.id;
     const modes: ('balanced' | 'stem' | 'arts')[] = ['balanced', 'stem', 'arts'];
-    const next = modes[(modes.indexOf(childFreqMode[kidIndex]) + 1) % modes.length];
+    const currentWeight = childFreqWeights[kidId] || 'balanced';
+    const next = modes[(modes.indexOf(currentWeight) + 1) % modes.length];
 
     // Set the child-level mode
-    setChildFreqMode(prev => {
-      const newArr = [...prev] as typeof prev;
-      newArr[kidIndex] = next;
-      return newArr;
-    });
+    setChildFreqWeights(prev => ({ ...prev, [kidId]: next }));
 
     // Update all subject cards based on category and weighting
-    const subjects = kidIndex === 0 ? kids[0].subjects : kids[1].subjects;
+    const subjects = kid.subjects;
     const newFreqModes: Record<string, TopicFrequency> = {};
 
     const isCoreSubject = (subj: string) => {
@@ -224,11 +170,7 @@ export const AdminDash: React.FC = () => {
       }
     });
 
-    if (kidIndex === 0) {
-      setFreqModeSophia(newFreqModes);
-    } else {
-      setFreqModeAdrian(newFreqModes);
-    }
+    setFreqModes(prev => ({ ...prev, [kidId]: newFreqModes }));
   };
 
   const Dot = ({ status, color }: { status: string; color: string }) => {
@@ -241,7 +183,6 @@ export const AdminDash: React.FC = () => {
 
   return (
     <div style={{ display: "flex", height: "100vh", background: DS.cream, overflow: "hidden" }}>
-      <GlobalStyles />
       <Texture />
 
       {/* SIDEBAR */}
@@ -261,13 +202,10 @@ export const AdminDash: React.FC = () => {
         </div>
 
         {/* Kids links */}
-        {[
-          { profile: PROFILES[2], section: 'section-sophia' },
-          { profile: PROFILES[4], section: 'section-adrian' },
-        ].map(({ profile, section }) => (
+        {kids.map((kid, ki) => (
           <div
-            key={profile.id}
-            onClick={() => document.getElementById(section)?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
+            key={kid.profile.id}
+            onClick={() => document.getElementById(`section-${kid.profile.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
             style={{
               padding: "11px 16px",
               display: "flex",
@@ -281,8 +219,8 @@ export const AdminDash: React.FC = () => {
             onMouseEnter={e => (e.currentTarget.style.background = "#F0EBE3")}
             onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
-            <span style={{ fontSize: 16 }}>{profile.emoji}</span>
-            {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 600, whiteSpace: "nowrap" }}>{profile.name}</span>}
+            <span style={{ fontSize: 16 }}>{kid.profile.emoji}</span>
+            {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 600, whiteSpace: "nowrap" }}>{kid.profile.name}</span>}
           </div>
         ))}
 
@@ -297,7 +235,7 @@ export const AdminDash: React.FC = () => {
 
         {/* Curriculum Builder */}
         <div
-          onClick={() => window.location.href = '/curriculum'}
+          onClick={() => onNavigate({ type: 'CURRICULUM' })}
           style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", borderLeft: "4px solid transparent" }}
         >
           <span style={{ fontSize: 16 }}>📚</span>
@@ -306,7 +244,7 @@ export const AdminDash: React.FC = () => {
 
         {/* Marketplace */}
         <div
-          onClick={() => window.location.href = '/marketplace'}
+          onClick={() => onNavigate({ type: 'MARKETPLACE' })}
           style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", borderLeft: "4px solid transparent" }}
         >
           <span style={{ fontSize: 16 }}>🛒</span>
@@ -322,7 +260,7 @@ export const AdminDash: React.FC = () => {
         </div>
 
         {/* Profiles link */}
-        <div onClick={() => window.location.href = '/returningview'} style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", borderTop: `2px solid #EDE8E0`, marginTop: 8 }}>
+        <div onClick={() => onNavigate({ type: 'PROFILES' })} style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", borderTop: `2px solid #EDE8E0`, marginTop: 8 }}>
           <span style={{ fontSize: 16 }}>👥</span>
           {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 600, whiteSpace: "nowrap" }}>Profiles</span>}
         </div>
@@ -411,201 +349,104 @@ export const AdminDash: React.FC = () => {
           </div>
         </div>
 
-        {/* SOPHIA SECTION */}
-        <div id="section-sophia" style={{ marginTop: 48 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <Shadow offset={2} size={2} radius={DS.radius.sm}>
-              <div style={{ position: "relative", background: kids[0].profile.color, border: DS.border, borderRadius: DS.radius.sm, padding: "4px 16px" }}>
-                <span className="b t-label" style={{ color: "#fff" }}>{kids[0].profile.name.toUpperCase()}'S SUBJECTS</span>
-              </div>
-            </Shadow>
-            <div
-              onClick={() => cycleChildFreqMode(0)}
-              style={{
-                cursor: "pointer",
-                padding: "4px 12px",
-                background: "#EDE8E0",
-                border: "1.5px solid #1A1A2E",
-                borderRadius: DS.radius.sm,
-                fontSize: 10,
-                fontWeight: 700,
-                color: DS.ink,
-                textTransform: "uppercase"
-              }}
-            >
-              {childFreqMode[0]}
-            </div>
-            <div style={{ flex: 1, height: 2, background: "rgba(26, 26, 46, 0.094)", borderRadius: 100 }} />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14 }}>
-            {[...kids[0].subjects].sort((a: any, b: any) => SUBJECT_BUCKET_ORDER.indexOf(getSubjectCategory(a.subject)) - SUBJECT_BUCKET_ORDER.indexOf(getSubjectCategory(b.subject))).map((item: any, i: number) => (
+        {/* KID SECTIONS */}
+        {kids.map((kid, ki) => (
+          <div key={kid.profile.id} id={`section-${kid.profile.id}`} style={{ marginTop: 48 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <Shadow offset={2} size={2} radius={DS.radius.sm}>
+                <div style={{ position: "relative", background: kid.profile.color, border: DS.border, borderRadius: DS.radius.sm, padding: "4px 16px" }}>
+                  <span className="b t-label" style={{ color: "#fff" }}>{kid.profile.name.toUpperCase()}'S SUBJECTS</span>
+                </div>
+              </Shadow>
               <div
-                key={i}
-                className={`card-${i}`}
-                onMouseEnter={() => setHoveredSophia(i)}
-                onMouseLeave={() => setHoveredSophia(null)}
+                onClick={() => cycleChildFreqMode(ki)}
                 style={{
-                  position: "relative",
-                  borderRadius: DS.radius.lg,
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  padding: "4px 12px",
+                  background: "#EDE8E0",
+                  border: "1.5px solid #1A1A2E",
+                  borderRadius: DS.radius.sm,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: DS.ink,
+                  textTransform: "uppercase"
                 }}
               >
-                <div style={{ position: "relative", borderRadius: DS.radius.lg, transform: hoveredSophia === i ? "translate(-2px, -2px)" : "none", transition: "transform 0.15s ease" }}>
-                  <div style={{ position: "absolute", top: 2, left: 2, right: -2, bottom: -2, zIndex: -1, pointerEvents: "none", backgroundImage: `radial-gradient(circle, ${DS.dotBrown} 3px, transparent 3px)`, backgroundSize: "6.6px 6.6px", borderRadius: "inherit", opacity: 0.35 }} />
-                  <div
-                    style={{
-                      position: "relative",
-                      background: DS.card,
-                      border: hoveredSophia === i ? `3px solid ${DS.ink}` : "3px solid #C4BBAF",
-                      borderRadius: DS.radius.lg,
-                      padding: "16px 14px",
-                      transition: "border-color 0.15s"
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
-                      <div style={{ width: 40, height: 40, background: `${item.color}20`, border: `2px solid ${item.color}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{item.icon}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div
-                          onClick={(e) => { e.stopPropagation(); cycleFreqMode(0, item.subject); }}
-                          style={{ cursor: "pointer", display: "flex", gap: 1 }}
-                        >
-                          {['low', 'balanced', 'high'].map((lvl) => {
-                            const current = freqModeSophia[item.subject] || 'balanced';
-                            const active = lvl === 'low' ||
-                              (lvl === 'balanced' && (current === 'balanced' || current === 'high')) ||
-                              (lvl === 'high' && current === 'high');
-                            return (
-                              <span
-                                key={lvl}
-                                style={{
-                                  fontSize: 14,
-                                  color: active ? "#F5A623" : "rgba(26, 26, 46, 0.1)"
-                                }}
-                              >
-                                ★
-                              </span>
-                            );
-                          })}
-                        </div>
-                        <Shadow offset={3} size={1} radius={DS.radius.pill}>
-                          <div style={{ position: "relative", background: item.color, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 8px" }}>
-                            <span className="n t-label" style={{ color: "#fff" }}>{item.progress}/{item.total}</span>
+                {childFreqWeights[kid.profile.id] || 'balanced'}
+              </div>
+              <div style={{ flex: 1, height: 2, background: "rgba(26, 26, 46, 0.094)", borderRadius: 100 }} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14 }}>
+              {kid.subjects.sort((a, b) => SUBJECT_BUCKET_ORDER.indexOf(getSubjectCategory(a.subject)) - SUBJECT_BUCKET_ORDER.indexOf(getSubjectCategory(b.subject))).map((item, i) => (
+                <div
+                  key={i}
+                  className={`card-${i}`}
+                  style={{
+                    position: "relative",
+                    borderRadius: DS.radius.lg,
+                    cursor: "pointer"
+                  }}
+                >
+                  <div style={{ position: "relative", borderRadius: DS.radius.lg, transition: "transform 0.15s ease" }}>
+                    <div style={{ position: "absolute", top: 2, left: 2, right: -2, bottom: -2, zIndex: -1, pointerEvents: "none", backgroundImage: `radial-gradient(circle, ${DS.dotBrown} 3px, transparent 3px)`, backgroundSize: "6.6px 6.6px", borderRadius: "inherit", opacity: 0.35 }} />
+                    <div
+                      style={{
+                        position: "relative",
+                        background: DS.card,
+                        border: "3px solid #C4BBAF",
+                        borderRadius: DS.radius.lg,
+                        padding: "16px 14px",
+                        transition: "border-color 0.15s"
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
+                        <div style={{ width: 40, height: 40, background: `${item.color}20`, border: `2px solid ${item.color}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{item.icon}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div
+                            onClick={(e) => { e.stopPropagation(); cycleFreqMode(ki, item.subject); }}
+                            style={{ cursor: "pointer", display: "flex", gap: 1 }}
+                          >
+                            {['low', 'balanced', 'high'].map((lvl) => {
+                              const kidModes = freqModes[kid.profile.id] || {};
+                              const current = kidModes[item.subject] || 'balanced';
+                              const active = lvl === 'low' ||
+                                (lvl === 'balanced' && (current === 'balanced' || current === 'high')) ||
+                                (lvl === 'high' && current === 'high');
+                              return (
+                                <span
+                                  key={lvl}
+                                  style={{
+                                    fontSize: 14,
+                                    color: active ? "#F5A623" : "rgba(26, 26, 46, 0.1)"
+                                  }}
+                                >
+                                  ★
+                                </span>
+                              );
+                            })}
                           </div>
-                        </Shadow>
+                          <Shadow offset={3} size={1} radius={DS.radius.pill}>
+                            <div style={{ position: "relative", background: item.color, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 8px" }}>
+                              <span className="n t-label" style={{ color: "#fff" }}>{item.progress}/{item.total}</span>
+                            </div>
+                          </Shadow>
+                        </div>
                       </div>
-                    </div>
-                    <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
-                    <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 6, fontWeight: 600 }}>{item.topic}</div>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', background: `${item.color}15`, border: `1px solid ${item.color}40`, borderRadius: 4, marginBottom: 8 }}>
-                      <span className="n" style={{ fontSize: 9, fontWeight: 700, color: item.color, textTransform: 'uppercase' }}>{getSubjectCategoryLabel(item.subject)}</span>
-                    </div>
-                    <div style={{ height: 7, background: "#EDE8E0", borderRadius: 100, overflow: "hidden", border: "1.5px solid #1A1A2E" }}>
-                      <div style={{ height: "100%", width: `${(item.progress / item.total) * 100}%`, background: item.color, borderRadius: 100 }} />
+                      <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
+                      <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 6, fontWeight: 600 }}>{item.topic}</div>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', background: `${item.color}15`, border: `1px solid ${item.color}40`, borderRadius: 4, marginBottom: 8 }}>
+                        <span className="n" style={{ fontSize: 9, fontWeight: 700, color: item.color, textTransform: 'uppercase' }}>{getSubjectCategoryLabel(item.subject)}</span>
+                      </div>
+                      <div style={{ height: 7, background: "#EDE8E0", borderRadius: 100, overflow: "hidden", border: "1.5px solid #1A1A2E" }}>
+                        <div style={{ height: "100%", width: `${(item.progress / item.total) * 100}%`, background: item.color, borderRadius: 100 }} />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ADRIAN SECTION */}
-        <div id="section-adrian" style={{ marginTop: 48 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <Shadow offset={2} size={2} radius={DS.radius.sm}>
-              <div style={{ position: "relative", background: kids[1].profile.color, border: DS.border, borderRadius: DS.radius.sm, padding: "4px 16px" }}>
-                <span className="b t-label" style={{ color: "#fff" }}>{kids[1].profile.name.toUpperCase()}'S SUBJECTS</span>
-              </div>
-            </Shadow>
-            <div
-              onClick={() => cycleChildFreqMode(1)}
-              style={{
-                cursor: "pointer",
-                padding: "4px 12px",
-                background: "#EDE8E0",
-                border: "1.5px solid #1A1A2E",
-                borderRadius: DS.radius.sm,
-                fontSize: 10,
-                fontWeight: 700,
-                color: DS.ink,
-                textTransform: "uppercase"
-              }}
-            >
-              {childFreqMode[1]}
+              ))}
             </div>
-            <div style={{ flex: 1, height: 2, background: "rgba(26, 26, 46, 0.094)", borderRadius: 100 }} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14 }}>
-            {[...kids[1].subjects].sort((a: any, b: any) => SUBJECT_BUCKET_ORDER.indexOf(getSubjectCategory(a.subject)) - SUBJECT_BUCKET_ORDER.indexOf(getSubjectCategory(b.subject))).map((item: any, i: number) => (
-              <div
-                key={i}
-                className={`card-${i}`}
-                onMouseEnter={() => setHoveredAdrian(i)}
-                onMouseLeave={() => setHoveredAdrian(null)}
-                style={{
-                  position: "relative",
-                  borderRadius: DS.radius.lg,
-                  cursor: "pointer"
-                }}
-              >
-                <div style={{ position: "relative", borderRadius: DS.radius.lg, transform: hoveredAdrian === i ? "translate(-2px, -2px)" : "none", transition: "transform 0.15s ease" }}>
-                  <div style={{ position: "absolute", top: 2, left: 2, right: -2, bottom: -2, zIndex: -1, pointerEvents: "none", backgroundImage: `radial-gradient(circle, ${DS.dotBrown} 3px, transparent 3px)`, backgroundSize: "6.6px 6.6px", borderRadius: "inherit", opacity: 0.35 }} />
-                  <div
-                    style={{
-                      position: "relative",
-                      background: DS.card,
-                      border: hoveredAdrian === i ? `3px solid ${DS.ink}` : "3px solid #C4BBAF",
-                      borderRadius: DS.radius.lg,
-                      padding: "16px 14px",
-                      transition: "border-color 0.15s"
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
-                      <div style={{ width: 40, height: 40, background: `${item.color}20`, border: `2px solid ${item.color}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{item.icon}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div
-                          onClick={(e) => { e.stopPropagation(); cycleFreqMode(1, item.subject); }}
-                          style={{ cursor: "pointer", display: "flex", gap: 1 }}
-                        >
-                          {['low', 'balanced', 'high'].map((lvl) => {
-                            const current = freqModeAdrian[item.subject] || 'balanced';
-                            const active = lvl === 'low' ||
-                              (lvl === 'balanced' && (current === 'balanced' || current === 'high')) ||
-                              (lvl === 'high' && current === 'high');
-                            return (
-                              <span
-                                key={lvl}
-                                style={{
-                                  fontSize: 14,
-                                  color: active ? "#F5A623" : "rgba(26, 26, 46, 0.1)"
-                                }}
-                              >
-                                ★
-                              </span>
-                            );
-                          })}
-                        </div>
-                        <Shadow offset={3} size={1} radius={DS.radius.pill}>
-                          <div style={{ position: "relative", background: item.color, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 8px" }}>
-                            <span className="n t-label" style={{ color: "#fff" }}>{item.progress}/{item.total}</span>
-                          </div>
-                        </Shadow>
-                      </div>
-                    </div>
-                    <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
-                    <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 6, fontWeight: 600 }}>{item.topic}</div>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', background: `${item.color}15`, border: `1px solid ${item.color}40`, borderRadius: 4, marginBottom: 8 }}>
-                      <span className="n" style={{ fontSize: 9, fontWeight: 700, color: item.color, textTransform: 'uppercase' }}>{getSubjectCategoryLabel(item.subject)}</span>
-                    </div>
-                    <div style={{ height: 7, background: "#EDE8E0", borderRadius: 100, overflow: "hidden", border: "1.5px solid #1A1A2E" }}>
-                      <div style={{ height: "100%", width: `${(item.progress / item.total) * 100}%`, background: item.color, borderRadius: 100 }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        ))}
 
         {/* ADMIN SECTION */}
         <div id="section-admin" style={{ marginTop: 48 }}>
@@ -623,21 +464,21 @@ export const AdminDash: React.FC = () => {
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
                   <div style={{ padding: 16, background: "#F5A62315", borderRadius: DS.radius.sm, border: "1.5px solid #F5A623" }}>
-                    <div className="b t-h2" style={{ color: DS.ink }}>2</div>
+                    <div className="b t-h2" style={{ color: DS.ink }}>{kids.length}</div>
                     <div className="n t-label" style={{ color: DS.inkSoft }}>Children</div>
                   </div>
                   <div style={{ padding: 16, background: "#4CAF8A15", borderRadius: DS.radius.sm, border: "1.5px solid #4CAF8A" }}>
-                    <div className="b t-h2" style={{ color: DS.ink }}>4</div>
+                    <div className="b t-h2" style={{ color: DS.ink }}>{kids.reduce((acc, k) => acc + k.done, 0)}</div>
                     <div className="n t-label" style={{ color: DS.inkSoft }}>Lessons Today</div>
                   </div>
                   <div style={{ padding: 16, background: "#9B6DD615", borderRadius: DS.radius.sm, border: "1.5px solid #9B6DD6" }}>
-                    <div className="b t-h2" style={{ color: DS.ink }}>13</div>
+                    <div className="b t-h2" style={{ color: DS.ink }}>{Math.max(...kids.map(k => k.streak), 0)}</div>
                     <div className="n t-label" style={{ color: DS.inkSoft }}>Day Streak</div>
                   </div>
                 </div>
                 <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
                   <button
-                    onClick={() => window.location.href = '/curriculum'}
+                    onClick={() => onNavigate({ type: 'CURRICULUM' })}
                     style={{
                       padding: "10px 20px",
                       borderRadius: DS.radius.md,
@@ -652,7 +493,7 @@ export const AdminDash: React.FC = () => {
                     Curriculum Builder
                   </button>
                   <button
-                    onClick={() => window.location.href = '/returningview'}
+                    onClick={() => onNavigate({ type: 'PROFILES' })}
                     style={{
                       padding: "10px 20px",
                       borderRadius: DS.radius.md,
@@ -694,16 +535,17 @@ export const AdminDash: React.FC = () => {
                 {/* Chart bars */}
                 <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: 140, padding: "0 10px" }}>
                   {[
-                    { day: 'Mon', sophia: 4, adrian: 3 },
-                    { day: 'Tue', sophia: 3, adrian: 4 },
-                    { day: 'Wed', sophia: 5, adrian: 2 },
-                    { day: 'Thu', sophia: 2, adrian: 5 },
-                    { day: 'Fri', sophia: 4, adrian: 4 },
+                    { day: 'Mon', childData: kids.map(k => Math.floor(Math.random() * 5)) },
+                    { day: 'Tue', childData: kids.map(k => Math.floor(Math.random() * 5)) },
+                    { day: 'Wed', childData: kids.map(k => Math.floor(Math.random() * 5)) },
+                    { day: 'Thu', childData: kids.map(k => Math.floor(Math.random() * 5)) },
+                    { day: 'Fri', childData: kids.map(k => Math.floor(Math.random() * 5)) },
                   ].map((d, idx) => (
                     <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                       <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 100 }}>
-                        <div style={{ width: 24, background: kids[0].profile.color, borderRadius: "4px 4px 0 0", height: d.sophia * 20, transition: "height 0.3s" }} />
-                        <div style={{ width: 24, background: kids[1].profile.color, borderRadius: "4px 4px 0 0", height: d.adrian * 20, transition: "height 0.3s" }} />
+                        {d.childData.map((val, ki) => (
+                          <div key={ki} style={{ width: 16, background: kids[ki].profile.color, borderRadius: "4px 4px 0 0", height: val * 20, transition: "height 0.3s" }} />
+                        ))}
                       </div>
                       <span className="n t-label" style={{ color: DS.inkFade }}>{d.day}</span>
                     </div>
@@ -711,15 +553,13 @@ export const AdminDash: React.FC = () => {
                 </div>
 
                 {/* Legend */}
-                <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 16, paddingTop: 16, borderTop: "1px solid #EDE8E0" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <div style={{ width: 12, height: 12, background: kids[0].profile.color, borderRadius: 2 }} />
-                    <span className="n t-small" style={{ color: DS.inkSoft }}>{kids[0].profile.name}</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <div style={{ width: 12, height: 12, background: kids[1].profile.color, borderRadius: 2 }} />
-                    <span className="n t-small" style={{ color: DS.inkSoft }}>{kids[1].profile.name}</span>
-                  </div>
+                <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 16, paddingTop: 16, borderTop: "1px solid #EDE8E0", flexWrap: "wrap" }}>
+                  {kids.map((kid, ki) => (
+                    <div key={ki} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: 12, height: 12, background: kid.profile.color, borderRadius: 2 }} />
+                      <span className="n t-small" style={{ color: DS.inkSoft }}>{kid.profile.name}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </Shadow>
@@ -760,7 +600,9 @@ export const AdminDash: React.FC = () => {
             <Shadow offset={3} size={2.5} radius={DS.radius.lg}>
               <div style={{ position: "relative", background: DS.card, border: DS.border, borderRadius: DS.radius.lg, padding: 26, textAlign: "center" }}>
                 <div style={{ width: 80, height: 80, borderRadius: "50%", border: `6px solid #4CAF8A`, margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="b" style={{ fontSize: 28, color: DS.ink }}>78%</span>
+                  <span className="b" style={{ fontSize: 28, color: DS.ink }}>{
+                    Math.round((kids.reduce((acc, k) => acc + k.done, 0) / Math.max(1, kids.reduce((acc, k) => acc + k.total, 0))) * 100)
+                  }%</span>
                 </div>
                 <div className="b t-h2" style={{ color: DS.ink }}>Completion Rate</div>
                 <div className="n t-label" style={{ color: DS.inkFade, marginTop: 4 }}>This Week</div>
@@ -771,20 +613,19 @@ export const AdminDash: React.FC = () => {
             <Shadow offset={3} size={2.5} radius={DS.radius.lg}>
               <div style={{ position: "relative", background: DS.card, border: DS.border, borderRadius: DS.radius.lg, padding: 26, textAlign: "center" }}>
                 <div style={{ fontSize: 40, marginBottom: 8 }}>⏱️</div>
-                <div className="b t-h2" style={{ color: DS.ink }}>12.5 hrs</div>
+                <div className="b t-h2" style={{ color: DS.ink }}>{kids.length * 6.2} hrs</div>
                 <div className="n t-label" style={{ color: DS.inkFade, marginTop: 4 }}>Total Learning Time</div>
-                <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 20 }}>
-                  <div>
-                    <div className="b" style={{ color: kids[0].profile.color, fontSize: 18 }}>6.2h</div>
-                    <div className="n t-label" style={{ color: DS.inkFade }}>{kids[0].profile.name}</div>
-                  </div>
-                  <div>
-                    <div className="b" style={{ color: kids[1].profile.color, fontSize: 18 }}>6.3h</div>
-                    <div className="n t-label" style={{ color: DS.inkFade }}>{kids[1].profile.name}</div>
-                  </div>
+                <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+                  {kids.map((kid, ki) => (
+                    <div key={ki}>
+                      <div className="b" style={{ color: kid.profile.color, fontSize: 18 }}>6.2h</div>
+                      <div className="n t-label" style={{ color: DS.inkFade }}>{kid.profile.name}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </Shadow>
+
 
             {/* STREAKS */}
             <Shadow offset={3} size={2.5} radius={DS.radius.lg}>

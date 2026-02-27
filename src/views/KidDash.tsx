@@ -1,58 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getDummyChild } from '../data/dummyData';
 import { getSubjectHexColor, getSubjectIcon } from '../utils/subjects';
+import { ChildProfile } from '../types';
+import { DS } from '../components/design-system';
 
 interface KidDashProps {
     childId: string;
+    data?: ChildProfile[];
 }
 
-const DS = {
-    cream: "#FAF6F0",
-    card: "#FFFFFF",
-    ink: "#1A1A2E",
-    inkSoft: "#6B6580",
-    inkFade: "#B0A8C0",
-    dotBrown: "#3D2B1F",
-    border: "2.5px solid #1A1A2E",
-    borderThick: "3px solid #1A1A2E",
-    radius: { sm: 10, md: 16, lg: 22, pill: 100 },
-};
-
-const GlobalStyles = () => (
-    <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { font-family: 'Nunito Sans', sans-serif; background: #FAF6F0; color: #1A1A2E; }
-        .b  { font-family: 'Baloo 2', cursive; }
-        .n  { font-family: 'Nunito', sans-serif; }
-        .t-h3    { font-size: 16px; font-weight: 800; line-height: 1.3; }
-        .t-body  { font-size: 14px; font-weight: 500; line-height: 1.65; }
-        .t-small { font-size: 12px; font-weight: 600; line-height: 1.5; }
-        .t-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
-        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
-        @keyframes fadeUp { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
-        .float { animation: float 3s ease-in-out infinite; }
-        .card-0  { animation: fadeUp .28s .00s ease-out both; }
-        .card-1  { animation: fadeUp .28s .03s ease-out both; }
-        .card-2  { animation: fadeUp .28s .06s ease-out both; }
-        .card-3  { animation: fadeUp .28s .09s ease-out both; }
-        .card-4  { animation: fadeUp .28s .12s ease-out both; }
-        .card-5  { animation: fadeUp .28s .15s ease-out both; }
-        .card-6  { animation: fadeUp .28s .18s ease-out both; }
-        .card-7  { animation: fadeUp .28s .21s ease-out both; }
-        .card-8  { animation: fadeUp .28s .24s ease-out both; }
-        .card-9  { animation: fadeUp .28s .27s ease-out both; }
-        .card-10 { animation: fadeUp .28s .30s ease-out both; }
-        .card-11 { animation: fadeUp .28s .33s ease-out both; }
-        .subject-card { transition: transform 0.15s ease; }
-        .subject-card:hover { transform: translate(-2px, -2px) !important; }
-        .subject-card-inner { transition: border-color 0.15s; }
-        .subject-card:hover .subject-card-inner { border-color: #1A1A2E !important; }
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: #EDE8E0; }
-        ::-webkit-scrollbar-thumb { background: #C4BBAF; border-radius: 3px; }
-    `}</style>
-);
 
 const BendayShadow = ({ offset = 3, size = 3 }: { offset?: number; size?: number }) => (
     <div style={{
@@ -117,9 +74,10 @@ const SectionHead = ({ label, color }: { label: string; color: string }) => (
     </div>
 );
 
-export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
+export const KidDash: React.FC<KidDashProps> = ({ childId, data = [] }) => {
+    const navigate = useNavigate();
     const [sel, setSel] = useState<number | null>(null);
-    const child = getDummyChild(childId);
+    const child = data.find(c => c.id === childId) || getDummyChild(childId) || getDummyChild(`demo_${childId}`);
 
     if (!child) {
         return (
@@ -132,7 +90,6 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
                 fontFamily: "'Nunito Sans', sans-serif",
                 color: DS.ink
             }}>
-                <GlobalStyles />
                 <div style={{ textAlign: "center" }}>
                     <h1>Kid not found: {childId}</h1>
                     <p>Available: sophia, adrian, marcus, amara, kai, rohan</p>
@@ -220,7 +177,6 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
             position: "relative",
             overflow: "hidden"
         }}>
-            <GlobalStyles />
             <Texture />
             <Deco color={profile.color} />
 
@@ -241,7 +197,7 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
                     </Shadow>
                     <div
                         className="float"
-                        onClick={() => window.location.href = '/returningview'}
+                        onClick={() => navigate('/returningview')}
                         style={{ width: 38, height: 38, background: DS.card, border: DS.border, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer" }}
                     >
                         {profile.emoji}
@@ -336,7 +292,7 @@ export const KidDash: React.FC<KidDashProps> = ({ childId }) => {
                                         className="subject-card-inner"
                                         onClick={() => {
                                             if (s.lessonId) {
-                                                window.location.href = `/lessonview?child=${childId}&lesson=${s.lessonId}`;
+                                                navigate(`/lessonview?child=${childId}&lesson=${s.lessonId}`);
                                             }
                                         }}
                                         style={{
