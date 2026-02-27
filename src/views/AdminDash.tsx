@@ -4,10 +4,11 @@ import { ChildProfile, TopicFrequency, Subject } from '../types';
 import { getSubjectHexColor, getSubjectCategory, SUBJECT_BUCKET_ORDER } from '../utils/subjects';
 import { getSubjectColor as getGlobalSubjectColor, getSubjectCategoryLabel } from '../constants';
 
-interface AdminDashProps {
-  data: ChildProfile[];
-  onNavigate: (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'MARKETPLACE' | 'CURRICULUM' | 'PROFILES'; childId?: string }) => void;
-}
+import { useAppContext } from '../context/AppContext';
+import { useNavigate } from 'react-router-dom';
+import { countCompletedToday, getCompletionRate, getTotalTimeHours, calculateStreak } from '../utils/dashboardStats';
+
+interface AdminDashProps { }
 
 // Removed local GlobalStyles - now in index.css
 
@@ -38,10 +39,21 @@ const Texture = () => (
 
 // Derive kids from data prop
 
-export const AdminDash: React.FC<AdminDashProps> = ({ data, onNavigate }) => {
+export const AdminDash: React.FC<AdminDashProps> = () => {
+  const { children, user } = useAppContext();
+  const navigate = useNavigate();
+
+  const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'MARKETPLACE' | 'CURRICULUM' | 'PROFILES'; childId?: string }) => {
+    if (view.type === 'KIDSDASH' && view.childId) navigate(`/kiddash?child=${view.childId}`);
+    else if (view.type === 'ADMIN' || view.type === 'HOME') navigate('/admindash');
+    else if (view.type === 'LANDING') navigate('/');
+    else if (view.type === 'MARKETPLACE') navigate('/marketplace');
+    else if (view.type === 'CURRICULUM') navigate('/admindash');
+    else if (view.type === 'PROFILES') navigate('/returningview');
+  };
+
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
-  const [hoveredSophia, setHoveredSophia] = React.useState<number | null>(null);
-  const [hoveredAdrian, setHoveredAdrian] = React.useState<number | null>(null);
+  const [hoveredCard, setHoveredCard] = React.useState<number | null>(null);
   const [subjectColors, setSubjectColors] = useState<Record<string, string>>(() => {
     const saved = localStorage.getItem('subjectColors');
     return saved ? JSON.parse(saved) : {};
@@ -75,7 +87,7 @@ export const AdminDash: React.FC<AdminDashProps> = ({ data, onNavigate }) => {
   }, [freqModes, childFreqWeights]);
 
   const kids = useMemo(() => {
-    return data.map((child) => {
+    return children.map((child) => {
       // Map currency subjects to the dashboard format
       const subjects = (child.yearGroups[0]?.subjects || []).map(s => ({
         subject: s.name,
@@ -109,12 +121,13 @@ export const AdminDash: React.FC<AdminDashProps> = ({ data, onNavigate }) => {
           ...schedule.slice(2)
         ],
         subjects,
-        done: subjects.filter(s => s.progress === s.total).length,
-        total: subjects.length,
-        streak: 5
+        done: countCompletedToday(child),
+        total: subjects.reduce((sum, s) => sum + s.total, 0),
+        streak: calculateStreak(child),
+        totalHours: getTotalTimeHours(child)
       };
     });
-  }, [data, subjectColors]);
+  }, [children, subjectColors]);
 
   const cycleFreqMode = (kidIndex: number, subjectName: string) => {
     const kid = kids[kidIndex];
@@ -285,7 +298,9 @@ export const AdminDash: React.FC<AdminDashProps> = ({ data, onNavigate }) => {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
             <div>
               <h1 className="b t-h1" style={{ color: DS.ink }}>Today's Overview</h1>
-              <p className="n t-small" style={{ color: DS.inkSoft, marginTop: 3 }}>Tuesday, 17 February 2026</p>
+              <p className="n t-small" style={{ color: DS.inkSoft, marginTop: 3 }}>
+                {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
             </div>
             <Shadow offset={2} size={2} radius={DS.radius.md}>
               <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, background: DS.card, border: DS.border, borderRadius: DS.radius.md, padding: "9px 16px" }}>
@@ -472,7 +487,7 @@ export const AdminDash: React.FC<AdminDashProps> = ({ data, onNavigate }) => {
                     <div className="n t-label" style={{ color: DS.inkSoft }}>Lessons Today</div>
                   </div>
                   <div style={{ padding: 16, background: "#9B6DD615", borderRadius: DS.radius.sm, border: "1.5px solid #9B6DD6" }}>
-                    <div className="b t-h2" style={{ color: DS.ink }}>{Math.max(...kids.map(k => k.streak), 0)}</div>
+                    <div className="b t-h2" style={{ color: DS.ink }}>{kids.length > 0 ? Math.max(...kids.map(k => k.streak)) : 0}</div>
                     <div className="n t-label" style={{ color: DS.inkSoft }}>Day Streak</div>
                   </div>
                 </div>
@@ -613,12 +628,14 @@ export const AdminDash: React.FC<AdminDashProps> = ({ data, onNavigate }) => {
             <Shadow offset={3} size={2.5} radius={DS.radius.lg}>
               <div style={{ position: "relative", background: DS.card, border: DS.border, borderRadius: DS.radius.lg, padding: 26, textAlign: "center" }}>
                 <div style={{ fontSize: 40, marginBottom: 8 }}>⏱️</div>
-                <div className="b t-h2" style={{ color: DS.ink }}>{kids.length * 6.2} hrs</div>
+                <div className="b t-h2" style={{ color: DS.ink }}>
+                  {kids.reduce((acc, k) => acc + parseFloat(k.totalHours), 0).toFixed(1)} hrs
+                </div>
                 <div className="n t-label" style={{ color: DS.inkFade, marginTop: 4 }}>Total Learning Time</div>
                 <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
                   {kids.map((kid, ki) => (
                     <div key={ki}>
-                      <div className="b" style={{ color: kid.profile.color, fontSize: 18 }}>6.2h</div>
+                      <div className="b" style={{ color: kid.profile.color, fontSize: 18 }}>{kid.totalHours}h</div>
                       <div className="n t-label" style={{ color: DS.inkFade }}>{kid.profile.name}</div>
                     </div>
                   ))}

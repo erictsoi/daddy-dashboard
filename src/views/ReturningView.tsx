@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChildProfile } from '../types';
 import { DS } from '../components/design-system';
+import { useAppContext } from '../context/AppContext';
+import { DEMO_DISPLAY_PROFILES } from '../data/demoProfiles';
 
 // Constants
 const CARD_WIDTH = 220;
@@ -312,14 +314,15 @@ interface CardItem {
   image?: string;
 }
 
-interface ReturningViewProps {
-  childProfile: ChildProfile | null;
-  data: ChildProfile[];
-  onNavigate: (view: { type: 'LANDING' } | { type: 'KIDSDASH'; childId: string } | { type: 'ADMIN' } | { type: 'HOME' }) => void;
-}
-
-export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data, onNavigate }) => {
+export const ReturningView: React.FC = () => {
+  const { children: contextChildren, user, loading, settings } = useAppContext();
   const navigate = useNavigate();
+
+  const onNavigate = (view: { type: 'LANDING' } | { type: 'KIDSDASH'; childId: string } | { type: 'ADMIN' } | { type: 'HOME' }) => {
+    if (view.type === 'KIDSDASH' && 'childId' in view) navigate(`/kiddash?child=${view.childId}`);
+    else if (view.type === 'ADMIN' || view.type === 'HOME') navigate('/admindash');
+    else if (view.type === 'LANDING') navigate('/');
+  };
   const [phase, setPhase] = useState<'stack' | 'reveal'>('stack');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [navigating, setNavigating] = useState(false);
@@ -333,21 +336,25 @@ export const ReturningView: React.FC<ReturningViewProps> = ({ childProfile, data
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  const PROFILES = useMemo(() => [
-    { id: "admin", name: "Daddy", year: "Admin", age: "", color: "#1A1A2E", tint: "#E8E8E8", emoji: "👨", image: undefined, interests: ["Dashboard", "Settings"], isAdmin: true },
-    ...(data || []).map(child => ({
-      id: child.id,
-      name: child.name,
-      year: child.year,
-      age: child.age,
-      color: child.color,
-      tint: child.tint,
-      emoji: child.emoji,
-      image: child.image,
-      interests: child.interests,
-      isAdmin: false,
-    })),
-  ], [data]);
+  const PROFILES = useMemo(() => {
+    const adminProfile = { id: "admin", name: settings.adminName || "Daddy", year: "Admin", age: "", color: settings.adminColor || "#1A1A2E", tint: "#E8E8E8", emoji: settings.adminAvatar || "👨", image: undefined, interests: ["Dashboard", "Settings"], isAdmin: true };
+    const kids = (user && contextChildren && contextChildren.length > 0) ? contextChildren : DEMO_DISPLAY_PROFILES;
+    return [
+      adminProfile,
+      ...kids.map(child => ({
+        id: child.id,
+        name: child.name,
+        year: child.year || 'N/A',
+        age: child.age,
+        color: child.color || '#95A5A6',
+        tint: child.tint || '',
+        emoji: child.emoji || '❓',
+        image: child.image,
+        interests: child.interests || [],
+        isAdmin: false,
+      }))
+    ];
+  }, [contextChildren, user, settings]);
 
   const FILLERS = useMemo(() => Array.from({ length: FILLER_COUNT }, (_, i) => ({
     id: `filler-${i}`,

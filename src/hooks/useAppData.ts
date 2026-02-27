@@ -8,6 +8,7 @@ import {
 } from '../lib/dataService';
 import { saveData, generateUuid } from '../lib/helpers';
 import { logger } from '../lib/logger';
+import { getDummyChild } from '../data/dummyData';
 
 export const useAppData = (user: any, authLoading: boolean) => {
     const navigate = useNavigate();
@@ -80,7 +81,15 @@ export const useAppData = (user: any, authLoading: boolean) => {
                     }
                 } else {
                     setChildProfile(null);
-                    setData([]);
+                    const demoChildren = [
+                        getDummyChild('demo_amara'),
+                        getDummyChild('demo_marcus'),
+                        getDummyChild('demo_sophia'),
+                        getDummyChild('demo_kai'),
+                        getDummyChild('demo_adrian'),
+                        getDummyChild('demo_rohan'),
+                    ].filter((c): c is ChildProfile => c !== undefined);
+                    setData(demoChildren);
                 }
             } catch (err) {
                 logger.error('Error loading data:', err);

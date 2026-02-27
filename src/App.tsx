@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 
 // Hooks
 import { useAuth } from './lib/AuthContext';
-import { useAppData } from './hooks/useAppData';
+import { AppProvider, useAppContext } from './context/AppContext';
 import { useSchedule } from './hooks/useSchedule';
 
 // Static Views
@@ -18,23 +18,21 @@ const KidDash = lazy(() => import('./views/KidDash').then(m => ({ default: m.Kid
 const LessonView = lazy(() => import('./views/LessonView').then(m => ({ default: m.LessonView })));
 const ReturningView = lazy(() => import('./views/ReturningView').then(m => ({ default: m.ReturningView })));
 const Marketplace = lazy(() => import('./views/Marketplace').then(m => ({ default: m.Marketplace })));
-// const TempGridView = lazy(() => import('./views/TempGridView').then(m => ({ default: m.TempGridView })));
 
-const App: React.FC = () => {
+const AppInner: React.FC = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth() || {};
-
-  // Custom Hook: Curriculum & User Data
   const {
-    data, loading, childProfile, allChildren,
-    adminAvatar, adminName, adminDob, adminColor,
-    setAdminAvatar, setAdminName, setAdminDob, setAdminColor,
-    handleUpdateChild, handleUpdateChildProfile, handleAddChild,
-    handleDeleteChild, handleAddYearGroup, handleRemoveYearGroup,
-    handleCompleteLesson, handleBulkImport, handleDeleteSubject,
-    handleAddLesson, handleRestoreLesson, handleHardDeleteLesson,
-    handleSoftDeleteLesson, handleUpdateTopicFrequency
-  } = useAppData(user, authLoading);
+    children: data,
+    childProfile,
+    settings: { adminAvatar },
+    handleAddChild,
+    handleUpdateChild,
+    handleDeleteChild,
+    handleAddYearGroup,
+    handleRemoveYearGroup,
+    handleUpdateChildProfile,
+    setAdminAvatar
+  } = useAppContext();
 
   // Custom Hook: Schedule Management
   const { schedule, isDayActive, generateSchedule } = useSchedule(data);
@@ -48,34 +46,15 @@ const App: React.FC = () => {
   return (
     <>
       <Routes>
-        <Route path="/landingview" element={<LandingView data={data} onNavigate={(nav) => {
-          if (nav.type === 'KIDSDASH') navigate(`/kiddash?child=${nav.childId}`);
-          else if (nav.type === 'HOME' || nav.type === 'ADMIN') navigate('/admindash');
-          else if (nav.type === 'LANDING') navigate('/');
-        }} />} />
-        <Route path="/" element={<LandingView data={data} onNavigate={(nav) => {
-          if (nav.type === 'KIDSDASH') navigate(`/kiddash?child=${nav.childId}`);
-          else if (nav.type === 'HOME' || nav.type === 'ADMIN') navigate('/admindash');
-          else if (nav.type === 'LANDING') navigate('/');
-        }} />} />
+        <Route path="/landingview" element={<LandingView />} />
+        <Route path="/" element={<LandingView />} />
         <Route path="/returningview" element={<Suspense fallback={<div>Loading...</div>}>
-          <ReturningView childProfile={childProfile} data={data} onNavigate={(nav) => {
-            if (nav.type === 'KIDSDASH') navigate(`/kiddash?child=${nav.childId}`);
-            else if (nav.type === 'HOME' || nav.type === 'ADMIN') navigate('/admindash');
-            else if (nav.type === 'LANDING') navigate('/');
-          }} />
+          <ReturningView />
         </Suspense>} />
 
-        <Route path="/admindash" element={<Suspense fallback={<div>Loading...</div>}><AdminDash data={data} onNavigate={(nav) => {
-          if (nav.type === 'KIDSDASH') navigate(`/kiddash?child=${nav.childId}`);
-          else if (nav.type === 'ADMIN' || nav.type === 'HOME') navigate('/admindash');
-          else if (nav.type === 'LANDING') navigate('/');
-          else if (nav.type === 'MARKETPLACE') navigate('/marketplace');
-          else if (nav.type === 'CURRICULUM') navigate('/admindash'); // Redirect to admin for now
-          else if (nav.type === 'PROFILES') navigate('/returningview');
-        }} /></Suspense>} />
+        <Route path="/admindash" element={<Suspense fallback={<div>Loading...</div>}><AdminDash /></Suspense>} />
         <Route path="/kiddash" element={<Suspense fallback={<div>Loading...</div>}>
-          <KidDash childId={new URLSearchParams(window.location.search).get('child') || (data[0]?.id || '')} data={data} />
+          <KidDash />
         </Suspense>} />
         <Route path="/lessonview" element={<Suspense fallback={<div>Loading...</div>}>
           <LessonView
@@ -127,6 +106,14 @@ const App: React.FC = () => {
         }}
       />
     </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AppProvider>
+      <AppInner />
+    </AppProvider>
   );
 };
 

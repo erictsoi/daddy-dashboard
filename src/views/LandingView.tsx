@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChildProfile } from '../types';
 import { DS } from '../components/design-system';
-import { DUMMY_PROFILES } from '../data/dummyData';
+import { DEMO_DISPLAY_PROFILES } from '../data/demoProfiles';
+import { useAppContext } from '../context/AppContext';
+import { useNavigate } from 'react-router-dom';
 
 // Constants
 const CARD_WIDTH = 220;
@@ -156,12 +158,16 @@ const ProfileCard: React.FC<{ profile: any; isActive?: boolean; isReading?: bool
 };
 
 
-interface LandingViewProps {
-  data: ChildProfile[];
-  onNavigate: (view: { type: 'LANDING' } | { type: 'KIDSDASH'; childId: string } | { type: 'ADMIN' } | { type: 'HOME' }) => void;
-}
+export const LandingView: React.FC = () => {
+  const { children, user } = useAppContext();
+  const navigate = useNavigate();
 
-export const LandingView: React.FC<LandingViewProps> = ({ data, onNavigate }) => {
+  const onNavigate = (view: { type: 'LANDING' } | { type: 'KIDSDASH'; childId: string } | { type: 'ADMIN' } | { type: 'HOME' }) => {
+    if (view.type === 'KIDSDASH' && 'childId' in view) navigate(`/kiddash?child=${view.childId}`);
+    else if (view.type === 'ADMIN' || view.type === 'HOME') navigate('/admindash');
+    else if (view.type === 'LANDING') navigate('/');
+  };
+
   const [activeIndex, setActiveIndex] = useState(0);
   const [animationStage, setAnimationStage] = useState<'stack' | 'dealing' | 'carousel'>('stack');
   const [readingProfileId, setReadingProfileId] = useState<string | null>(null);
@@ -171,7 +177,21 @@ export const LandingView: React.FC<LandingViewProps> = ({ data, onNavigate }) =>
 
   const isFiller = (id: string) => id.startsWith('filler');
 
-  const RETURNING_PROFILES = useMemo(() => DUMMY_PROFILES, []);
+  const RETURNING_PROFILES = useMemo(() => {
+    if (user && children && children.length > 0) {
+      return children.map(child => ({
+        id: child.id,
+        name: child.name,
+        year: child.year,
+        age: child.age,
+        color: child.color,
+        emoji: child.emoji,
+        image: child.image,
+        interests: child.interests
+      }));
+    }
+    return DEMO_DISPLAY_PROFILES;
+  }, [user, children]);
 
   const INITIAL_PROFILES = useMemo(() => Array.from({ length: FILLER_COUNT }, (_, i) => ({
     id: `filler${i + 1}`,

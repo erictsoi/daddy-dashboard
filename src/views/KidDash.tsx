@@ -1,14 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getDummyChild } from '../data/dummyData';
+import { useNavigate, useSearchParams, Navigate } from 'react-router-dom';
 import { getSubjectHexColor, getSubjectIcon } from '../utils/subjects';
-import { ChildProfile } from '../types';
 import { DS } from '../components/design-system';
-
-interface KidDashProps {
-    childId: string;
-    data?: ChildProfile[];
-}
+import { useAppContext } from '../context/AppContext';
 
 
 const BendayShadow = ({ offset = 3, size = 3 }: { offset?: number; size?: number }) => (
@@ -74,28 +68,16 @@ const SectionHead = ({ label, color }: { label: string; color: string }) => (
     </div>
 );
 
-export const KidDash: React.FC<KidDashProps> = ({ childId, data = [] }) => {
+export const KidDash: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const childId = searchParams.get('child');
+    const { children } = useAppContext();
     const [sel, setSel] = useState<number | null>(null);
-    const child = data.find(c => c.id === childId) || getDummyChild(childId) || getDummyChild(`demo_${childId}`);
+    const child = children.find(c => c.id === childId);
 
-    if (!child) {
-        return (
-            <div style={{
-                minHeight: "100vh",
-                background: DS.cream,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: "'Nunito Sans', sans-serif",
-                color: DS.ink
-            }}>
-                <div style={{ textAlign: "center" }}>
-                    <h1>Kid not found: {childId}</h1>
-                    <p>Available: sophia, adrian, marcus, amara, kai, rohan</p>
-                </div>
-            </div>
-        );
+    if (!childId || !child) {
+        return <Navigate to="/" replace />;
     }
 
     const themeColor = child.themeColor === 'purple' ? '#9B6DD6'
