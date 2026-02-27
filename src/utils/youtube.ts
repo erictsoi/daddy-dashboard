@@ -480,3 +480,42 @@ export function validateYouTubeApiKey(apiKey: string): Promise<boolean> {
     .then(response => response.ok)
     .catch(() => false);
 }
+
+export interface PlaylistFallbackResult {
+  videos: YouTubeVideo[];
+  usedPlaylist: string;
+  failedPlaylists: string[];
+}
+
+export async function fetchWithFallback(
+  primary: string,
+  backup1?: string,
+  backup2?: string,
+  apiKey?: string
+): Promise<PlaylistFallbackResult> {
+  const failedPlaylists: string[] = [];
+  const playlists = [primary, backup1, backup2].filter(Boolean) as string[];
+
+  for (const playlistUrl of playlists) {
+    try {
+      const videos = await fetchPlaylistVideos(playlistUrl, apiKey);
+      if (videos.length > 0) {
+        return {
+          videos,
+          usedPlaylist: playlistUrl,
+          failedPlaylists,
+        };
+      }
+      failedPlaylists.push(playlistUrl);
+    } catch (error) {
+      console.warn(`[YouTube] Failed to fetch playlist: ${playlistUrl}`, error);
+      failedPlaylists.push(playlistUrl);
+    }
+  }
+
+  return {
+    videos: [],
+    usedPlaylist: '',
+    failedPlaylists,
+  };
+}
