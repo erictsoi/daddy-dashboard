@@ -1,56 +1,22 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { getDummyProfiles } from '../data/dummyData';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { ChildProfile } from '../types';
+import { DS } from '../components/design-system';
 
-const DS = {
-  cream: "#FAF6F0",
-  card: "#FFFFFF",
-  ink: "#1A1A2E",
-  inkSoft: "#6B6580",
-  inkFade: "#B0A8C0",
-  dotBrown: "#3D2B1F",
-  border: "2.5px solid #1A1A2E",
-  radius: { sm: 10, md: 16, lg: 22, pill: 100 },
-};
-
-const RETURNING_PROFILES = getDummyProfiles().slice(0, 6);
-
-const INITIAL_PROFILES = [
-  { id: "filler1", name: "?", year: "Year ?", color: "#95A5A6", emoji: "❓" },
-  { id: "filler2", name: "?", year: "Year ?", color: "#7F8C8D", emoji: "❓" },
-  { id: "filler3", name: "?", year: "Year ?", color: "#BDC3C7", emoji: "❓" },
-];
-
-const ALL_CARDS = [...RETURNING_PROFILES, ...INITIAL_PROFILES];
-const TOTAL_RETURNING = RETURNING_PROFILES.length;
-
-const INTERESTS: Record<string, string[]> = {
-  admin: ["Dashboard", "Settings", "Admin"],
-  amara: ["Animals", "Drawing", "Singing", "Nature"],
-  marcus: ["Dinosaurs", "Football", "Building", "Comics"],
-  sophia: ["Art", "Dance", "Music", "Sports"],
-  kai: ["Gaming", "Skateboarding", "History", "Film"],
-  adrian: ["Design", "Maths", "Science", "Basketball"],
-  rohan: ["Coding", "Photography", "Film", "Economics"],
-};
-
-const GlobalStyles = () => (
-  <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { font-family: 'Nunito Sans', sans-serif; background: #FAF6F0; color: #1A1A2E; }
-    .b  { font-family: 'Baloo 2', cursive; }
-    .n  { font-family: 'Nunito', sans-serif; }
-    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
-    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-    @keyframes fadeIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
-    .float { animation: float 3s ease-in-out infinite; }
-    .bounce { animation: bounce 1.5s ease-in-out infinite; }
-    .fadeIn { animation: fadeIn 0.3s ease-out both; }
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: #EDE8E0; }
-    ::-webkit-scrollbar-thumb { background: #C4BBAF; border-radius: 3px; }
-  `}</style>
-);
+// Constants
+const CARD_WIDTH = 220;
+const CARD_HEIGHT = 320;
+const CARD_MARGIN_TOP = -CARD_HEIGHT / 2;
+const CARD_MARGIN_LEFT = -CARD_WIDTH / 2;
+const CAROUSEL_OFFSET = 160;
+const CAROUSEL_Z_INDEX_BASE = 100;
+const SCALE_STEP = 0.1;
+const ROTATION_STEP = 3;
+const DELAY_DEALING = 800;
+const DELAY_CAROUSEL = 1600;
+const DELAY_FOOTER = 200;
+const NAVIGATE_TIMEOUT = 1500;
+const FILLER_COUNT = 3;
+const SCALE_SELECTED = 1.5;
 
 const BendayShadow = ({ offset = 3, size = 3, scale = 1 }: { offset?: number; size?: number; scale?: number }) => (
   <div style={{
@@ -83,8 +49,8 @@ const Tag = ({ label, color, dark = false }: { label: string; color: string; dar
 );
 
 // Pokemon-style Profile Card Component
-const ProfileCard: React.FC<{ profile: typeof RETURNING_PROFILES[0]; isActive?: boolean; isReading?: boolean; scale?: number; onClick?: () => void }> = ({ profile, isActive, isReading, scale = 1, onClick }) => {
-  const currentScale = (isReading ? 1.5 : 1) * scale;
+const ProfileCard: React.FC<{ profile: any; isActive?: boolean; isReading?: boolean; scale?: number; onClick?: () => void }> = ({ profile, isActive, isReading, scale = 1, onClick }) => {
+  const currentScale = (isReading ? SCALE_SELECTED : 1) * scale;
   return (
     <div className={isActive ? "bounce" : ""} style={{ width: "100%", height: "100%" }}>
       <Shadow offset={4} size={2.5} radius={16} scale={currentScale}>
@@ -97,8 +63,8 @@ const ProfileCard: React.FC<{ profile: typeof RETURNING_PROFILES[0]; isActive?: 
             cursor: onClick ? "pointer" : "default",
             transition: "transform 0.15s",
             overflow: "visible",
-            width: 220,
-            height: 320,
+            width: CARD_WIDTH,
+            height: CARD_HEIGHT,
             padding: 10
           }}
           onClick={onClick}
@@ -189,21 +155,51 @@ const ProfileCard: React.FC<{ profile: typeof RETURNING_PROFILES[0]; isActive?: 
 };
 
 
-export const LandingView: React.FC = () => {
-  const sophiaIndex = RETURNING_PROFILES.findIndex(p => p.id === 'sophia');
-  const [activeIndex, setActiveIndex] = useState(sophiaIndex >= 0 ? sophiaIndex : TOTAL_RETURNING - 1);
+interface LandingViewProps {
+  data: ChildProfile[];
+  onNavigate: (view: { type: 'LANDING' } | { type: 'KIDSDASH'; childId: string } | { type: 'ADMIN' } | { type: 'HOME' }) => void;
+}
+
+export const LandingView: React.FC<LandingViewProps> = ({ data, onNavigate }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
   const [animationStage, setAnimationStage] = useState<'stack' | 'dealing' | 'carousel'>('stack');
   const [readingProfileId, setReadingProfileId] = useState<string | null>(null);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [footerVisible, setFooterVisible] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   const isFiller = (id: string) => id.startsWith('filler');
-  const p = RETURNING_PROFILES[activeIndex];
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const RETURNING_PROFILES = useMemo(() => [
+    { id: "admin", name: "Daddy", year: "Admin", age: "", color: "#1A1A2E", tint: "#E8E8E8", emoji: "👨", interests: ["Dashboard", "Settings"] },
+    ...(data || []).map(child => ({
+      id: child.id,
+      name: child.name,
+      year: child.year,
+      age: child.age,
+      color: child.color,
+      tint: child.tint,
+      emoji: child.emoji,
+      interests: child.interests,
+    })),
+  ], [data]);
+
+  const INITIAL_PROFILES = useMemo(() => Array.from({ length: FILLER_COUNT }, (_, i) => ({
+    id: `filler${i + 1}`,
+    name: "?",
+    year: `Year ?`,
+    color: i === 0 ? "#95A5A6" : i === 1 ? "#7F8C8D" : "#BDC3C7",
+    emoji: "❓"
+  })), []);
+
+  const ALL_CARDS = useMemo(() => [...RETURNING_PROFILES, ...INITIAL_PROFILES], [RETURNING_PROFILES, INITIAL_PROFILES]);
+  const TOTAL_RETURNING = RETURNING_PROFILES.length;
+
+  const p = RETURNING_PROFILES[activeIndex] || RETURNING_PROFILES[0];
+
   useEffect(() => {
-    const timer1 = setTimeout(() => setAnimationStage('dealing'), 800);
-    const timer2 = setTimeout(() => setAnimationStage('carousel'), 1600);
+    const timer1 = setTimeout(() => setAnimationStage('dealing'), DELAY_DEALING);
+    const timer2 = setTimeout(() => setAnimationStage('carousel'), DELAY_CAROUSEL);
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
@@ -218,18 +214,18 @@ export const LandingView: React.FC = () => {
       dealX: ((i * 100) % 1000) - 500,
       dealRotate: ((i * 50) % 90) - 45,
     }));
-  }, []);
+  }, [ALL_CARDS]);
 
   const messyValues = useMemo(() => {
     return RETURNING_PROFILES.map((_, i) => ({
       messyRotate: ((i * 17) % 5) - 2,
       messyY: ((i * 23) % 10) - 5,
     }));
-  }, []);
+  }, [RETURNING_PROFILES]);
 
   useEffect(() => {
     if (animationStage === 'carousel') {
-      const timer = setTimeout(() => setFooterVisible(true), 200);
+      const timer = setTimeout(() => setFooterVisible(true), DELAY_FOOTER);
       return () => clearTimeout(timer);
     } else {
       setFooterVisible(false);
@@ -243,7 +239,7 @@ export const LandingView: React.FC = () => {
     }
   }, [readingProfileId]);
 
-  const handleCardClick = (index: number, profileId: string) => {
+  const handleCardClick = useCallback((index: number, profileId: string) => {
     if (animationStage !== 'carousel' || readingProfileId) return;
     if (isFiller(profileId)) return;
 
@@ -252,12 +248,18 @@ export const LandingView: React.FC = () => {
     if (returningIndex === activeIndex) {
       setReadingProfileId(profileId);
       setTimeout(() => {
-        window.location.href = profileId === 'admin' ? '/admindash' : `/kiddash?child=${profileId}`;
-      }, 1500);
+        if (profileId === 'admin') {
+          onNavigate({ type: 'ADMIN' });
+        } else {
+          onNavigate({ type: 'KIDSDASH', childId: profileId });
+        }
+        // Cleanup reading state in case navigation takes time or user stays on page
+        setReadingProfileId(null);
+      }, NAVIGATE_TIMEOUT);
     } else {
       setActiveIndex(returningIndex);
     }
-  };
+  }, [animationStage, readingProfileId, activeIndex, RETURNING_PROFILES, onNavigate]);
 
   const goToPrev = () => {
     if (readingProfileId) return;
@@ -269,7 +271,36 @@ export const LandingView: React.FC = () => {
     setActiveIndex((activeIndex + 1) % TOTAL_RETURNING);
   };
 
-  const getCardStyle = (index: number, profileId: string): { style: React.CSSProperties; scale: number } => {
+  const getCarouselStyle = useCallback((index: number, profileId: string): { style: React.CSSProperties; scale: number } => {
+    const returningIndex = RETURNING_PROFILES.findIndex(p => p.id === profileId);
+    let offset = (returningIndex - activeIndex) % TOTAL_RETURNING;
+    if (offset < 0) offset += TOTAL_RETURNING;
+    if (offset > TOTAL_RETURNING / 2) offset -= TOTAL_RETURNING;
+
+    const absOffset = Math.abs(offset);
+    const isVisible = absOffset <= 2;
+
+    const xOffset = offset * CAROUSEL_OFFSET + 120;
+    const yOffset = 0;
+    const scale = 1 - absOffset * SCALE_STEP;
+    const zIndex = CAROUSEL_Z_INDEX_BASE - absOffset;
+    const rotate = offset * ROTATION_STEP;
+
+    const messy = messyValues[returningIndex];
+
+    return {
+      style: {
+        transform: `translateX(calc(-50% + ${xOffset}px)) translateY(${yOffset + (messy?.messyY || 0)}px) scale(${scale}) rotate(${rotate + (messy?.messyRotate || 0)}deg)`,
+        zIndex,
+        opacity: isVisible ? 1 : 0,
+        pointerEvents: isVisible ? 'auto' as const : 'none' as const,
+        transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
+      },
+      scale,
+    };
+  }, [activeIndex, TOTAL_RETURNING, RETURNING_PROFILES, messyValues]);
+
+  const getCardStyle = useCallback((index: number, profileId: string): { style: React.CSSProperties; scale: number } => {
     const isFillerCard = isFiller(profileId);
 
     // Handle "reading" mode - selected card scales up, others scale down
@@ -277,7 +308,7 @@ export const LandingView: React.FC = () => {
       if (profileId === readingProfileId) {
         return {
           style: {
-            transform: `scale(1.5)`,
+            transform: `scale(${SCALE_SELECTED})`,
             zIndex: 1000,
             opacity: 1,
             transition: "transform 0.5s cubic-bezier(.34,1.56,.64,1)",
@@ -331,39 +362,10 @@ export const LandingView: React.FC = () => {
     }
 
     return { style: {}, scale: 1 };
-  };
-
-  const getCarouselStyle = (index: number, profileId: string): { style: React.CSSProperties; scale: number } => {
-    const returningIndex = RETURNING_PROFILES.findIndex(p => p.id === profileId);
-    let offset = (returningIndex - activeIndex) % TOTAL_RETURNING;
-    if (offset < 0) offset += TOTAL_RETURNING;
-    if (offset > TOTAL_RETURNING / 2) offset -= TOTAL_RETURNING;
-
-    const absOffset = Math.abs(offset);
-    const isVisible = absOffset <= 2;
-
-    const xOffset = offset * 160 + 120;
-    const yOffset = 0;
-    const scale = 1 - absOffset * 0.1;
-    const zIndex = 100 - absOffset;
-    const rotate = offset * 3;
-
-    const messy = messyValues[returningIndex];
-
-    return {
-      style: {
-        transform: `translateX(calc(-50% + ${xOffset}px)) translateY(${yOffset + messy.messyY}px) scale(${scale}) rotate(${rotate + messy.messyRotate}deg)`,
-        zIndex,
-        opacity: isVisible ? 1 : 0,
-        pointerEvents: isVisible ? 'auto' as const : 'none' as const,
-        transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
-      },
-      scale,
-    };
-  };
+  }, [readingProfileId, animationStage, cardOffsets, ALL_CARDS.length, getCarouselStyle]);
 
   const getInterestsText = () => {
-    const interests = INTERESTS[p.id] || [];
+    const interests = p?.interests || [];
     if (interests.length === 0) return "learning";
     if (interests.length === 1) return interests[0].toLowerCase();
     const last = interests[interests.length - 1];
@@ -391,7 +393,6 @@ export const LandingView: React.FC = () => {
 
   return (
     <div style={{ minHeight: "100vh", background: DS.cream, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <GlobalStyles />
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, backgroundImage: 'radial-gradient(circle, #1A1A2E08 1px, transparent 1px)', backgroundSize: '24px 24px', opacity: 0.3 }} />
 
       <nav style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 40px", borderBottom: DS.border, background: `${DS.card}F0`, backdropFilter: "blur(14px)" }}>
@@ -404,7 +405,7 @@ export const LandingView: React.FC = () => {
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
           <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: DS.ink, cursor: "pointer" }}>HOW IT WORKS</span>
           <Shadow offset={3} size={2.5} radius={DS.radius.pill}>
-            <button style={{ position: "relative", background: DS.ink, color: "#fff", fontWeight: 800, fontSize: 13, padding: "9px 22px", borderRadius: DS.radius.pill, border: DS.border, cursor: "pointer" }} onClick={() => window.location.href = '/admindash'}>Admin</button>
+            <button style={{ position: "relative", background: DS.ink, color: "#fff", fontWeight: 800, fontSize: 13, padding: "9px 22px", borderRadius: DS.radius.pill, border: DS.border, cursor: "pointer" }} onClick={() => onNavigate({ type: 'ADMIN' })}>Admin</button>
           </Shadow>
         </div>
       </nav>
@@ -442,17 +443,15 @@ export const LandingView: React.FC = () => {
             return (
               <div
                 key={profile.id}
-                onClick={() => isReturning && handleCardClick(index, profile.id)}
                 style={{
                   position: "absolute",
                   top: "50%",
                   left: "50%",
-                  width: 220,
-                  height: 320,
-                  marginLeft: -110,
-                  marginTop: -160,
+                  width: CARD_WIDTH,
+                  height: CARD_HEIGHT,
+                  marginLeft: CARD_MARGIN_LEFT,
+                  marginTop: CARD_MARGIN_TOP,
                   transformOrigin: "center center",
-                  cursor: isReturning && animationStage === 'carousel' ? 'pointer' : 'default',
                   transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
                   ...style,
                 }}
@@ -462,7 +461,7 @@ export const LandingView: React.FC = () => {
                   isActive={isCentered}
                   isReading={profile.id === readingProfileId}
                   scale={scale}
-                  onClick={() => isReturning && handleCardClick(index, profile.id)}
+                  onClick={isReturning && animationStage === 'carousel' ? () => handleCardClick(index, profile.id) : undefined}
                 />
               </div>
             );
@@ -479,16 +478,31 @@ export const LandingView: React.FC = () => {
             <Shadow offset={4} size={3} radius={DS.radius.pill}>
               <button
                 onClick={() => handleCardClick(activeIndex, p.id)}
-                style={{ position: "relative", background: p.color, color: "#fff", fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: 16, padding: "12px 36px", borderRadius: DS.radius.pill, border: DS.border, cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.05em", transition: "transform .2s" }}
-                onMouseEnter={e => e.currentTarget.style.transform = "translate(-2px,-2px)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "none"}
+                style={{
+                  position: "relative",
+                  background: p.color,
+                  color: "#fff",
+                  fontFamily: "'Baloo 2', cursive",
+                  fontWeight: 800,
+                  fontSize: 16,
+                  padding: "12px 36px",
+                  borderRadius: DS.radius.pill,
+                  border: DS.border,
+                  cursor: "pointer",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  transition: "transform .2s",
+                  transform: hovered ? "translate(-2px,-2px)" : "none"
+                }}
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
               >
                 Select this profile 🚀
               </button>
             </Shadow>
 
             <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: DS.inkFade, marginTop: 4 }}>
-              Already have an account? <span style={{ color: p.color, cursor: "pointer", textDecoration: "underline" }} onClick={() => window.location.href = '/returningview'}>Sign in here</span>
+              Already have an account? <span style={{ color: p.color, cursor: "pointer", textDecoration: "underline" }} onClick={() => onNavigate({ type: 'LANDING' })}>Sign in here</span>
             </div>
           </div>
         </div>

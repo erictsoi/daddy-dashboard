@@ -48,8 +48,16 @@ const App: React.FC = () => {
   return (
     <>
       <Routes>
-        <Route path="/landingview" element={<LandingView />} />
-        <Route path="/" element={<LandingView />} />
+        <Route path="/landingview" element={<LandingView data={data} onNavigate={(nav) => {
+          if (nav.type === 'KIDSDASH') navigate(`/kiddash?child=${nav.childId}`);
+          else if (nav.type === 'HOME' || nav.type === 'ADMIN') navigate('/admindash');
+          else if (nav.type === 'LANDING') navigate('/');
+        }} />} />
+        <Route path="/" element={<LandingView data={data} onNavigate={(nav) => {
+          if (nav.type === 'KIDSDASH') navigate(`/kiddash?child=${nav.childId}`);
+          else if (nav.type === 'HOME' || nav.type === 'ADMIN') navigate('/admindash');
+          else if (nav.type === 'LANDING') navigate('/');
+        }} />} />
         <Route path="/returningview" element={<Suspense fallback={<div>Loading...</div>}>
           <ReturningView childProfile={childProfile} data={data} onNavigate={(nav) => {
             if (nav.type === 'KIDSDASH') navigate(`/kiddash?child=${nav.childId}`);
