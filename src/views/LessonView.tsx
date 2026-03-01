@@ -73,31 +73,58 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
     
     const child = data.find(c => c.id === childId) || getDummyChild(childId) || getDummyChild(`demo-${childId}`);
 
-    // Collect all lessons for the subject to enable playlist navigation
-    const allSubjectLessons = useMemo(() => {
-        if (!child || !subjectIdParam) return [];
-        const lessons: { id: string; title: string; videoUrl?: string; completed: boolean; subjectName: string; topicName: string }[] = [];
+    // Collect all lessons for the subject grouped by topic
+    const subjectData = useMemo(() => {
+        if (!child || !subjectIdParam) return { lessons: [], topics: [] };
+        const lessons: { id: string; title: string; videoUrl?: string; completed: boolean; subjectName: string; topicName: string; topicId: string }[] = [];
+        const topics: { id: string; name: string; lessonIds: string[] }[] = [];
         
         for (const yearGroup of child.yearGroups || []) {
             for (const subject of yearGroup.subjects || []) {
                 if (subject.id === subjectIdParam || subject.name.toLowerCase() === subjectIdParam.toLowerCase()) {
                     for (const topic of subject.topics || []) {
+                        const topicLessonIds = topic.lessons?.map(l => l.id) || [];
+                        topics.push({ id: topic.id, name: topic.name, lessonIds: topicLessonIds });
                         for (const lesson of topic.lessons || []) {
                             lessons.push({
                                 ...lesson,
                                 subjectName: subject.name,
-                                topicName: topic.name
+                                topicName: topic.name,
+                                topicId: topic.id
                             });
                         }
                     }
                 }
             }
         }
-        return lessons;
+        return { lessons, topics };
     }, [child, subjectIdParam]);
     
-    // Find current lesson index
+    const allSubjectLessons = subjectData.lessons;
+    const allTopics = subjectData.topics;
+    
+    // Find current lesson and topic
     const currentLessonIndex = allSubjectLessons.findIndex(l => l.id === lessonId);
+    const currentTopicInfo = allTopics.find(t => t.lessonIds.includes(lessonId));
+    const currentTopicIndex = allTopics.findIndex(t => t.id === currentTopicInfo?.id);
+    
+    // Check if all lessons in current topic are completed
+    const isCurrentTopicComplete = useMemo(() => {
+        if (!currentTopicInfo) return false;
+        const topicLessons = allSubjectLessons.filter(l => l.topicId === currentTopicInfo.id);
+        return topicLessons.length > 0 && topicLessons.every(l => l.completed);
+    }, [allSubjectLessons, currentTopicInfo]);
+    
+    // Auto-advance to next topic when current topic is complete
+    useMemo(() => {
+        if (isCurrentTopicComplete && currentTopicIndex < allTopics.length - 1) {
+            const nextTopic = allTopics[currentTopicIndex + 1];
+            const nextTopicFirstLesson = allSubjectLessons.find(l => l.topicId === nextTopic.id);
+            if (nextTopicFirstLesson) {
+                navigate(`/lessonview?child=${childId}&lesson=${nextTopicFirstLesson.id}&subject=${subjectIdParam}&topic=${nextTopic.id}`);
+            }
+        }
+    }, [isCurrentTopicComplete]);
     
     const playlist = allSubjectLessons.length > 0 ? allSubjectLessons : [
         { title: "What is an Ecosystem?", duration: "7:20", completed: true, active: false },

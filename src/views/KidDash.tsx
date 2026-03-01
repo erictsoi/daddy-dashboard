@@ -116,7 +116,7 @@ export const KidDash: React.FC = () => {
                     if (!firstTopicId) firstTopicId = topic.id;
                     for (const lesson of topic.lessons || []) {
                         lessonCount++;
-                        completedCount++;
+                        if (lesson.completed) completedCount++;
                         allLessons.push({
                             id: lesson.id,
                             title: lesson.title,
