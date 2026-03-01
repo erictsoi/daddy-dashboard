@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getDummyChild } from '../data/dummyData';
 import { ChildProfile } from '../types';
 import { DS } from '../components/design-system';
@@ -8,6 +8,8 @@ interface LessonViewProps {
     childId: string;
     lessonId: string;
     data?: ChildProfile[];
+    subjectId?: string;
+    topicId?: string;
 }
 
 const GlobalStyles = () => (
@@ -60,12 +62,44 @@ const Blobs = ({ color }: { color: string }) => (
     </div>
 );
 
-export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data = [] }) => {
+export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data = [], subjectId, topicId }) => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    
+    // Get subject and topic from params if not passed as props
+    const subjectIdParam = subjectId || searchParams.get('subject') || '';
+    const topicIdParam = topicId || searchParams.get('topic') || '';
+    
     const child = data.find(c => c.id === childId) || getDummyChild(childId) || getDummyChild(`demo-${childId}`);
 
-    const playlist = [
+    // Collect all lessons for the subject to enable playlist navigation
+    const allSubjectLessons = useMemo(() => {
+        if (!child || !subjectIdParam) return [];
+        const lessons: { id: string; title: string; videoUrl?: string; completed: boolean; subjectName: string; topicName: string }[] = [];
+        
+        for (const yearGroup of child.yearGroups || []) {
+            for (const subject of yearGroup.subjects || []) {
+                if (subject.id === subjectIdParam || subject.name.toLowerCase() === subjectIdParam.toLowerCase()) {
+                    for (const topic of subject.topics || []) {
+                        for (const lesson of topic.lessons || []) {
+                            lessons.push({
+                                ...lesson,
+                                subjectName: subject.name,
+                                topicName: topic.name
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        return lessons;
+    }, [child, subjectIdParam]);
+    
+    // Find current lesson index
+    const currentLessonIndex = allSubjectLessons.findIndex(l => l.id === lessonId);
+    
+    const playlist = allSubjectLessons.length > 0 ? allSubjectLessons : [
         { title: "What is an Ecosystem?", duration: "7:20", completed: true, active: false },
         { title: "Producers, Consumers & Decomposers", duration: "9:15", completed: true, active: false },
         { title: "Food Chains Explained", duration: "11:40", completed: false, active: true },
@@ -94,20 +128,31 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
     let subjectName = '';
     let topicName = '';
 
-    for (const yearGroup of child.yearGroups || []) {
-        for (const subject of yearGroup.subjects || []) {
-            for (const topic of subject.topics || []) {
-                const found = topic.lessons?.find(l => l.id === lessonId);
-                if (found) {
-                    lesson = found;
-                    subjectName = subject.name;
-                    topicName = topic.name;
-                    break;
+    // Use the real lessons from the subject if available
+    if (allSubjectLessons.length > 0) {
+        const currentLesson = allSubjectLessons[currentLessonIndex];
+        if (currentLesson) {
+            lesson = currentLesson;
+            subjectName = currentLesson.subjectName;
+            topicName = currentLesson.topicName;
+        }
+    } else {
+        // Fallback to searching through all data
+        for (const yearGroup of child.yearGroups || []) {
+            for (const subject of yearGroup.subjects || []) {
+                for (const topic of subject.topics || []) {
+                    const found = topic.lessons?.find(l => l.id === lessonId);
+                    if (found) {
+                        lesson = found;
+                        subjectName = subject.name;
+                        topicName = topic.name;
+                        break;
+                    }
                 }
+                if (lesson) break;
             }
             if (lesson) break;
         }
-        if (lesson) break;
     }
 
     if (!lesson) {
@@ -302,6 +347,87 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
                             </button>
                         </div>
                     </div>
+
+                    {/* Next/Previous Navigation */}
+                    {allSubjectLessons.length > 1 && (
+                        <div style={{ maxWidth: 900, margin: "16px auto", display: "flex", justifyContent: "space-between", gap: 12 }}>
+                            <Shadow offset={1} size={1} radius={DS.radius.md}>
+                                <button
+                                    onClick={() => {
+                                        if (currentLessonIndex > 0) {
+                                            const prevLesson = allSubjectLessons[currentLessonIndex - 1];
+                                            navigate(`/lessonview?child=${childId}&lesson=${prevLesson.id}&subject=${subjectIdParam}&topic=${topicIdParam}`);
+                                        }
+                                    }}
+                                    disabled={currentLessonIndex <= 0}
+                                    style={{
+                                        position: "relative",
+                                        padding: "10px 20px",
+                                        borderRadius: DS.radius.md,
+                                        border: "2.5px solid #C4BBAF",
+                                        background: currentLessonIndex <= 0 ? "#EDE8E0" : DS.card,
+                                        color: currentLessonIndex <= 0 ? DS.inkFade : DS.ink,
+                                        fontSize: 14,
+                                        fontWeight: 800,
+                                        cursor: currentLessonIndex <= 0 ? "not-allowed" : "pointer",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8
+                                    }}
+                                >
+                                    ← Previous
+                                </button>
+                            </Shadow>
+                            
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                {allSubjectLessons.map((_, idx) => (
+                                    <div
+                                        key={idx}
+                                        onClick={() => {
+                                            const l = allSubjectLessons[idx];
+                                            navigate(`/lessonview?child=${childId}&lesson=${l.id}&subject=${subjectIdParam}&topic=${topicIdParam}`);
+                                        }}
+                                        style={{
+                                            width: idx === currentLessonIndex ? 20 : 8,
+                                            height: 8,
+                                            borderRadius: 4,
+                                            background: idx === currentLessonIndex ? themeColor : idx < currentLessonIndex ? `${themeColor}60` : "#EDE8E0",
+                                            cursor: "pointer",
+                                            transition: "all 0.2s"
+                                        }}
+                                    />
+                                ))}
+                            </div>
+
+                            <Shadow offset={1} size={1} radius={DS.radius.md}>
+                                <button
+                                    onClick={() => {
+                                        if (currentLessonIndex < allSubjectLessons.length - 1) {
+                                            const nextLesson = allSubjectLessons[currentLessonIndex + 1];
+                                            navigate(`/lessonview?child=${childId}&lesson=${nextLesson.id}&subject=${subjectIdParam}&topic=${topicIdParam}`);
+                                        }
+                                    }}
+                                    disabled={currentLessonIndex >= allSubjectLessons.length - 1}
+                                    style={{
+                                        position: "relative",
+                                        padding: "10px 20px",
+                                        borderRadius: DS.radius.md,
+                                        border: "2.5px solid #C4BBAF",
+                                        background: currentLessonIndex >= allSubjectLessons.length - 1 ? "#EDE8E0" : DS.card,
+                                        color: currentLessonIndex >= allSubjectLessons.length - 1 ? DS.inkFade : DS.ink,
+                                        fontSize: 14,
+                                        fontWeight: 800,
+                                        cursor: currentLessonIndex >= allSubjectLessons.length - 1 ? "not-allowed" : "pointer",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8
+                                    }}
+                                >
+                                    Next →
+                                </button>
+                            </Shadow>
+                        </div>
+                    )}
 
                     {/* Complete Button */}
                     <div style={{ maxWidth: 900, margin: "16px 0 0" }}>

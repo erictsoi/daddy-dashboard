@@ -101,21 +101,31 @@ export const KidDash: React.FC = () => {
         emoji: child.avatar
     };
 
-    const subjects: { name: string; icon: string; progress: number; total: number; topic: string; color: string; lessonId?: string }[] = [];
+    const subjects: { name: string; icon: string; progress: number; total: number; topic: string; color: string; subjectId?: string; topicId?: string; lessons: { id: string; title: string; videoUrl?: string; completed: boolean }[] }[] = [];
 
     if (child.yearGroups) {
         for (const yg of child.yearGroups) {
             for (const sub of yg.subjects || []) {
                 let lessonCount = 0;
                 let completedCount = 0;
-                let firstLessonId = '';
+                let subjectId = sub.id;
+                let allLessons: { id: string; title: string; videoUrl?: string; completed: boolean }[] = [];
+                let firstTopicId = '';
+                
                 for (const topic of sub.topics || []) {
+                    if (!firstTopicId) firstTopicId = topic.id;
                     for (const lesson of topic.lessons || []) {
                         lessonCount++;
-                        if (lesson.completed) completedCount++;
-                        if (!firstLessonId) firstLessonId = lesson.id;
+                        completedCount++;
+                        allLessons.push({
+                            id: lesson.id,
+                            title: lesson.title,
+                            videoUrl: lesson.videoUrl,
+                            completed: lesson.completed
+                        });
                     }
                 }
+                
                 const subjectName = sub.category || sub.name;
                 subjects.push({
                     name: sub.name,
@@ -124,7 +134,9 @@ export const KidDash: React.FC = () => {
                     total: lessonCount || 1,
                     topic: sub.topics?.[0]?.name || sub.category || 'General',
                     color: getSubjectHexColor(subjectName),
-                    lessonId: firstLessonId
+                    subjectId,
+                    topicId: firstTopicId,
+                    lessons: allLessons
                 });
             }
         }
@@ -272,9 +284,12 @@ export const KidDash: React.FC = () => {
                                 <Shadow offset={isActive ? 4 : 2} size={2} radius={DS.radius.lg}>
                                     <div
                                         className="subject-card-inner"
-                                        onClick={() => {
-                                            if (s.lessonId) {
-                                                navigate(`/lessonview?child=${childId}&lesson=${s.lessonId}`);
+                                    onClick={() => {
+                                            if (s.subjectId && s.topicId && s.lessons?.length > 0) {
+                                                // Find first incomplete lesson or start from beginning
+                                                const firstIncomplete = s.lessons.find(l => !l.completed);
+                                                const lessonToPlay = firstIncomplete || s.lessons[0];
+                                                navigate(`/lessonview?child=${childId}&lesson=${lessonToPlay.id}&subject=${s.subjectId}&topic=${s.topicId}`);
                                             }
                                         }}
                                         style={{

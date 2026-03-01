@@ -5,8 +5,9 @@ import { getSubjectHexColor, getSubjectCategory, SUBJECT_BUCKET_ORDER } from '..
 import { getSubjectColor as getGlobalSubjectColor, getSubjectCategoryLabel } from '../constants';
 
 import { useAppContext } from '../context/AppContext';
-import { useNavigate } from 'react-router-dom';
-import { countCompletedToday, getCompletionRate, getTotalTimeHours, calculateStreak } from '../utils/dashboardStats';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { countCompletedToday, getCompletionRate, getTotalTimeHours, calculateStreak, getSubjectStats } from '../utils/dashboardStats';
+import { SubjectFields } from '../components/SubjectFields';
 
 interface AdminDashProps { }
 
@@ -42,13 +43,18 @@ const Texture = () => (
 export const AdminDash: React.FC<AdminDashProps> = () => {
   const { children, user } = useAppContext();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const singleChildId = searchParams.get('child');
 
-  const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'MARKETPLACE' | 'CURRICULUM' | 'PROFILES'; childId?: string }) => {
+const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'MARKETPLACE' | 'CURRICULUM' | 'PROFILES' | 'LIBRARY' | 'VALIDATOR' | 'SEARCH'; childId?: string }) => {
     if (view.type === 'KIDSDASH' && view.childId) navigate(`/kiddash?child=${view.childId}`);
     else if (view.type === 'ADMIN' || view.type === 'HOME') navigate('/admindash');
     else if (view.type === 'LANDING') navigate('/');
     else if (view.type === 'MARKETPLACE') navigate('/marketplace');
     else if (view.type === 'CURRICULUM') navigate('/curriculumbuilder');
+    else if (view.type === 'LIBRARY') navigate('/curriculumlibrary');
+    else if (view.type === 'VALIDATOR') navigate('/curriculumvalidator');
+    else if (view.type === 'SEARCH') navigate('/curriculumsearch');
     else if (view.type === 'PROFILES') navigate('/returningview');
   };
 
@@ -110,17 +116,48 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
             };
           });
       } else {
-        // Old format: use yearGroups
-        subjects = (child.yearGroups[0]?.subjects || []).map(s => ({
-          subject: s.name,
-          topic: s.topics[0]?.name || 'No Topic',
-          icon: '📚',
-          color: getSubjectColor(s.name),
-          progress: s.topics[0]?.lessons.filter(l => l.completed).length || 0,
-          total: s.topics[0]?.lessons.length || 1,
-          category: s.category || getSubjectCategory(s.name),
-          isStack: false
-        }));
+        // Old format: use yearGroups - show all topics as stacked cards
+        const allSubjectTopics: any[] = [];
+        (child.yearGroups[0]?.subjects || []).forEach(s => {
+          s.topics.forEach((topic, topicIdx) => {
+            allSubjectTopics.push({
+              subject: s.name,
+              topic: topic.name,
+              icon: '📚',
+              color: getSubjectColor(s.name),
+              progress: topic.lessons.filter(l => l.completed).length,
+              total: topic.lessons.length,
+              category: s.category || getSubjectCategory(s.name),
+              isStack: true,
+              topics: s.topics,
+              currentTopicIndex: topicIdx
+            });
+          });
+        });
+        
+        // Group by subject
+        const groupedSubjects = allSubjectTopics.reduce((acc, item) => {
+          if (!acc[item.subject]) {
+            acc[item.subject] = {
+              subject: item.subject,
+              topic: `${item.total} playlists`,
+              icon: '📚',
+              color: item.color,
+              progress: item.progress,
+              total: item.total,
+              category: item.category,
+              isStack: true,
+              topics: item.topics,
+              subjectColor: item.color
+            };
+          } else {
+            acc[item.subject].progress += item.progress;
+            acc[item.subject].total += item.total;
+          }
+          return acc;
+        }, {} as Record<string, any>);
+        
+        subjects = Object.values(groupedSubjects);
       }
 
       // Mock schedule for now based on subjects
@@ -152,6 +189,10 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
       };
     });
   }, [children, subjectColors]);
+
+  const filteredKids = singleChildId 
+    ? kids.filter(k => k.profile.id === singleChildId) 
+    : kids;
 
   const cycleFreqMode = (kidIndex: number, subjectName: string) => {
     const kid = kids[kidIndex];
@@ -239,7 +280,7 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
         </div>
 
         {/* Kids links */}
-        {kids.map((kid, ki) => (
+        {filteredKids.map((kid, ki) => (
           <div
             key={kid.profile.id}
             onClick={() => document.getElementById(`section-${kid.profile.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
@@ -277,6 +318,24 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
         >
           <span style={{ fontSize: 16 }}>📚</span>
           {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 600, whiteSpace: "nowrap" }}>Curriculum Builder</span>}
+        </div>
+
+        {/* Curriculum Validator */}
+        <div
+          onClick={() => onNavigate({ type: 'VALIDATOR' })}
+          style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", borderLeft: "4px solid transparent" }}
+        >
+          <span style={{ fontSize: 16 }}>✅</span>
+          {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 600, whiteSpace: "nowrap" }}>Validate Curriculum</span>}
+        </div>
+
+        {/* Curriculum Search */}
+        <div
+          onClick={() => onNavigate({ type: 'SEARCH' })}
+          style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", borderLeft: "4px solid transparent" }}
+        >
+          <span style={{ fontSize: 16 }}>🔍</span>
+          {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 600, whiteSpace: "nowrap" }}>Find Videos</span>}
         </div>
 
         {/* Marketplace */}
@@ -317,7 +376,37 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
       {/* CONTENT */}
       <div style={{ flex: 1, overflow: "auto", padding: "28px 32px" }}>
 
-        {/* OVERVIEW SECTION */}
+        {/* Single Child Header */}
+        {singleChildId && filteredKids.length > 0 && (
+          <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              onClick={() => navigate('/admindash')}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 8,
+                border: '1.5px solid #C4BBAF',
+                background: 'transparent',
+                color: DS.ink,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: 13
+              }}
+            >
+              ← Back to All
+            </button>
+            <div style={{ flex: 1 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 28 }}>{filteredKids[0].profile.emoji}</span>
+              <div>
+                <div className="b t-h2" style={{ color: DS.ink }}>{filteredKids[0].profile.name}</div>
+                <div className="n t-label" style={{ color: filteredKids[0].profile.color }}>{filteredKids[0].profile.year}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* OVERVIEW SECTION - hide when single child */}
+        {!singleChildId && (
         <div id="section-overview">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
             <div>
@@ -329,7 +418,13 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
             <Shadow offset={2} size={2} radius={DS.radius.md}>
               <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, background: DS.card, border: DS.border, borderRadius: DS.radius.md, padding: "9px 16px" }}>
                 <span className="blink" style={{ width: 8, height: 8, borderRadius: "50%", background: "#F5A623", flexShrink: 0 }} />
-                <span className="n t-small" style={{ color: DS.ink, fontWeight: 700 }}>Sophia hasn't started yet</span>
+                <span className="n t-small" style={{ color: DS.ink, fontWeight: 700 }}>
+                  {kids.length > 0 && kids.some(k => k.done > 0) 
+                    ? `${kids.find(k => k.done > 0)?.profile.name} is learning now`
+                    : kids.length > 0 
+                      ? `${kids[0].profile.name} hasn't started yet`
+                      : 'No children added yet'}
+                </span>
               </div>
             </Shadow>
           </div>
@@ -378,7 +473,7 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
                         </div>
                     )}
                   </div>
-                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid #EDE8F0`, display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid #EDE8E0`, display: "flex", alignItems: "center", gap: 6 }}>
                     <span>🔥</span>
                     <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 700 }}>{streak} day streak</span>
                   </div>
@@ -387,9 +482,10 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
             ))}
           </div>
         </div>
+        )}
 
         {/* KID SECTIONS */}
-        {kids.map((kid, ki) => (
+        {filteredKids.map((kid, ki) => (
           <div key={kid.profile.id} id={`section-${kid.profile.id}`} style={{ marginTop: 48 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
               <Shadow offset={2} size={2} radius={DS.radius.sm}>
@@ -473,17 +569,17 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
                       </div>
                       <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
                       <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 6, fontWeight: 600 }}>{item.topic}</div>
-                      {/* Show 3 stacked cards for template mode */}
-                      {item.cards && item.cards.length > 0 && (
-                        <div style={{ position: 'relative', height: 85, marginBottom: 8, marginLeft: 10 }}>
-                          {item.cards.slice(0, 3).map((card: any, ci: number) => (
-                            <div key={ci} style={{
+                      {/* Show stacked topic cards (playlists) */}
+                      {item.topics && item.topics.length > 0 && (
+                        <div style={{ position: 'relative', height: Math.min(item.topics.length * 12 + 70, 180), marginBottom: 8, marginLeft: 10 }}>
+                          {item.topics.map((topic: any, ti: number) => (
+                            <div key={ti} style={{
                               position: 'absolute',
-                              left: ci * 10,
-                              top: ci * 12,
+                              left: ti * 10,
+                              top: ti * 12,
                               width: 70,
                               height: 52,
-                              background: card.approved ? item.color : '#FFF',
+                              background: topic.lessons?.some((l: any) => l.completed) ? item.color : '#FFF',
                               border: `2.5px solid ${item.color}`,
                               borderRadius: 8,
                               display: 'flex',
@@ -492,18 +588,18 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
                               justifyContent: 'center',
                               padding: '4px 2px',
                               fontSize: 7,
-                              color: card.approved ? '#FFF' : item.color,
+                              color: topic.lessons?.some((l: any) => l.completed) ? '#FFF' : item.color,
                               fontWeight: 600,
-                              boxShadow: `${ci + 1}px ${ci + 1}px 0 rgba(0,0,0,0.15)`,
-                              zIndex: 10 - ci,
+                              boxShadow: `${ti + 1}px ${ti + 1}px 0 rgba(0,0,0,0.15)`,
+                              zIndex: 10 - ti,
                               overflow: 'hidden'
                             }}>
                               <div style={{ fontSize: 10, marginBottom: 2 }}>▶</div>
                               <div style={{ textAlign: 'center', lineHeight: 1.1 }}>
-                                {card.focus?.replace(' (Primary)', '').replace(' (Backup 1)', '').replace(' (Backup 2)', '').substring(0, 12)}
+                                {topic.name?.substring(0, 12) || 'Playlist'}
                               </div>
                               <div style={{ fontSize: 5, opacity: 0.7, marginTop: 2 }}>
-                                {card.focus?.includes('Primary') ? '1' : card.focus?.includes('Backup 1') ? '2' : '3'}
+                                {topic.lessons?.length || 0} videos
                               </div>
                             </div>
                           ))}
@@ -519,6 +615,16 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* New Subject Fields */}
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px dashed #C4BBAF' }}>
+              <SubjectFields
+                childId={kid.profile.id}
+                childName={kid.profile.name}
+                yearGroup={kid.profile.year as any}
+                themeColor={kid.profile.color}
+              />
             </div>
           </div>
         ))}
@@ -610,11 +716,11 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
                 {/* Chart bars */}
                 <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: 140, padding: "0 10px" }}>
                   {[
-                    { day: 'Mon', childData: kids.map(k => Math.floor(Math.random() * 5)) },
-                    { day: 'Tue', childData: kids.map(k => Math.floor(Math.random() * 5)) },
-                    { day: 'Wed', childData: kids.map(k => Math.floor(Math.random() * 5)) },
-                    { day: 'Thu', childData: kids.map(k => Math.floor(Math.random() * 5)) },
-                    { day: 'Fri', childData: kids.map(k => Math.floor(Math.random() * 5)) },
+                    { day: 'Mon', childData: kids.map(k => k.done) },
+                    { day: 'Tue', childData: kids.map(() => 0) },
+                    { day: 'Wed', childData: kids.map(() => 0) },
+                    { day: 'Thu', childData: kids.map(() => 0) },
+                    { day: 'Fri', childData: kids.map(() => 0) },
                   ].map((d, idx) => (
                     <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                       <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 100 }}>
@@ -629,7 +735,7 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
 
                 {/* Legend */}
                 <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 16, paddingTop: 16, borderTop: "1px solid #EDE8E0", flexWrap: "wrap" }}>
-                  {kids.map((kid, ki) => (
+                  {filteredKids.map((kid, ki) => (
                     <div key={ki} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <div style={{ width: 12, height: 12, background: kid.profile.color, borderRadius: 2 }} />
                       <span className="n t-small" style={{ color: DS.inkSoft }}>{kid.profile.name}</span>
@@ -646,7 +752,17 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
 
                 {/* Bar chart */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {[
+                  {kids.length > 0 ? getSubjectStats(children.find(c => c.id === kids[0].profile.id)!).slice(0, 5).map((item, idx) => (
+                    <div key={idx}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span className="n t-small" style={{ color: DS.ink, fontWeight: 600 }}>{item.name}</span>
+                        <span className="n t-small" style={{ color: DS.inkFade }}>{item.percent}%</span>
+                      </div>
+                      <div style={{ height: 8, background: "#EDE8E0", borderRadius: 4, overflow: "hidden", border: "1px solid #1A1A2E" }}>
+                        <div style={{ height: "100%", width: `${item.percent}%`, background: item.color || getSubjectColor(item.name), borderRadius: 4, transition: "width 0.5s" }} />
+                      </div>
+                    </div>
+                  )) : [
                     { subject: "Maths", percent: 85 },
                     { subject: "English", percent: 72 },
                     { subject: "Science", percent: 60 },
@@ -693,7 +809,7 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
                 </div>
                 <div className="n t-label" style={{ color: DS.inkFade, marginTop: 4 }}>Total Learning Time</div>
                 <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
-                  {kids.map((kid, ki) => (
+                  {filteredKids.map((kid, ki) => (
                     <div key={ki}>
                       <div className="b" style={{ color: kid.profile.color, fontSize: 18 }}>{kid.totalHours}h</div>
                       <div className="n t-label" style={{ color: DS.inkFade }}>{kid.profile.name}</div>

@@ -8,6 +8,82 @@ import {
 } from '../lib/dataService';
 import { saveData, generateUuid } from '../lib/helpers';
 import { logger } from '../lib/logger';
+import { DUMMY_CHILDREN } from '../data/dummyData';
+import { getSubjectCardsForYear, SubjectCard } from '../lib/subjectCards';
+
+const YEAR_GROUP_MAP: Record<string, string> = {
+    'Year 5': 'Y5-6',
+    'Year 6': 'Y5-6',
+    'Year 7': 'Y7-9',
+    'Year 8': 'Y7-9',
+    'Year 9': 'Y7-9',
+};
+
+const injectSubjectCardsData = (children: ChildProfile[]): ChildProfile[] => {
+    return children.map(child => {
+        const yearGroupName = child.yearGroups?.[0]?.name;
+        const yearGroupKey = YEAR_GROUP_MAP[yearGroupName || ''];
+        
+        if (!yearGroupKey) {
+            // No mapping - remove subjects for profiles without real data (Amara, Marcus, Kai, Rohan)
+            return {
+                ...child,
+                yearGroups: child.yearGroups.map(yg => ({
+                    ...yg,
+                    subjects: []  // Remove dummy subjects
+                }))
+            };
+        }
+        
+        const subjectCards = getSubjectCardsForYear(yearGroupKey);
+        if (subjectCards.length === 0) {
+            return {
+                ...child,
+                yearGroups: child.yearGroups.map(yg => ({
+                    ...yg,
+                    subjects: []  // Remove subjects if no JSON data
+                }))
+            };
+        }
+        
+        // Check if child already has real subject data (has more than 1 topic per subject)
+        const hasRealData = child.yearGroups?.[0]?.subjects?.some(s => s.topics?.length > 1);
+        if (hasRealData) {
+            return child;  // Keep existing real data
+        }
+        
+        const colorName = child.themeColor || 'blue';
+        
+        const newSubjects = subjectCards.map((card: SubjectCard) => {
+            return {
+                id: `sub-${child.id}-${card.subject.toLowerCase().replace(/\s+/g, '-')}`,
+                name: card.subject,
+                category: card.subject,
+                color: colorName,
+                topics: card.playlists.map((playlist, playlistIdx) => ({
+                    id: `topic-${child.id}-${card.subject.toLowerCase().replace(/\s+/g, '-')}-${playlistIdx}`,
+                    name: playlist.title,
+                    lessons: playlist.videos.slice(0, 5).map((video: { id: string; title: string; url: string }, videoIdx: number) => ({
+                        id: `les-${child.id}-${card.subject.toLowerCase().replace(/\s+/g, '-')}-${playlistIdx}-${videoIdx}`,
+                        title: video.title,
+                        videoUrl: video.url,
+                        completed: videoIdx < 1,
+                        outcomes: []
+                    }))
+                }))
+            };
+        });
+        
+        return {
+            ...child,
+            hasSubjectCards: true,
+            yearGroups: child.yearGroups.map(yg => ({
+                ...yg,
+                subjects: newSubjects
+            }))
+        };
+    });
+};
 
 export const useAppData = (user: any, authLoading: boolean) => {
     const navigate = useNavigate();
@@ -22,6 +98,7 @@ export const useAppData = (user: any, authLoading: boolean) => {
     const [adminDob, setAdminDob] = useState('');
     const [parentEmailInput, setParentEmailInput] = useState('');
     const [parentUid, setParentUid] = useState('');
+    const [isDemoMode, setIsDemoMode] = useState(false);
 
     const lastUserIdRef = useRef<string | null>(null);
     const isFetchingRef = useRef(false);
@@ -80,11 +157,17 @@ export const useAppData = (user: any, authLoading: boolean) => {
                     }
                 } else {
                     setChildProfile(null);
-                    setData(getLocalData());
+                    const localData = getLocalData();
+                    const dataWithSubjectCards = injectSubjectCardsData(localData.length > 0 ? localData : DUMMY_CHILDREN);
+                    setData(dataWithSubjectCards);
+                    setIsDemoMode(localData.length === 0);
                 }
             } catch (err) {
                 logger.error('Error loading data:', err);
-                setData(getLocalData());
+                const localData = getLocalData();
+                const dataWithSubjectCards = injectSubjectCardsData(localData.length > 0 ? localData : DUMMY_CHILDREN);
+                setData(dataWithSubjectCards);
+                setIsDemoMode(localData.length === 0);
             }
             setLoading(false);
             isFetchingRef.current = false;
@@ -636,6 +719,7 @@ export const useAppData = (user: any, authLoading: boolean) => {
         adminDob,
         parentEmailInput,
         parentUid,
+        isDemoMode,
         setAdminAvatar,
         setAdminName,
         setAdminDob,

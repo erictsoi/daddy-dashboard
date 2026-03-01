@@ -9,6 +9,7 @@ interface AppContextValue {
     user: any; // Firebase User
     childProfile: ChildProfile | null;
     allChildren: { id: string; name: string; avatar: string; themeColor: string }[];
+    isDemoMode: boolean;
 
     settings: {
         adminAvatar: string;
@@ -67,6 +68,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             parentEmailInput: appData.parentEmailInput,
             parentUid: appData.parentUid,
         },
+        isDemoMode: appData.isDemoMode,
 
         setAdminAvatar: appData.setAdminAvatar,
         setAdminName: appData.setAdminName,

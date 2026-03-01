@@ -519,3 +519,37 @@ export async function fetchWithFallback(
     failedPlaylists,
   };
 }
+
+// Search YouTube using scraping (no API key needed)
+export async function searchYouTubePlaylists(query: string, maxResults: number = 10): Promise<{ id: string; title: string; thumbnail: string }[]> {
+  const searchUrl = `https://r.jina.ai/http://www.youtube.com/results?search_query=${encodeURIComponent(query + ' playlist')}`;
+  
+  try {
+    const response = await fetch(searchUrl);
+    if (!response.ok) return [];
+    
+    const text = await response.text();
+    const videos: { id: string; title: string; thumbnail: string }[] = [];
+    
+    const videoIdRegex = /watch\?v=([a-zA-Z0-9_-]{11})/g;
+    
+    let match;
+    const seen = new Set<string>();
+    
+    while ((match = videoIdRegex.exec(text)) !== null) {
+      const videoId = match[1];
+      if (!seen.has(videoId) && videos.length < maxResults) {
+        seen.add(videoId);
+        videos.push({
+          id: videoId,
+          title: `Video ${videoId}`,
+          thumbnail: `https://img.youtube.com/vi/${videoId}/default.jpg`,
+        });
+      }
+    }
+    
+    return videos;
+  } catch {
+    return [];
+  }
+}

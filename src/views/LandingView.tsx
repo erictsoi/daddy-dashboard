@@ -19,7 +19,7 @@ const DELAY_DEALING = 800;
 const DELAY_CAROUSEL = 1600;
 const DELAY_FOOTER = 200;
 const NAVIGATE_TIMEOUT = 1500;
-const FILLER_COUNT = 3;
+const FILLER_COUNT = 6;
 const SCALE_SELECTED = 1.5;
 
 const BendayShadow = ({ offset = 3, size = 3, scale = 1 }: { offset?: number; size?: number; scale?: number }) => (
@@ -168,7 +168,7 @@ const ProfileCard: React.FC<{ profile: any; isActive?: boolean; isReading?: bool
 
 
 export const LandingView: React.FC = () => {
-  const { children, user } = useAppContext();
+  const { children, user, isDemoMode } = useAppContext();
   const navigate = useNavigate();
 
   const onNavigate = (view: { type: 'LANDING' } | { type: 'KIDSDASH'; childId: string } | { type: 'ADMIN' } | { type: 'HOME' }) => {
@@ -476,6 +476,9 @@ export const LandingView: React.FC = () => {
             <div style={{ position: "relative", width: 40, height: 40, background: p.color, border: DS.border, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🎓</div>
           </Shadow>
           <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: 22, fontWeight: 800, color: DS.ink }}>DADDY DASHBOARD</span>
+          {isDemoMode && (
+            <span style={{ background: '#FF6B6B', color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 4, letterSpacing: 1 }}>DEMO</span>
+          )}
         </div>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
           <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: DS.ink, cursor: "pointer" }}>HOW IT WORKS</span>

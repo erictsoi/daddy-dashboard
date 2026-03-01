@@ -168,6 +168,40 @@ export interface ParsedTemplateRow {
   isValid: boolean;
 }
 
+// --- Curriculum Library (Curated Playlists) ---
+
+export interface CuratedPlaylist {
+  id: string;
+  yearGroup: ProfileTemplate;
+  subject: string;
+  topic: string;
+  focus: string;
+  primaryPlaylist: string;
+  backupPlaylist1?: string;
+  backupPlaylist2?: string;
+  notes?: string;
+  outcomes?: string;
+  verified: boolean;
+  addedBy: string;
+  createdAt: string;
+}
+
+export interface DbCuratedPlaylist {
+  id: string;
+  year_group: ProfileTemplate;
+  subject: string;
+  topic: string;
+  focus: string;
+  primary_playlist: string;
+  backup_playlist_1?: string;
+  backup_playlist_2?: string;
+  notes?: string;
+  outcomes?: string;
+  verified: boolean;
+  added_by: string;
+  created_at: string;
+}
+
 // Database Types
 
 export interface DbProfile {

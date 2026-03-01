@@ -19,6 +19,9 @@ const LessonView = lazy(() => import('./views/LessonView').then(m => ({ default:
 const ReturningView = lazy(() => import('./views/ReturningView').then(m => ({ default: m.ReturningView })));
 const Marketplace = lazy(() => import('./views/Marketplace').then(m => ({ default: m.Marketplace })));
 const CurriculumBuilder = lazy(() => import('./components/CurriculumBuilder').then(m => ({ default: m.CurriculumBuilder })));
+const CurriculumLibrary = lazy(() => import('./components/CurriculumLibrary').then(m => ({ default: m.CurriculumLibrary })));
+const CurriculumValidator = lazy(() => import('./components/CurriculumValidator').then(m => ({ default: m.CurriculumValidator })));
+const CurriculumSearch = lazy(() => import('./components/CurriculumSearch').then(m => ({ default: m.CurriculumSearch })));
 
 const AppInner: React.FC = () => {
   const navigate = useNavigate();
@@ -63,6 +66,8 @@ const AppInner: React.FC = () => {
           <LessonView
             childId={new URLSearchParams(window.location.search).get('child') || (data[0]?.id || '')}
             lessonId={new URLSearchParams(window.location.search).get('lesson') || ''}
+            subjectId={new URLSearchParams(window.location.search).get('subject') || undefined}
+            topicId={new URLSearchParams(window.location.search).get('topic') || undefined}
             data={data}
           />
         </Suspense>} />
@@ -74,6 +79,21 @@ const AppInner: React.FC = () => {
             onImport={handleBulkImport}
             onImportComplete={() => navigate('/admindash')}
             onTemplateImport={handleTemplateImport}
+          />
+        </Suspense>} />
+        <Route path="/curriculumlibrary" element={<Suspense fallback={<div>Loading...</div>}>
+          <CurriculumLibrary
+            onBack={() => navigate('/admindash')}
+          />
+        </Suspense>} />
+        <Route path="/curriculumvalidator" element={<Suspense fallback={<div>Loading...</div>}>
+          <CurriculumValidator
+            onBack={() => navigate('/admindash')}
+          />
+        </Suspense>} />
+        <Route path="/curriculumsearch" element={<Suspense fallback={<div>Loading...</div>}>
+          <CurriculumSearch
+            onBack={() => navigate('/admindash')}
           />
         </Suspense>} />
         {/* <Route path="/temp-grid" element={<Suspense fallback={<div>Loading...</div>}><TempGridView /></Suspense>} /> */}
