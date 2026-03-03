@@ -1,5 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { DS } from '../components/design-system';
+import { DS, Texture, Shadow } from '../components/design-system';
+import {
+  toKidDash,
+  toAdminDash,
+  toLanding,
+  toMarketplace,
+  toCurriculumBuilder,
+  toCurriculumLibrary,
+  toCurriculumValidator,
+  toCurriculumSearch,
+  toProfiles,
+} from '../lib/routes';
 import { ChildProfile, TopicFrequency, Subject } from '../types';
 import { getSubjectHexColor, getSubjectCategory, SUBJECT_BUCKET_ORDER } from '../utils/subjects';
 import { getSubjectColor as getGlobalSubjectColor, getSubjectCategoryLabel } from '../constants';
@@ -13,31 +24,6 @@ interface AdminDashProps { }
 
 // Removed local GlobalStyles - now in index.css
 
-const BendayShadow = ({ offset = 3, size = 3 }: { offset?: number; size?: number }) => (
-  <div style={{
-    position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset,
-    zIndex: -1, pointerEvents: "none",
-    backgroundImage: `radial-gradient(circle, ${DS.dotBrown} ${size}px, transparent ${size}px)`,
-    backgroundSize: `${size * 2.2}px ${size * 2.2}px`,
-    borderRadius: "inherit", opacity: 0.35,
-  }} />
-);
-
-const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties }> = ({ children, offset = 3, size = 3, radius, style = {} }) => (
-  <div style={{ position: "relative", borderRadius: radius, ...style }}>
-    <BendayShadow offset={offset} size={size} />
-    {children}
-  </div>
-);
-
-const Texture = () => (
-  <div style={{
-    position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
-    backgroundImage: `radial-gradient(circle, #1A1A2E08 1px, transparent 1px)`,
-    backgroundSize: "20px 20px"
-  }} />
-);
-
 // Derive kids from data prop
 
 export const AdminDash: React.FC<AdminDashProps> = () => {
@@ -47,15 +33,15 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
   const singleChildId = searchParams.get('child');
 
 const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'MARKETPLACE' | 'CURRICULUM' | 'PROFILES' | 'LIBRARY' | 'VALIDATOR' | 'SEARCH'; childId?: string }) => {
-    if (view.type === 'KIDSDASH' && view.childId) navigate(`/kiddash?child=${view.childId}`);
-    else if (view.type === 'ADMIN' || view.type === 'HOME') navigate('/admindash');
-    else if (view.type === 'LANDING') navigate('/');
-    else if (view.type === 'MARKETPLACE') navigate('/marketplace');
-    else if (view.type === 'CURRICULUM') navigate('/curriculumbuilder');
-    else if (view.type === 'LIBRARY') navigate('/curriculumlibrary');
-    else if (view.type === 'VALIDATOR') navigate('/curriculumvalidator');
-    else if (view.type === 'SEARCH') navigate('/curriculumsearch');
-    else if (view.type === 'PROFILES') navigate('/returningview');
+    if (view.type === 'KIDSDASH' && view.childId) navigate(toKidDash(view.childId));
+    else if (view.type === 'ADMIN' || view.type === 'HOME') navigate(toAdminDash());
+    else if (view.type === 'LANDING') navigate(toLanding());
+    else if (view.type === 'MARKETPLACE') navigate(toMarketplace());
+    else if (view.type === 'CURRICULUM') navigate(toCurriculumBuilder());
+    else if (view.type === 'LIBRARY') navigate(toCurriculumLibrary());
+    else if (view.type === 'VALIDATOR') navigate(toCurriculumValidator());
+    else if (view.type === 'SEARCH') navigate(toCurriculumSearch());
+    else if (view.type === 'PROFILES') navigate(toProfiles());
   };
 
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
@@ -187,6 +173,24 @@ const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'M
         streak: calculateStreak(child),
         totalHours: getTotalTimeHours(child)
       };
+    });
+    
+    // Sort kids by year group order
+    const yearGroupOrder: Record<string, number> = {
+      'Y1-2': 1,
+      'Y3-4': 2,
+      'Y5-6': 3,
+      'Y7-9': 4,
+      'Y10-11': 5,
+      'Y12-13': 6
+    };
+    
+    // Sort by year group, then by name
+    kids.sort((a, b) => {
+      const aOrder = yearGroupOrder[a.profile.year] || 99;
+      const bOrder = yearGroupOrder[b.profile.year] || 99;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return a.profile.name.localeCompare(b.profile.name);
     });
   }, [children, subjectColors]);
 
@@ -752,17 +756,25 @@ const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'M
 
                 {/* Bar chart */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {kids.length > 0 ? getSubjectStats(children.find(c => c.id === kids[0].profile.id)!).slice(0, 5).map((item, idx) => (
-                    <div key={idx}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                        <span className="n t-small" style={{ color: DS.ink, fontWeight: 600 }}>{item.name}</span>
-                        <span className="n t-small" style={{ color: DS.inkFade }}>{item.percent}%</span>
+                  {(() => {
+                    if (kids.length === 0) return null;
+
+                    const firstKid = kids[0];
+                    const sourceChild = children.find(c => c.id === firstKid.profile.id);
+                    if (!sourceChild) return null;
+
+                    return getSubjectStats(sourceChild).slice(0, 5).map((item, idx) => (
+                      <div key={idx}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <span className="n t-small" style={{ color: DS.ink, fontWeight: 600 }}>{item.name}</span>
+                          <span className="n t-small" style={{ color: DS.inkFade }}>{item.percent}%</span>
+                        </div>
+                        <div style={{ height: 8, background: "#EDE8E0", borderRadius: 4, overflow: "hidden", border: "1px solid #1A1A2E" }}>
+                          <div style={{ height: "100%", width: `${item.percent}%`, background: item.color || getSubjectColor(item.name), borderRadius: 4, transition: "width 0.5s" }} />
+                        </div>
                       </div>
-                      <div style={{ height: 8, background: "#EDE8E0", borderRadius: 4, overflow: "hidden", border: "1px solid #1A1A2E" }}>
-                        <div style={{ height: "100%", width: `${item.percent}%`, background: item.color || getSubjectColor(item.name), borderRadius: 4, transition: "width 0.5s" }} />
-                      </div>
-                    </div>
-                  )) : [
+                    ));
+                  })() || [
                     { subject: "Maths", percent: 85 },
                     { subject: "English", percent: 72 },
                     { subject: "Science", percent: 60 },
@@ -778,7 +790,7 @@ const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'M
                         <div style={{ height: "100%", width: `${item.percent}%`, background: getSubjectColor(item.subject), borderRadius: 4, transition: "width 0.5s" }} />
                       </div>
                     </div>
-                  ))}
+                  ])}
                 </div>
               </div>
             </Shadow>

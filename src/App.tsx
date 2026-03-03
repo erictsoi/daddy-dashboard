@@ -1,10 +1,8 @@
 import React, { useState, lazy, Suspense } from 'react';
-import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 
 // Hooks
-import { useAuth } from './lib/AuthContext';
 import { AppProvider, useAppContext } from './context/AppContext';
-import { useSchedule } from './hooks/useSchedule';
 
 // Static Views
 import { LandingView } from './views/LandingView';
@@ -23,8 +21,12 @@ const CurriculumLibrary = lazy(() => import('./components/CurriculumLibrary').th
 const CurriculumValidator = lazy(() => import('./components/CurriculumValidator').then(m => ({ default: m.CurriculumValidator })));
 const CurriculumSearch = lazy(() => import('./components/CurriculumSearch').then(m => ({ default: m.CurriculumSearch })));
 
+// Reusable loading fallback
+const LoadingFallback = () => <div>Loading...</div>;
+
 const AppInner: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const {
     children: data,
     childProfile,
@@ -40,40 +42,43 @@ const AppInner: React.FC = () => {
     setAdminAvatar
   } = useAppContext();
 
-  // Custom Hook: Schedule Management
-  const { schedule, isDayActive, generateSchedule } = useSchedule(data);
-
   // Modal State
   const [showChildManagement, setShowChildManagement] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editingChildId, setEditingChildId] = useState<string | null>(null);
   const [showEditAdmin, setShowEditAdmin] = useState(false);
 
+  // Extract URL params once for LessonView using React Router
+  const lessonChildId = searchParams.get('child') || data[0]?.id || '';
+  const lessonId = searchParams.get('lesson') || '';
+  const lessonSubjectId = searchParams.get('subject') || undefined;
+  const lessonTopicId = searchParams.get('topic') || undefined;
+
   return (
     <>
       <Routes>
         <Route path="/landingview" element={<LandingView />} />
         <Route path="/" element={<LandingView />} />
-        <Route path="/returningview" element={<Suspense fallback={<div>Loading...</div>}>
+        <Route path="/returningview" element={<Suspense fallback={<LoadingFallback />}>
           <ReturningView />
         </Suspense>} />
 
-        <Route path="/admindash" element={<Suspense fallback={<div>Loading...</div>}><AdminDash /></Suspense>} />
-        <Route path="/kiddash" element={<Suspense fallback={<div>Loading...</div>}>
+        <Route path="/admindash" element={<Suspense fallback={<LoadingFallback />}><AdminDash /></Suspense>} />
+        <Route path="/kiddash" element={<Suspense fallback={<LoadingFallback />}>
           <KidDash />
         </Suspense>} />
-        <Route path="/lessonview" element={<Suspense fallback={<div>Loading...</div>}>
+        <Route path="/lessonview" element={<Suspense fallback={<LoadingFallback />}>
           <LessonView
-            childId={new URLSearchParams(window.location.search).get('child') || (data[0]?.id || '')}
-            lessonId={new URLSearchParams(window.location.search).get('lesson') || ''}
-            subjectId={new URLSearchParams(window.location.search).get('subject') || undefined}
-            topicId={new URLSearchParams(window.location.search).get('topic') || undefined}
+            childId={lessonChildId}
+            lessonId={lessonId}
+            subjectId={lessonSubjectId}
+            topicId={lessonTopicId}
             data={data}
           />
         </Suspense>} />
 
-        <Route path="/marketplace" element={<Suspense fallback={<div>Loading...</div>}><Marketplace /></Suspense>} />
-        <Route path="/curriculumbuilder" element={<Suspense fallback={<div>Loading...</div>}>
+        <Route path="/marketplace" element={<Suspense fallback={<LoadingFallback />}><Marketplace /></Suspense>} />
+        <Route path="/curriculumbuilder" element={<Suspense fallback={<LoadingFallback />}>
           <CurriculumBuilder
             onBack={() => navigate('/admindash')}
             onImport={handleBulkImport}
@@ -81,22 +86,21 @@ const AppInner: React.FC = () => {
             onTemplateImport={handleTemplateImport}
           />
         </Suspense>} />
-        <Route path="/curriculumlibrary" element={<Suspense fallback={<div>Loading...</div>}>
+        <Route path="/curriculumlibrary" element={<Suspense fallback={<LoadingFallback />}>
           <CurriculumLibrary
             onBack={() => navigate('/admindash')}
           />
         </Suspense>} />
-        <Route path="/curriculumvalidator" element={<Suspense fallback={<div>Loading...</div>}>
+        <Route path="/curriculumvalidator" element={<Suspense fallback={<LoadingFallback />}>
           <CurriculumValidator
             onBack={() => navigate('/admindash')}
           />
         </Suspense>} />
-        <Route path="/curriculumsearch" element={<Suspense fallback={<div>Loading...</div>}>
+        <Route path="/curriculumsearch" element={<Suspense fallback={<LoadingFallback />}>
           <CurriculumSearch
             onBack={() => navigate('/admindash')}
           />
         </Suspense>} />
-        {/* <Route path="/temp-grid" element={<Suspense fallback={<div>Loading...</div>}><TempGridView /></Suspense>} /> */}
 
         {/* Redirects */}
         <Route path="/admin" element={<Navigate to="/admindash" replace />} />

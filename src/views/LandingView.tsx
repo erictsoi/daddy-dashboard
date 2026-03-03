@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChildProfile } from '../types';
-import { DS } from '../components/design-system';
+import { DS, Shadow } from '../components/design-system';
+import { toKidDash, toAdminDash, toLanding } from '../lib/routes';
 import { DEMO_PROFILES } from '../data/demoProfiles';
 import { useAppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -21,28 +22,6 @@ const DELAY_FOOTER = 200;
 const NAVIGATE_TIMEOUT = 1500;
 const FILLER_COUNT = 6;
 const SCALE_SELECTED = 1.5;
-
-const BendayShadow = ({ offset = 3, size = 3, scale = 1 }: { offset?: number; size?: number; scale?: number }) => (
-  <div style={{
-    position: "absolute",
-    top: offset / scale,
-    left: offset / scale,
-    right: -offset / scale,
-    bottom: -offset / scale,
-    zIndex: -1, pointerEvents: "none",
-    backgroundImage: `radial-gradient(circle, ${DS.dotBrown} ${size / scale}px, transparent ${size / scale}px)`,
-    backgroundSize: `${(size * 2.2) / scale}px ${(size * 2.2) / scale}px`,
-    borderRadius: "inherit", opacity: 0.35,
-    transition: "all 0.44s cubic-bezier(.34,1.56,.64,1)",
-  }} />
-);
-
-const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties; scale?: number }> = ({ children, offset = 4, size = 3, radius, style = {}, scale = 1 }) => (
-  <div style={{ position: "relative", borderRadius: radius, ...style }}>
-    <BendayShadow offset={offset} size={size} scale={scale} />
-    {children}
-  </div>
-);
 
 const Tag = ({ label, color, dark = false }: { label: string; color: string; dark?: boolean }) => (
   <Shadow offset={2} size={2} radius={DS.radius.pill} style={{ display: "inline-block" }}>
@@ -172,9 +151,9 @@ export const LandingView: React.FC = () => {
   const navigate = useNavigate();
 
   const onNavigate = (view: { type: 'LANDING' } | { type: 'KIDSDASH'; childId: string } | { type: 'ADMIN' } | { type: 'HOME' }) => {
-    if (view.type === 'KIDSDASH' && 'childId' in view) navigate(`/kiddash?child=${view.childId}`);
-    else if (view.type === 'ADMIN' || view.type === 'HOME') navigate('/admindash');
-    else if (view.type === 'LANDING') navigate('/');
+    if (view.type === 'KIDSDASH' && 'childId' in view) navigate(toKidDash(view.childId));
+    else if (view.type === 'ADMIN' || view.type === 'HOME') navigate(toAdminDash());
+    else if (view.type === 'LANDING') navigate(toLanding());
   };
 
   const [activeIndex, setActiveIndex] = useState(0);

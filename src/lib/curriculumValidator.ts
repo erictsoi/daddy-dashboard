@@ -73,9 +73,9 @@ const getKeyStage = (yearGroup: ProfileTemplate): number => {
     'Y1-2': 1,
     'Y3-4': 2,
     'Y5-6': 2,
-    'Y7-8': 3,
-    'Y9-10': 4,
-    'Y11-12': 5,
+    'Y7-9': 3,
+    'Y10-11': 4,
+    'Y12-13': 5,
   };
   return map[yearGroup] || 1;
 };

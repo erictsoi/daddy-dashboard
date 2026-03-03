@@ -12,11 +12,27 @@ import { DUMMY_CHILDREN } from '../data/dummyData';
 import { getSubjectCardsForYear, SubjectCard } from '../lib/subjectCards';
 
 const YEAR_GROUP_MAP: Record<string, string> = {
+    'Year 1 and 2': 'Y1-2',
+    'Year 3 and 4': 'Y3-4',
+    'Year 5 and 6': 'Y5-6',
+    'Year 7/8 and 9': 'Y7-9',
+    'Year 10 and 11': 'Y10-11',
+    'Year 12 and 13': 'Y12-13',
+    'Year 1-2': 'Y1-2',
+    'Year 3-4': 'Y3-4',
+    'Year 5-6': 'Y5-6',
+    'Year 7-8-9': 'Y7-9',
+    'Year 10-11': 'Y10-11',
+    'Year 12-13': 'Y12-13',
     'Year 5': 'Y5-6',
     'Year 6': 'Y5-6',
     'Year 7': 'Y7-9',
     'Year 8': 'Y7-9',
     'Year 9': 'Y7-9',
+    'Year 10': 'Y10-11',
+    'Year 11': 'Y10-11',
+    'Year 12': 'Y12-13',
+    'Year 13': 'Y12-13',
 };
 
 const injectSubjectCardsData = (children: ChildProfile[]): ChildProfile[] => {

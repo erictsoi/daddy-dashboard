@@ -20,9 +20,9 @@ const YEAR_GROUPS: { id: ProfileTemplate; label: string; age: string }[] = [
   { id: 'Y1-2', label: 'Y1-2', age: '5-7 years' },
   { id: 'Y3-4', label: 'Y3-4', age: '7-9 years' },
   { id: 'Y5-6', label: 'Y5-6', age: '9-11 years' },
-  { id: 'Y7-8', label: 'Y7-8', age: '11-13 years' },
-  { id: 'Y9-10', label: 'Y9-10', age: '13-15 years' },
-  { id: 'Y11-12', label: 'Y11-12', age: '15-17 years' },
+  { id: 'Y7-9', label: 'Y7-9', age: '11-14 years' },
+  { id: 'Y10-11', label: 'Y10-11', age: '14-16 years' },
+  { id: 'Y12-13', label: 'Y12-13', age: '16-18 years' },
 ];
 
 const SUBJECTS = [

@@ -90,9 +90,9 @@ const PROFILE_MAP: Record<string, ProfileTemplate> = {
   'Y1/2 Child': 'Y1-2',
   'Y3/4 Child': 'Y3-4',
   'Y5/6 Child': 'Y5-6',
-  'Y7/8 Child': 'Y7-8',
-  'Y9/10 Child': 'Y9-10',
-  'Y11/12 Child': 'Y11-12',
+  'Y7/8/9 Child': 'Y7-9',
+  'Y10/11 Child': 'Y10-11',
+  'Y12/13 Child': 'Y12-13',
 };
 
 const SUBJECT_MAP: Record<string, string> = {

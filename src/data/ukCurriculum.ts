@@ -76,9 +76,9 @@ export const UK_CURRICULUM: UKCurriculumYear[] = [
   },
 
   {
-    yearGroup: 'Y7-8',
+    yearGroup: 'Y7-9',
     keyStage: 3,
-    ageRange: '11-13 years',
+    ageRange: '11-14 years',
     statutory: 12,
     subjects: [
       { subject: 'English', topic: 'English', focus: 'English', description: 'Reading, writing, spoken language' },
@@ -97,9 +97,9 @@ export const UK_CURRICULUM: UKCurriculumYear[] = [
   },
 
   {
-    yearGroup: 'Y9-10',
+    yearGroup: 'Y10-11',
     keyStage: 4,
-    ageRange: '13-15 years',
+    ageRange: '14-16 years',
     statutory: 10,
     subjects: [
       { subject: 'English', topic: 'English Language', focus: 'English Language', description: 'GCSE English Language' },
@@ -116,9 +116,9 @@ export const UK_CURRICULUM: UKCurriculumYear[] = [
   },
 
   {
-    yearGroup: 'Y11-12',
+    yearGroup: 'Y12-13',
     keyStage: 5,
-    ageRange: '15-17 years',
+    ageRange: '16-18 years',
     statutory: 10,
     subjects: [
       { subject: 'English', topic: 'English Language', focus: 'A-Level English Language', description: 'Language analysis, sociolinguistics' },
@@ -168,19 +168,19 @@ export const getStatutoryCount = (yearGroup: ProfileTemplate): number => {
 };
 
 export const getYearGroupByAge = (age: number): ProfileTemplate => {
-  if (age >= 5 && age <= 6) return 'Y1-2';
-  if (age >= 7 && age <= 8) return 'Y3-4';
-  if (age >= 9 && age <= 10) return 'Y5-6';
-  if (age >= 11 && age <= 13) return 'Y7-8';
-  if (age >= 14 && age <= 15) return 'Y9-10';
-  return 'Y11-12';
+  if (age >= 5 && age <= 7) return 'Y1-2';
+  if (age >= 8 && age <= 9) return 'Y3-4';
+  if (age >= 10 && age <= 11) return 'Y5-6';
+  if (age >= 12 && age <= 14) return 'Y7-9';
+  if (age >= 15 && age <= 16) return 'Y10-11';
+  return 'Y12-13';
 };
 
 export const PROFILE_TEMPLATES = [
-  { id: 'Y1-2' as ProfileTemplate, label: 'Y1-2', ageRange: '5-6 years' },
-  { id: 'Y3-4' as ProfileTemplate, label: 'Y3-4', ageRange: '7-8 years' },
-  { id: 'Y5-6' as ProfileTemplate, label: 'Y5-6', ageRange: '9-10 years' },
-  { id: 'Y7-8' as ProfileTemplate, label: 'Y7-8', ageRange: '11-13 years' },
-  { id: 'Y9-10' as ProfileTemplate, label: 'Y9-10', ageRange: '13-15 years' },
-  { id: 'Y11-12' as ProfileTemplate, label: 'Y11-12', ageRange: '15-17 years' },
+  { id: 'Y1-2' as ProfileTemplate, label: 'Y1-2', ageRange: '5-7 years' },
+  { id: 'Y3-4' as ProfileTemplate, label: 'Y3-4', ageRange: '7-9 years' },
+  { id: 'Y5-6' as ProfileTemplate, label: 'Y5-6', ageRange: '9-11 years' },
+  { id: 'Y7-9' as ProfileTemplate, label: 'Y7-9', ageRange: '11-14 years' },
+  { id: 'Y10-11' as ProfileTemplate, label: 'Y10-11', ageRange: '14-16 years' },
+  { id: 'Y12-13' as ProfileTemplate, label: 'Y12-13', ageRange: '16-18 years' },
 ];

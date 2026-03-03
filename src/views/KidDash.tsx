@@ -1,79 +1,18 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useSearchParams, Navigate } from 'react-router-dom';
 import { getSubjectHexColor, getSubjectIcon } from '../utils/subjects';
-import { DS } from '../components/design-system';
+import { DS, Texture, Deco, Shadow, Chip, SectionHead } from '../components/design-system';
+import { toLessonView } from '../lib/routes';
 import { useAppContext } from '../context/AppContext';
+import { getSubjectCardsForYear } from '../lib/subjectCards';
+import { SubjectCard } from '../components/SubjectCard';
 
-
-const BendayShadow = ({ offset = 3, size = 3 }: { offset?: number; size?: number }) => (
-    <div style={{
-        position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset,
-        zIndex: -1, pointerEvents: "none",
-        backgroundImage: `radial-gradient(circle, ${DS.dotBrown} ${size}px, transparent ${size}px)`,
-        backgroundSize: `${size * 2.2}px ${size * 2.2}px`,
-        borderRadius: "inherit", opacity: 0.35,
-    }} />
-);
-
-const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties; className?: string }> = ({ children, offset = 3, size = 3, radius, style = {}, className = '' }) => (
-    <div className={className} style={{ position: "relative", borderRadius: radius, ...style }}>
-        <BendayShadow offset={offset} size={size} />
-        {children}
-    </div>
-);
-
-const Texture = () => (
-    <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
-        backgroundImage: `radial-gradient(circle, #1A1A2E08 1px, transparent 1px)`,
-        backgroundSize: "20px 20px"
-    }} />
-);
-
-const Blobs = ({ color }: { color: string }) => (
-    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
-        <div style={{ position: "absolute", top: "-12%", right: "-4%", width: 380, height: 380, borderRadius: "50%", background: color, opacity: .06, filter: "blur(64px)" }} />
-        <div style={{ position: "absolute", bottom: "-5%", left: "-8%", width: 300, height: 300, borderRadius: "50%", background: color, opacity: .04, filter: "blur(52px)" }} />
-    </div>
-);
-
-const Deco = ({ color }: { color: string }) => (
-    <>
-        <Blobs color={color} />
-        {[{ t: "⭐", x: 4, y: 7, s: 26 }, { t: "✨", x: 87, y: 9, s: 20 }, { t: "🚀", x: 2, y: 48, s: 22 }, { t: "💫", x: 93, y: 72, s: 18 }, { t: "⭐", x: 47, y: 3, s: 15 }, { t: "🌈", x: 90, y: 46, s: 24 }]
-            .map((d, i) => (
-                <div key={i} style={{ position: "absolute", left: `${d.x}%`, top: `${d.y}%`, fontSize: d.s, opacity: .14, pointerEvents: "none", zIndex: 0, animation: `float ${2.6 + i * .35}s ease-in-out ${i * .18}s infinite` }}>{d.t}</div>
-            ))}
-    </>
-);
-
-const Chip = ({ icon, val, label, color }: { icon: string; val: string; label: string; color: string }) => (
-    <Shadow offset={3} size={2.5} radius={DS.radius.md}>
-        <div style={{ position: "relative", background: DS.card, border: DS.border, borderRadius: DS.radius.md, padding: "10px 14px", textAlign: "center" }}>
-            <div style={{ fontSize: 18, marginBottom: 2 }}>{icon}</div>
-            <div className="b t-h3" style={{ color }}>{val}</div>
-            <div className="n t-label" style={{ color: DS.inkFade }}>{label}</div>
-        </div>
-    </Shadow>
-);
-
-const SectionHead = ({ label, color }: { label: string; color: string }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <Shadow offset={2} size={2} radius={DS.radius.sm} style={{ display: "inline-block" }}>
-            <div style={{ position: "relative", background: color, border: DS.border, borderRadius: DS.radius.sm, padding: "4px 16px" }}>
-                <span className="b t-label" style={{ color: "#fff" }}>{label}</span>
-            </div>
-        </Shadow>
-        <div style={{ flex: 1, height: 2, background: `${DS.ink}18`, borderRadius: 100 }} />
-    </div>
-);
 
 export const KidDash: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const childId = searchParams.get('child');
     const { children } = useAppContext();
-    const [sel, setSel] = useState<number | null>(null);
     const child = children.find(c => c.id === childId);
 
     if (!childId || !child) {
@@ -101,9 +40,68 @@ export const KidDash: React.FC = () => {
         emoji: child.avatar
     };
 
-    const subjects: { name: string; icon: string; progress: number; total: number; topic: string; color: string; subjectId?: string; topicId?: string; lessons: { id: string; title: string; videoUrl?: string; completed: boolean }[] }[] = [];
+    const yearKeyMap: Record<string, string> = {
+        'Y5-6': 'Y5-6',
+        'Y7-9': 'Y7-9',
+        'Y10-11': 'Y7-9',
+        'Y12-13': 'Y7-9'
+    };
+    const rawYear = child.yearGroups?.[0]?.name || 'Y5-6';
+    const yearMatch = rawYear.match(/Year\s*(\d+)/i);
+    let normalizedYear = 'Y5-6';
+    if (yearMatch) {
+        const yearNum = parseInt(yearMatch[1]);
+        if (yearNum <= 2) normalizedYear = 'Y1-2';
+        else if (yearNum <= 4) normalizedYear = 'Y3-4';
+        else if (yearNum <= 6) normalizedYear = 'Y5-6';
+        else if (yearNum <= 9) normalizedYear = 'Y7-9';
+        else if (yearNum <= 11) normalizedYear = 'Y10-11';
+        else normalizedYear = 'Y12-13';
+    }
+    const jsonYearKey = yearKeyMap[normalizedYear] || 'Y5-6';
+    const jsonSubjectCards = useMemo(() => getSubjectCardsForYear(jsonYearKey), [jsonYearKey]);
 
-    if (child.yearGroups) {
+    const subjects: { name: string; icon: string; progress: number; total: number; topic: string; color: string; subjectId?: string; topicId?: string; lessons: { id: string; title: string; videoUrl?: string; completed: boolean }[]; topicCards: { title: string; videoCount: number; url: string; firstVideoId?: string }[] }[] = [];
+
+    if (jsonSubjectCards.length > 0) {
+        for (const card of jsonSubjectCards) {
+            const totalVideos = card.playlists.reduce((sum, p) => sum + p.videos.length, 0);
+
+            // Deterministic progress: treat the first playlist as "completed"
+            const firstPlaylist = card.playlists[0];
+            const completedCount = firstPlaylist ? firstPlaylist.videos.length : 0;
+
+            const allLessons = card.playlists.flatMap((p, pIdx) =>
+                p.videos.map(v => ({
+                    id: v.id,
+                    title: v.title,
+                    videoUrl: v.url,
+                    completed: pIdx === 0 // first playlist considered done
+                }))
+            );
+
+            const firstTopicUrl = firstPlaylist?.url;
+            const firstVideoId = firstPlaylist?.videos[0]?.id;
+
+            subjects.push({
+                name: card.subject,
+                icon: getSubjectIcon(card.subject),
+                progress: completedCount,
+                total: totalVideos || 1,
+                topic: card.focus,
+                color: getSubjectHexColor(card.subject),
+                subjectId: card.id,
+                topicId: firstTopicUrl || '',
+                lessons: allLessons,
+                topicCards: card.playlists.map(p => ({
+                    title: p.title,
+                    videoCount: p.videos.length,
+                    url: p.url,
+                    firstVideoId: p.videos[0]?.id
+                }))
+            });
+        }
+    } else if (child.yearGroups) {
         for (const yg of child.yearGroups) {
             for (const sub of yg.subjects || []) {
                 let lessonCount = 0;
@@ -136,20 +134,29 @@ export const KidDash: React.FC = () => {
                     color: getSubjectHexColor(subjectName),
                     subjectId,
                     topicId: firstTopicId,
-                    lessons: allLessons
+                    lessons: allLessons,
+                    topicCards: []
                 });
             }
         }
     }
 
-    const schedule = [
-        { subject: "Maths", topic: "Fractions", icon: "📐", status: "done" as const },
-        { subject: "English", topic: "Creative Writing", icon: "📖", status: "done" as const },
-        { subject: "LUNCH", topic: "", icon: "🍽️", status: "lunch" as const },
-        { subject: "Science", topic: "Ecosystems", icon: "🔬", status: "active" as const },
-        { subject: "Art", topic: "Watercolour", icon: "🎨", status: "pending" as const },
-        { subject: "PE", topic: "Gymnastics", icon: "⚽", status: "stretch" as const },
-    ];
+    type ScheduleStatus = 'done' | 'active' | 'pending' | 'lunch';
+    const schedule: { subject: string; topic: string; icon: string; status: ScheduleStatus; subjectId: string; topicId: string }[] = [];
+    
+    const coreSubjects = subjects.slice(0, 4);
+    for (let i = 0; i < coreSubjects.length; i++) {
+        const s = coreSubjects[i];
+        schedule.push({
+            subject: s.name,
+            topic: s.topic,
+            icon: s.icon,
+            status: i < 2 ? "done" as ScheduleStatus : i === 2 ? "active" as ScheduleStatus : "pending" as ScheduleStatus,
+            subjectId: s.subjectId || '',
+            topicId: s.topicId || ''
+        });
+    }
+    schedule.splice(2, 0, { subject: "LUNCH", topic: "", icon: "🍽️", status: "lunch" as ScheduleStatus, subjectId: "", topicId: "" });
 
     const statusCfg: Record<string, { bg: string; border: string; label: string }> = {
         done: { bg: "#E8F8F0", border: "#4CAF8A", label: "✓ Done" },
@@ -159,8 +166,8 @@ export const KidDash: React.FC = () => {
         lunch: { bg: "#FFF8EC", border: "#F5A623", label: "🍽 Lunch" },
     };
 
-    const todayDone = 2;
-    const totalToday = 4;
+    const todayDone = subjects.reduce((sum, s) => sum + s.progress, 0);
+    const totalToday = subjects.reduce((sum, s) => sum + s.total, 0) || 1;
     const streak = 5;
     const xp = 120;
 
@@ -267,57 +274,74 @@ export const KidDash: React.FC = () => {
 
                 {/* SUBJECTS */}
                 <SectionHead label="MY SUBJECTS" color={profile.color} />
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
-                    {subjects.map((s, i) => {
-                        const isActive = sel === i;
-                        return (
-                            <div
-                                key={i}
-                                className={`card-${i} subject-card`}
-                                style={{
-                                    position: "relative",
-                                    borderRadius: DS.radius.lg,
-                                    transition: "transform 0.15s",
-                                    cursor: "pointer"
-                                }}
-                            >
-                                <Shadow offset={isActive ? 4 : 2} size={2} radius={DS.radius.lg}>
-                                    <div
-                                        className="subject-card-inner"
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16 }}>
+                    {(() => {
+                        const coreSubjects = ['English', 'Maths', 'Science', 'History', 'Geography'];
+                        const sortedSubjects = [...subjects].sort((a, b) => {
+                            const aIsCore = coreSubjects.includes(a.name);
+                            const bIsCore = coreSubjects.includes(b.name);
+                            if (aIsCore && !bIsCore) return -1;
+                            if (!aIsCore && bIsCore) return 1;
+                            return 0;
+                        });
+                        return sortedSubjects.map((s, i) => {
+                            const isCoreSubject = coreSubjects.includes(s.name);
+                            const subjectCardsData = {
+                                color: s.color,
+                                icon: s.icon,
+                                topic: s.topic,
+                                category: isCoreSubject ? 'core' : 'optional',
+                                progress: s.progress,
+                                total: s.total,
+                                cards: s.topicCards?.slice(0, 7).map((tc, idx) => ({
+                                    focus: tc.title,
+                                    approved: idx === 0
+                                })) || []
+                            };
+                            
+                            return (
+                                <SubjectCard
+                                    key={i}
+                                    subject={s.name}
+                                    subjectData={subjectCardsData}
+                                    frequency="balanced"
+                                    isCore={isCoreSubject}
+                                    isEditable={false}
+                                    onAddTopic={undefined}
+                                    onFrequencyChange={undefined}
+                                    onRemove={undefined}
                                     onClick={() => {
-                                            if (s.subjectId && s.topicId && s.lessons?.length > 0) {
-                                                // Find first incomplete lesson or start from beginning
-                                                const firstIncomplete = s.lessons.find(l => !l.completed);
-                                                const lessonToPlay = firstIncomplete || s.lessons[0];
-                                                navigate(`/lessonview?child=${childId}&lesson=${lessonToPlay.id}&subject=${s.subjectId}&topic=${s.topicId}`);
-                                            }
-                                        }}
-                                        style={{
-                                            position: "relative",
-                                            background: DS.card,
-                                            border: `3px solid ${isActive ? DS.ink : "#C4BBAF"}`,
-                                            borderRadius: DS.radius.lg,
-                                            padding: "16px 14px"
-                                        }}
-                                    >
-                                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
-                                            <div style={{ width: 40, height: 40, background: `${s.color}20`, border: `2px solid ${s.color}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{s.icon}</div>
-                                            <Shadow offset={3} size={1} radius={DS.radius.pill}>
-                                                <div style={{ position: "relative", background: isActive ? DS.ink : s.color, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 8px" }}>
-                                                    <span className="n t-label" style={{ color: "#fff" }}>{s.progress}/{s.total}</span>
-                                                </div>
-                                            </Shadow>
-                                        </div>
-                                        <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{s.name}</div>
-                                        <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 10, fontWeight: 600 }}>{s.topic}</div>
-                                        <div style={{ height: 7, background: "#EDE8E0", borderRadius: 100, overflow: "hidden", border: `1.5px solid ${DS.ink}` }}>
-                                            <div style={{ height: "100%", width: `${(s.progress / s.total) * 100}%`, background: s.color, borderRadius: 100 }} />
-                                        </div>
-                                    </div>
-                                </Shadow>
-                            </div>
-                        );
-                    })}
+                                        const firstCard = s.topicCards?.[0];
+                                        if (firstCard) {
+                                            navigate(
+                                                toLessonView({
+                                                    childId,
+                                                    lessonId: firstCard.firstVideoId || '',
+                                                    subjectId: s.subjectId,
+                                                    topic: firstCard.title,
+                                                    url: firstCard.url,
+                                                })
+                                            );
+                                        }
+                                    }}
+                                    onCardClick={(card) => {
+                                        const clickedCard = s.topicCards?.find(tc => tc.title === card.focus);
+                                        if (clickedCard) {
+                                            navigate(
+                                                toLessonView({
+                                                    childId,
+                                                    lessonId: clickedCard.firstVideoId || '',
+                                                    subjectId: s.subjectId,
+                                                    topic: clickedCard.title,
+                                                    url: clickedCard.url,
+                                                })
+                                            );
+                                        }
+                                    }}
+                                />
+                            );
+                        });
+                    })()}
                 </div>
             </div>
         </div>

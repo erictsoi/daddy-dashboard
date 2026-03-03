@@ -10,8 +10,8 @@ export const DUMMY_PROFILES: ChildProfile[] = [
     themeColor: "rose",
     yearGroups: [
       {
-        id: "amara-y1",
-        name: "Year 1",
+        id: "amara-y12",
+        name: "Year 1 and 2",
         subjects: [
           { id: "amara-maths", name: "Maths", category: "Maths", color: getColor("Maths"), topics: [{ id: "amara-maths-1", name: "Numbers", lessons: [] }] },
           { id: "amara-english", name: "English", category: "English", color: getColor("English"), topics: [{ id: "amara-english-1", name: "Phonics", lessons: [] }] },
@@ -28,8 +28,8 @@ export const DUMMY_PROFILES: ChildProfile[] = [
     themeColor: "emerald",
     yearGroups: [
       {
-        id: "marcus-y3",
-        name: "Year 3",
+        id: "marcus-y34",
+        name: "Year 3 and 4",
         subjects: [
           { id: "marcus-maths", name: "Maths", category: "Maths", color: getColor("Maths"), topics: [{ id: "marcus-maths-1", name: "Multiplication", lessons: [] }] },
           { id: "marcus-english", name: "English", category: "English", color: getColor("English"), topics: [{ id: "marcus-english-1", name: "Reading", lessons: [] }] },
@@ -46,8 +46,8 @@ export const DUMMY_PROFILES: ChildProfile[] = [
     themeColor: "purple",
     yearGroups: [
       {
-        id: "sophia-y5",
-        name: "Year 5",
+        id: "sophia-y56",
+        name: "Year 5 and 6",
         subjects: [
           { id: "sophia-maths", name: "Maths", category: "Maths", color: getColor("Maths"), topics: [{ id: "sophia-maths-1", name: "Fractions", lessons: [] }] },
           { id: "sophia-english", name: "English", category: "English", color: getColor("English"), topics: [{ id: "sophia-english-1", name: "Creative Writing", lessons: [] }] },
@@ -67,8 +67,8 @@ export const DUMMY_PROFILES: ChildProfile[] = [
     themeColor: "orange",
     yearGroups: [
       {
-        id: "kai-y7",
-        name: "Year 7",
+        id: "kai-y1011",
+        name: "Year 10 and 11",
         subjects: [
           { id: "kai-maths", name: "Maths", category: "Maths", color: getColor("Maths"), topics: [{ id: "kai-maths-1", name: "Algebra", lessons: [] }] },
           { id: "kai-english", name: "English", category: "English", color: getColor("English"), topics: [{ id: "kai-english-1", name: "Literature", lessons: [] }] },
@@ -85,8 +85,8 @@ export const DUMMY_PROFILES: ChildProfile[] = [
     themeColor: "blue",
     yearGroups: [
       {
-        id: "adrian-y9",
-        name: "Year 9",
+        id: "adrian-y789",
+        name: "Year 7/8 and 9",
         subjects: [
           { id: "adrian-maths", name: "Maths", category: "Maths", color: getColor("Maths"), topics: [{ id: "adrian-maths-1", name: "Algebra II", lessons: [] }] },
           { id: "adrian-english", name: "English", category: "English", color: getColor("English"), topics: [{ id: "adrian-english-1", name: "Essay Writing", lessons: [] }] },
@@ -104,8 +104,8 @@ export const DUMMY_PROFILES: ChildProfile[] = [
     themeColor: "rose",
     yearGroups: [
       {
-        id: "rohan-y11",
-        name: "Year 11",
+        id: "rohan-y1213",
+        name: "Year 12 and 13",
         subjects: [
           { id: "rohan-maths", name: "Maths", category: "Maths", color: getColor("Maths"), topics: [{ id: "rohan-maths-1", name: "Calculus", lessons: [] }] },
           { id: "rohan-english", name: "English", category: "English", color: getColor("English"), topics: [{ id: "rohan-english-1", name: "Literature", lessons: [] }] },

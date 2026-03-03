@@ -139,11 +139,11 @@ const INAPPROPRIATE_TOPICS: Record<ProfileTemplate, string[]> = {
     'Algebra', 'Chemistry', 'Physics', 'Statistics',
     'Economics', 'Business', 'Media Studies', 'Latin'
   ],
-  'Y7-8': [
+  'Y7-9': [
     'Statistics'
   ],
-  'Y9-10': [],
-  'Y11-12': []
+  'Y10-11': [],
+  'Y12-13': []
 }
 
 export const isTopicAppropriate = (

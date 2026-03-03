@@ -2,7 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getDummyChild } from '../data/dummyData';
 import { ChildProfile } from '../types';
-import { DS } from '../components/design-system';
+import { DS, Texture, Blobs, Shadow } from '../components/design-system';
+import { toKidDash, toLessonView } from '../lib/routes';
+import { getSubjectCardsForYear } from '../lib/subjectCards';
 
 interface LessonViewProps {
     childId: string;
@@ -36,32 +38,6 @@ const GlobalStyles = () => (
     `}</style>
 );
 
-const BendayShadow = ({ offset = 2 }: { offset?: number }) => (
-    <div style={{ position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset, zIndex: -1, pointerEvents: "none", backgroundImage: `radial-gradient(circle, ${DS.dotBrown} 3px, transparent 3px)`, backgroundSize: "6.6px 6.6px", borderRadius: "inherit", opacity: 0.35 }} />
-);
-
-const Shadow: React.FC<{ children: React.ReactNode; offset?: number; size?: number; radius?: number; style?: React.CSSProperties }> = ({ children, offset = 3, radius, style = {} }) => (
-    <div style={{ position: "relative", borderRadius: radius, ...style }}>
-        <BendayShadow offset={offset} />
-        {children}
-    </div>
-);
-
-const Texture = () => (
-    <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
-        backgroundImage: `radial-gradient(circle, #1A1A2E08 1px, transparent 1px)`,
-        backgroundSize: "20px 20px"
-    }} />
-);
-
-const Blobs = ({ color }: { color: string }) => (
-    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
-        <div style={{ position: "absolute", top: "-12%", right: "-4%", width: 380, height: 380, borderRadius: "50%", background: color, opacity: .06, filter: "blur(64px)" }} />
-        <div style={{ position: "absolute", bottom: "-5%", left: "-8%", width: 300, height: 300, borderRadius: "50%", background: color, opacity: .04, filter: "blur(52px)" }} />
-    </div>
-);
-
 export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data = [], subjectId, topicId }) => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -70,11 +46,44 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
     // Get subject and topic from params if not passed as props
     const subjectIdParam = subjectId || searchParams.get('subject') || '';
     const topicIdParam = topicId || searchParams.get('topic') || '';
+    const playlistUrl = searchParams.get('url') || '';
     
     const child = data.find(c => c.id === childId) || getDummyChild(childId) || getDummyChild(`demo-${childId}`);
 
+    // Load from JSON SubjectCards if URL provided
+    const jsonSubjectData = useMemo(() => {
+        if (!playlistUrl) return { lessons: [], topics: [] };
+        
+        const decodedUrl = decodeURIComponent(playlistUrl);
+        
+        // Find the subject card and playlist that matches the URL
+        const yearKeys = ['Y5-6', 'Y7-9'];
+        for (const yearKey of yearKeys) {
+            const cards = getSubjectCardsForYear(yearKey);
+            for (const card of cards) {
+                const playlist = card.playlists.find(p => p.url === decodedUrl || decodeURIComponent(p.url) === decodedUrl);
+                if (playlist) {
+                    const lessons = playlist.videos.map(v => ({
+                        id: v.id,
+                        title: v.title,
+                        videoUrl: v.url,
+                        completed: false,
+                        subjectName: card.subject,
+                        topicName: playlist.title,
+                        topicId: playlist.url
+                    }));
+                    const topics = [{ id: playlist.url, name: playlist.title, lessonIds: lessons.map(l => l.id) }];
+                    return { lessons, topics, subjectName: card.subject };
+                }
+            }
+        }
+        return { lessons: [], topics: [] };
+    }, [playlistUrl]);
+
     // Collect all lessons for the subject grouped by topic
     const subjectData = useMemo(() => {
+        if (jsonSubjectData.lessons.length > 0) return jsonSubjectData;
+        
         if (!child || !subjectIdParam) return { lessons: [], topics: [] };
         const lessons: { id: string; title: string; videoUrl?: string; completed: boolean; subjectName: string; topicName: string; topicId: string }[] = [];
         const topics: { id: string; name: string; lessonIds: string[] }[] = [];
@@ -98,7 +107,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
             }
         }
         return { lessons, topics };
-    }, [child, subjectIdParam]);
+    }, [child, subjectIdParam, playlistUrl]);
     
     const allSubjectLessons = subjectData.lessons;
     const allTopics = subjectData.topics;
@@ -121,7 +130,12 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
             const nextTopic = allTopics[currentTopicIndex + 1];
             const nextTopicFirstLesson = allSubjectLessons.find(l => l.topicId === nextTopic.id);
             if (nextTopicFirstLesson) {
-                navigate(`/lessonview?child=${childId}&lesson=${nextTopicFirstLesson.id}&subject=${subjectIdParam}&topic=${nextTopic.id}`);
+                navigate(toLessonView({
+                    childId,
+                    lessonId: nextTopicFirstLesson.id,
+                    subjectId: subjectIdParam,
+                    topic: nextTopic.id,
+                }));
             }
         }
     }, [isCurrentTopicComplete]);
@@ -194,8 +208,13 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
                 <Texture />
                 <div style={{ position: "relative", zIndex: 10, textAlign: 'center', padding: 40 }}>
                     <h1>Lesson not found: {lessonId}</h1>
-                    <a href={`/kiddash?child=${childId}`} style={{ color: themeColor, fontWeight: 700 }}></a>
-                    ← Back to Dashboard </div>
+                    <button
+                        onClick={() => navigate(toKidDash(childId))}
+                        style={{ marginTop: 16, color: themeColor, fontWeight: 700, border: 'none', background: 'none', cursor: 'pointer' }}
+                    >
+                        ← Back to Dashboard
+                    </button>
+                </div>
             </div>
         );
     }
@@ -235,7 +254,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
                     <Shadow offset={1} size={1} radius={DS.radius.pill}>
                         <button
                             className="b"
-                            onClick={() => navigate(`/kiddash?child=${childId}`)}
+                            onClick={() => navigate(toKidDash(childId))}
                             style={{
                                 position: "relative",
                                 display: "flex",
@@ -383,7 +402,12 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
                                     onClick={() => {
                                         if (currentLessonIndex > 0) {
                                             const prevLesson = allSubjectLessons[currentLessonIndex - 1];
-                                            navigate(`/lessonview?child=${childId}&lesson=${prevLesson.id}&subject=${subjectIdParam}&topic=${topicIdParam}`);
+                                            navigate(toLessonView({
+                                                childId,
+                                                lessonId: prevLesson.id,
+                                                subjectId: subjectIdParam,
+                                                topic: topicIdParam,
+                                            }));
                                         }
                                     }}
                                     disabled={currentLessonIndex <= 0}
@@ -412,7 +436,12 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
                                         key={idx}
                                         onClick={() => {
                                             const l = allSubjectLessons[idx];
-                                            navigate(`/lessonview?child=${childId}&lesson=${l.id}&subject=${subjectIdParam}&topic=${topicIdParam}`);
+                                            navigate(toLessonView({
+                                                childId,
+                                                lessonId: l.id,
+                                                subjectId: subjectIdParam,
+                                                topic: topicIdParam,
+                                            }));
                                         }}
                                         style={{
                                             width: idx === currentLessonIndex ? 20 : 8,
@@ -431,7 +460,12 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
                                     onClick={() => {
                                         if (currentLessonIndex < allSubjectLessons.length - 1) {
                                             const nextLesson = allSubjectLessons[currentLessonIndex + 1];
-                                            navigate(`/lessonview?child=${childId}&lesson=${nextLesson.id}&subject=${subjectIdParam}&topic=${topicIdParam}`);
+                                            navigate(toLessonView({
+                                                childId,
+                                                lessonId: nextLesson.id,
+                                                subjectId: subjectIdParam,
+                                                topic: topicIdParam,
+                                            }));
                                         }
                                     }}
                                     disabled={currentLessonIndex >= allSubjectLessons.length - 1}

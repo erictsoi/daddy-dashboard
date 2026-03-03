@@ -16,7 +16,17 @@ import { generateUuid } from './helpers'
 import { logger } from './logger'
 import { createEmptyStacks } from '../constants'
 
+// --- Constants ---
 const STORAGE_KEY = 'daddy_dashboard_data'
+
+// Firestore path constants
+const PATHS = {
+  USERS: 'users',
+  CHILDREN: 'children',
+  SETTINGS: 'settings',
+  PROFILE: 'profile',
+  LINKED_ACCOUNTS: 'linkedAccounts'
+} as const;
 
 // --- Data Mappers ---
 
@@ -78,6 +88,8 @@ export const toChildProfile = (data: any): ChildProfile => ({
   profileData: data.profileData ? toProfileTemplateData(data.profileData) : undefined
 });
 
+// Helper function to convert raw profile data to typed ProfileTemplateData
+// Not exported - used internally by toChildProfile
 const toProfileTemplateData = (data: any): ProfileTemplateData | undefined => {
   if (!data) return undefined;
   return {
@@ -99,7 +111,7 @@ export const getLocalData = (): ChildProfile[] => {
       return parsed
     } catch (e) {
       logger.error('[dataService] Failed to parse localStorage:', e)
-      alert("Oops! We couldn't load your saved data. It might be corrupted.")
+      throw new Error("Failed to parse localStorage data. It may be corrupted.")
     }
   }
   return []

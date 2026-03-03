@@ -37,9 +37,9 @@ export const PROFILE_TEMPLATES: { id: ProfileTemplate; label: string; ageRange: 
   { id: 'Y1-2', label: 'Y1/2 Child', ageRange: '5-7 years', avatar: '🧒' },
   { id: 'Y3-4', label: 'Y3/4 Child', ageRange: '7-9 years', avatar: '👦' },
   { id: 'Y5-6', label: 'Y5/6 Child', ageRange: '9-11 years', avatar: '👧' },
-  { id: 'Y7-8', label: 'Y7/8 Child', ageRange: '11-13 years', avatar: '🧑' },
-  { id: 'Y9-10', label: 'Y9/10 Child', ageRange: '13-15 years', avatar: '👱' },
-  { id: 'Y11-12', label: 'Y11/12 Child', ageRange: '15-17 years', avatar: '🎓' }
+  { id: 'Y7-9', label: 'Y7/8/9 Child', ageRange: '11-14 years', avatar: '🧑' },
+  { id: 'Y10-11', label: 'Y10/11 Child', ageRange: '14-16 years', avatar: '👱' },
+  { id: 'Y12-13', label: 'Y12/13 Child', ageRange: '16-18 years', avatar: '🎓' }
 ];
 
 // Create empty stacks for a profile

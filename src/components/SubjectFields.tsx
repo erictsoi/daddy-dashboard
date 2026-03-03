@@ -19,16 +19,16 @@ interface SubjectFieldsProps {
 const STARTER_SUBJECTS = ['English', 'Maths', 'Science', 'History', 'Geography', 'Art & Design', 'Music', 'PE', 'Computing'];
 
 const normalizeYearGroup = (year: string): ProfileTemplate => {
-  // Try to match "Year 5" -> "Y5-6", "Year 7" -> "Y7-8" etc
+  // Try to match "Year 5" -> "Y5-6", "Year 7" -> "Y7-9" etc
   const yearMatch = year.match(/Year\s*(\d+)/i);
   if (yearMatch) {
     const yearNum = parseInt(yearMatch[1]);
     if (yearNum <= 2) return 'Y1-2';
     if (yearNum <= 4) return 'Y3-4';
     if (yearNum <= 6) return 'Y5-6';
-    if (yearNum <= 8) return 'Y7-8';
-    if (yearNum <= 10) return 'Y9-10';
-    return 'Y11-12';
+    if (yearNum <= 9) return 'Y7-9';
+    if (yearNum <= 11) return 'Y10-11';
+    return 'Y12-13';
   }
   // Direct match like "Y5-6"
   const direct = UK_CURRICULUM.find(c => c.yearGroup.toLowerCase() === year.toLowerCase());
@@ -53,9 +53,9 @@ export const SubjectFields: React.FC<SubjectFieldsProps> = ({
   // Load real subject cards from JSON
   const yearKeyMap: Record<string, string> = {
     'Y5-6': 'Y5-6',
-    'Y7-8': 'Y7-9',
-    'Y9-10': 'Y7-9',
-    'Y11-12': 'Y7-9'
+    'Y7-9': 'Y7-9',
+    'Y10-11': 'Y7-9',
+    'Y12-13': 'Y7-9'
   };
   const jsonYearKey = yearKeyMap[normalizedYear] || 'Y5-6';
   const jsonSubjectCards = useMemo(() => getSubjectCardsForYear(jsonYearKey), [jsonYearKey]);
@@ -69,7 +69,7 @@ export const SubjectFields: React.FC<SubjectFieldsProps> = ({
     // Use real JSON data if available
     if (jsonSubjectCards.length > 0) {
       return jsonSubjectCards.map((card: JSONSubjectCard) => {
-        const isCore = STARTER_SUBJECTS.includes(card.subject) && ['English', 'Maths', 'Science'].includes(card.subject);
+        const isCore = STARTER_SUBJECTS.includes(card.subject) && ['English', 'Maths', 'Science', 'History', 'Geography'].includes(card.subject);
         return {
           subject: card.subject,
           focus: card.focus,
@@ -89,7 +89,7 @@ export const SubjectFields: React.FC<SubjectFieldsProps> = ({
     
     const uniqueSubjects = [...new Set(curriculum.subjects.map(s => s.subject))];
     return uniqueSubjects.map(subject => {
-      const isCore = STARTER_SUBJECTS.includes(subject) && ['English', 'Maths', 'Science'].includes(subject);
+      const isCore = STARTER_SUBJECTS.includes(subject) && ['English', 'Maths', 'Science', 'History', 'Geography'].includes(subject);
       return {
         subject,
         focus: curriculum.subjects.find(s => s.subject === subject)?.focus || subject,
