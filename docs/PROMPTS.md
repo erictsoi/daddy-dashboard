@@ -8,6 +8,30 @@
      5. Bump version in package.json
      -->
 
+## 2026-03-05 - Curriculum Finalization & Data Refactor (v3.15.0)
+
+**User Request:**
+> finalize curriculum data integration, add missing year groups, refactor useAppData for performance, and add Import from Applet tool.
+
+**Session Actions:**
+- **Curriculum Expansion**: Added placeholder JSON files for Y1-2, Y3-4, Y10-11, and Y12-13 to ensure complete UK curriculum coverage.
+- **Lazy Loading**: Refactored `src/lib/subjectCards.ts` to use dynamic `import()` for large JSON files, moving ~5MB of data out of the main bundle.
+- **Hook Refactor**: Decomposed monolithic `useAppData.ts` into focused hooks: `useChildData.ts`, `useLessonData.ts`, and `useSettingsData.ts`.
+- **Search Logic Fix**: Updated Y7-9 Music search terms in `CurriculumSearch.tsx` to favor organic performance videos over specific curriculum codes.
+- **Import Hub**: Implemented "Import from Applet" in `CurriculumLibrary.tsx` to handle external JSON data with snake\_case field mapping.
+- **Aesthetic Loading**: Replaced basic "Loading..." text with a premium `LoadingFallback` component featuring centered spinners and themed background textures.
+- **API Awareness**: Added a YouTube API Key status panel in `CurriculumSearch.tsx` to warn if `VITE_YOUTUBE_API_KEY` is missing.
+
+**Files Modified:**
+- `src/hooks/useAppData.ts`, `useChildData.ts`, `useLessonData.ts`, `useSettingsData.ts` - Refactored data layer.
+- `src/lib/subjectCards.ts` - Implemented lazy loading.
+- `src/data/ukCurriculum.ts` - Enriched topic data and fixed search terms.
+- `src/components/CurriculumLibrary.tsx` - Added Import from Applet tool.
+- `src/components/CurriculumSearch.tsx` - Added API warning and subject descriptions.
+- `src/App.tsx` - Improved loading fallback and removed prop-drilling.
+
+---
+
 ## 2026-02-26 - Shadow Refinement & Layout Stabilization
 
 **User Request:**

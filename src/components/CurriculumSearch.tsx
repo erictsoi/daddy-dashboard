@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, Play, Loader2, ExternalLink, BookOpen, Youtube, Check, X } from 'lucide-react';
+import { ArrowLeft, Search, Play, Loader2, ExternalLink, BookOpen, Youtube, Check, X, AlertTriangle } from 'lucide-react';
 import { fetchPlaylistVideos, YouTubeVideo } from '../utils/youtube';
 import { getCurriculumForYear, UKCurriculumYear, UKCurriculumTopic } from '../data/ukCurriculum';
-import { ProfileTemplate, PROFILE_TEMPLATES } from '../constants';
+import { ProfileTemplate } from '../types';
+import { PROFILE_TEMPLATES } from '../constants';
 import { Card } from './design-system';
 
 interface Props {
@@ -13,6 +14,7 @@ interface SubjectPlaylist {
   subject: string;
   topic: string;
   focus: string;
+  description: string;
   videos: YouTubeVideo[];
   loading: boolean;
   error: string | null;
@@ -45,13 +47,14 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
     if (selectedYear) {
       const curr = getCurriculumForYear(selectedYear);
       setCurriculum(curr || null);
-      
+
       if (curr) {
         const subs = getUniqueSubjects(curr.subjects);
         setSubjects(subs.map(s => ({
           subject: s.subject,
           topic: s.topic,
           focus: s.focus,
+          description: s.description,
           videos: [],
           loading: false,
           error: null,
@@ -78,19 +81,19 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
     if (idx === -1) return;
 
     const searchTerms = SEARCH_TERMS[subject] || [`${subject} ${topic}`, `${subject} kids`];
-    
-    setSubjects(prev => prev.map((s, i) => 
+
+    setSubjects(prev => prev.map((s, i) =>
       i === idx ? { ...s, loading: true, error: null, expanded: true } : s
     ));
 
     try {
       let videos: YouTubeVideo[] = [];
-      
+
       for (const term of searchTerms) {
         try {
           const encoded = encodeURIComponent(term);
           const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&q=${encoded}&type=playlist&key=${import.meta.env.VITE_YOUTUBE_API_KEY}`);
-          
+
           if (response.ok) {
             const data = await response.json();
             if (data.items && data.items.length > 0) {
@@ -100,25 +103,25 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
                   try {
                     const playlistVideos = await fetchPlaylistVideos(playlistUrl);
                     videos = [...videos, ...playlistVideos.slice(0, 5)];
-                  } catch {}
+                  } catch { }
                 }
               }
             }
           }
-        } catch {}
-        
+        } catch { }
+
         if (videos.length >= 3) break;
       }
 
-      const uniqueVideos = videos.filter((v, i, arr) => 
+      const uniqueVideos = videos.filter((v, i, arr) =>
         arr.findIndex(x => x.id === v.id) === i
       ).slice(0, 10);
 
-      setSubjects(prev => prev.map((s, i) => 
+      setSubjects(prev => prev.map((s, i) =>
         i === idx ? { ...s, videos: uniqueVideos, loading: false } : s
       ));
     } catch (err) {
-      setSubjects(prev => prev.map((s, i) => 
+      setSubjects(prev => prev.map((s, i) =>
         i === idx ? { ...s, error: 'Failed to fetch videos', loading: false } : s
       ));
     }
@@ -132,6 +135,9 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
     setSearchAll(false);
   };
 
+  const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
+  const hasApiKey = !!apiKey && apiKey !== 'YOUR_API_KEY';
+
   if (!selectedYear) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -143,6 +149,16 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
         </div>
 
         <div className="p-6 max-w-2xl mx-auto">
+          {!hasApiKey && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex gap-3 text-amber-800">
+              <AlertTriangle className="flex-shrink-0" size={24} />
+              <div>
+                <div className="font-bold">YouTube API Key Missing</div>
+                <div className="text-sm">Please set VITE_YOUTUBE_API_KEY in your .env file to enable live search. Fallback scraping will be used otherwise.</div>
+              </div>
+            </div>
+          )}
+
           <h2 className="text-lg font-semibold mb-4">Select Year Group</h2>
           <div className="grid grid-cols-2 gap-4">
             {PROFILE_TEMPLATES.map(template => (
@@ -171,6 +187,14 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
         <h1 className="text-xl font-bold">Curriculum Search</h1>
         <span className="text-gray-500">|</span>
         <span className="font-medium">{curriculum?.yearGroup} ({curriculum?.ageRange})</span>
+
+        {!hasApiKey && (
+          <div className="flex items-center gap-1 text-amber-600 px-2 py-1 bg-amber-50 rounded text-xs border border-amber-100">
+            <AlertTriangle size={12} />
+            <span>API Key Missing</span>
+          </div>
+        )}
+
         <button
           onClick={searchAllSubjects}
           disabled={searchAll}
@@ -193,57 +217,60 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
 
         <div className="space-y-3">
           {subjects.map((sub, idx) => (
-            <Card key={idx} className="overflow-hidden">
-              <div 
-                className="p-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50"
-                onClick={() => sub.videos.length === 0 && !sub.loading && searchSubject(sub.subject, sub.topic, sub.focus)}
-              >
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
-                  {idx + 1}
+            <div key={idx}>
+              <Card className="overflow-hidden">
+                <div
+                  className="p-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50"
+                  onClick={() => sub.videos.length === 0 && !sub.loading && searchSubject(sub.subject, sub.topic, sub.focus)}
+                >
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold">{sub.subject}</div>
+                    <div className="text-sm text-gray-500">{sub.focus}</div>
+                    <div className="text-xs text-gray-400 mt-1 italic">{sub.description}</div>
+                  </div>
+                  {sub.loading && <Loader2 size={20} className="animate-spin text-blue-600" />}
+                  {sub.error && <X size={20} className="text-red-500" />}
+                  {sub.videos.length > 0 && (
+                    <Check size={20} className="text-green-500" />
+                  )}
+                  {sub.videos.length === 0 && !sub.loading && !sub.error && (
+                    <Search size={20} className="text-gray-400" />
+                  )}
                 </div>
-                <div className="flex-1">
-                  <div className="font-semibold">{sub.subject}</div>
-                  <div className="text-sm text-gray-500">{sub.focus}</div>
-                </div>
-                {sub.loading && <Loader2 size={20} className="animate-spin text-blue-600" />}
-                {sub.error && <X size={20} className="text-red-500" />}
-                {sub.videos.length > 0 && (
-                  <Check size={20} className="text-green-500" />
-                )}
-                {sub.videos.length === 0 && !sub.loading && !sub.error && (
-                  <Search size={20} className="text-gray-400" />
-                )}
-              </div>
 
-              {sub.expanded && sub.videos.length > 0 && (
-                <div className="border-t bg-gray-50 p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Youtube size={16} className="text-red-500" />
-                    <span className="font-medium">Found {sub.videos.length} videos</span>
+                {sub.expanded && sub.videos.length > 0 && (
+                  <div className="border-t bg-gray-50 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Youtube size={16} className="text-red-500" />
+                      <span className="font-medium">Found {sub.videos.length} videos</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {sub.videos.slice(0, 6).map((video, vIdx) => (
+                        <a
+                          key={vIdx}
+                          href={video.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex gap-3 p-2 bg-white rounded border hover:border-blue-400"
+                        >
+                          <div className="w-24 h-16 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
+                            <Play size={20} className="text-gray-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">{video.title}</div>
+                            <div className="text-xs text-gray-500 truncate">{video.url}</div>
+                          </div>
+                          <ExternalLink size={14} className="text-gray-400 flex-shrink-0" />
+                        </a>
+                      ))}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {sub.videos.slice(0, 6).map((video, vIdx) => (
-                      <a
-                        key={vIdx}
-                        href={video.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex gap-3 p-2 bg-white rounded border hover:border-blue-400"
-                      >
-                        <div className="w-24 h-16 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
-                          <Play size={20} className="text-gray-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm truncate">{video.title}</div>
-                          <div className="text-xs text-gray-500 truncate">{video.url}</div>
-                        </div>
-                        <ExternalLink size={14} className="text-gray-400 flex-shrink-0" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Card>
+                )}
+              </Card>
+            </div>
           ))}
         </div>
       </div>

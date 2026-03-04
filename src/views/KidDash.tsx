@@ -109,7 +109,7 @@ export const KidDash: React.FC = () => {
                 let subjectId = sub.id;
                 let allLessons: { id: string; title: string; videoUrl?: string; completed: boolean }[] = [];
                 let firstTopicId = '';
-                
+
                 for (const topic of sub.topics || []) {
                     if (!firstTopicId) firstTopicId = topic.id;
                     for (const lesson of topic.lessons || []) {
@@ -123,7 +123,7 @@ export const KidDash: React.FC = () => {
                         });
                     }
                 }
-                
+
                 const subjectName = sub.category || sub.name;
                 subjects.push({
                     name: sub.name,
@@ -143,7 +143,7 @@ export const KidDash: React.FC = () => {
 
     type ScheduleStatus = 'done' | 'active' | 'pending' | 'lunch';
     const schedule: { subject: string; topic: string; icon: string; status: ScheduleStatus; subjectId: string; topicId: string }[] = [];
-    
+
     const coreSubjects = subjects.slice(0, 4);
     for (let i = 0; i < coreSubjects.length; i++) {
         const s = coreSubjects[i];
@@ -233,41 +233,43 @@ export const KidDash: React.FC = () => {
                         const isLunch = item.status === "lunch";
                         const isActive = item.status === "active";
                         return (
-                            <Shadow key={i} offset={2} size={2} radius={DS.radius.lg} className={isActive ? "float" : ""} style={{ flexShrink: 0, overflow: "visible", marginTop: 4 }}>
-                                <div
-                                    style={{
-                                        position: "relative",
-                                        background: cfg.bg,
-                                        border: `3px solid ${cfg.border}`,
-                                        borderRadius: DS.radius.lg,
-                                        padding: isLunch ? "16px 18px" : "16px 18px",
-                                        minWidth: 148,
-                                        height: 148,
-                                        textAlign: "center",
-                                        cursor: !isLunch ? "pointer" : "default",
-                                        transition: "all .2s"
-                                    }}
-                                >
-                                    {isLunch ? (
-                                        <>
-                                            <div style={{ fontSize: 28, marginBottom: 4 }}>🍽️</div>
-                                            <div className="b t-h3" style={{ color: DS.ink }}>LUNCH</div>
-                                            <div className="n t-label" style={{ color: "#B87A10", marginTop: 2 }}>12 – 1PM</div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div style={{ fontSize: 26, marginBottom: 6 }}>{item.icon}</div>
-                                            <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
-                                            <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 10, fontWeight: 600 }}>{item.topic}</div>
-                                            <Shadow offset={1} size={1.5} radius={DS.radius.pill} style={{ display: "inline-block" }}>
-                                                <div style={{ position: "relative", background: cfg.border, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 10px" }}>
-                                                    <span className="n t-label" style={{ color: "#fff" }}>{cfg.label}</span>
-                                                </div>
-                                            </Shadow>
-                                        </>
-                                    )}
-                                </div>
-                            </Shadow>
+                            <div key={i} className={isActive ? "float" : ""}>
+                                <Shadow offset={2} size={2} radius={DS.radius.lg} style={{ flexShrink: 0, overflow: "visible", marginTop: 4 }}>
+                                    <div
+                                        style={{
+                                            position: "relative",
+                                            background: cfg.bg,
+                                            border: `3px solid ${cfg.border}`,
+                                            borderRadius: DS.radius.lg,
+                                            padding: isLunch ? "16px 18px" : "16px 18px",
+                                            minWidth: 148,
+                                            height: 148,
+                                            textAlign: "center",
+                                            cursor: !isLunch ? "pointer" : "default",
+                                            transition: "all .2s"
+                                        }}
+                                    >
+                                        {isLunch ? (
+                                            <>
+                                                <div style={{ fontSize: 28, marginBottom: 4 }}>🍽️</div>
+                                                <div className="b t-h3" style={{ color: DS.ink }}>LUNCH</div>
+                                                <div className="n t-label" style={{ color: "#B87A10", marginTop: 2 }}>12 – 1PM</div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div style={{ fontSize: 26, marginBottom: 6 }}>{item.icon}</div>
+                                                <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
+                                                <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 10, fontWeight: 600 }}>{item.topic}</div>
+                                                <Shadow offset={1} size={1.5} radius={DS.radius.pill} style={{ display: "inline-block" }}>
+                                                    <div style={{ position: "relative", background: cfg.border, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 10px" }}>
+                                                        <span className="n t-label" style={{ color: "#fff" }}>{cfg.label}</span>
+                                                    </div>
+                                                </Shadow>
+                                            </>
+                                        )}
+                                    </div>
+                                </Shadow>
+                            </div>
                         );
                     })}
                 </div>
@@ -298,47 +300,48 @@ export const KidDash: React.FC = () => {
                                     approved: idx === 0
                                 })) || []
                             };
-                            
+
                             return (
-                                <SubjectCard
-                                    key={i}
-                                    subject={s.name}
-                                    subjectData={subjectCardsData}
-                                    frequency="balanced"
-                                    isCore={isCoreSubject}
-                                    isEditable={false}
-                                    onAddTopic={undefined}
-                                    onFrequencyChange={undefined}
-                                    onRemove={undefined}
-                                    onClick={() => {
-                                        const firstCard = s.topicCards?.[0];
-                                        if (firstCard) {
-                                            navigate(
-                                                toLessonView({
-                                                    childId,
-                                                    lessonId: firstCard.firstVideoId || '',
-                                                    subjectId: s.subjectId,
-                                                    topic: firstCard.title,
-                                                    url: firstCard.url,
-                                                })
-                                            );
-                                        }
-                                    }}
-                                    onCardClick={(card) => {
-                                        const clickedCard = s.topicCards?.find(tc => tc.title === card.focus);
-                                        if (clickedCard) {
-                                            navigate(
-                                                toLessonView({
-                                                    childId,
-                                                    lessonId: clickedCard.firstVideoId || '',
-                                                    subjectId: s.subjectId,
-                                                    topic: clickedCard.title,
-                                                    url: clickedCard.url,
-                                                })
-                                            );
-                                        }
-                                    }}
-                                />
+                                <div key={i}>
+                                    <SubjectCard
+                                        subject={s.name}
+                                        subjectData={subjectCardsData}
+                                        frequency="balanced"
+                                        isCore={isCoreSubject}
+                                        isEditable={false}
+                                        onAddTopic={undefined}
+                                        onFrequencyChange={undefined}
+                                        onRemove={undefined}
+                                        onClick={() => {
+                                            const firstCard = s.topicCards?.[0];
+                                            if (firstCard) {
+                                                navigate(
+                                                    toLessonView({
+                                                        childId,
+                                                        lessonId: firstCard.firstVideoId || '',
+                                                        subjectId: s.subjectId,
+                                                        topic: firstCard.title,
+                                                        url: firstCard.url,
+                                                    })
+                                                );
+                                            }
+                                        }}
+                                        onCardClick={(card) => {
+                                            const clickedCard = s.topicCards?.find(tc => tc.title === card.focus);
+                                            if (clickedCard) {
+                                                navigate(
+                                                    toLessonView({
+                                                        childId,
+                                                        lessonId: clickedCard.firstVideoId || '',
+                                                        subjectId: s.subjectId,
+                                                        topic: clickedCard.title,
+                                                        url: clickedCard.url,
+                                                    })
+                                                );
+                                            }
+                                        }}
+                                    />
+                                </div>
                             );
                         });
                     })()}

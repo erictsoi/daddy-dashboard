@@ -1,17 +1,3 @@
-import { ProfileTemplate } from '../types';
-import { validateTopic, CurriculumValidationResult } from '../lib/curriculumValidator';
-
-export interface PlaylistRow {
-  profile: string;
-  subject: string;
-  topic: string;
-  focus: string;
-  primaryPlaylist: string;
-  backupPlaylist1: string;
-  backupPlaylist2: string;
-  notes: string;
-  outcomes: string;
-}
 
 const RAW_DATA = `Y1/2 Child	English	Phonics & stories	BBC Alphablocks Phonics	Letters and Sounds	Twinkl Phonics	Blending sounds, simple sentences	Read CVC words
 Y1/2 Child	Maths	Number bonds/counting	Numberblocks Series 1-2	BBC Bitesize Y1 Maths	Corbettmaths KS1	1-20 counting, addition/subtraction	Solve number stories
@@ -82,126 +68,81 @@ Y11/12 Child	Geography	GCSE Natural Hazards	Geography All The Way	Internet Geogr
 Y11/12 Child	MFL (Spanish)	GCSE Higher Writing	Spanish GCSE Podcast	Butterfly Edu GCSE	Senor Jordan	Photo card, 150-word essay	AQA/Edexcel writing mastery
 Y11/12 Child	Design & Technology	GCSE NEA + Theory	DT Guru GCSE	Tech Award D&T	Product Design Online	Iterative design, new tech	NEA portfolio completion
 Y11/12 Child	Art & Design	GCSE Component 1	The Arty Teacher	Art Of Education UK	GCSE Art & Design	A01-A04, artist links, annotation	100-page coursework
-Y11/12 Child	Physical Education	GCSE Practical + Theory	PE Academy GCSE	GCSE PE Online	Sport Science Hub	Training principles, data analysis	B1-4 full moderation
-Y11/12 Child	PSHE/Citizenship	GCSE Relationships/Law	BBC Newsround Explains	Citizenship Today	PSHCE Association	Parliament, rights, county lines	Mock interviews/debates
-Y11/12 Child	Computing	GCSE Programming Project	Craig'n'Dave GCSE	Computer Science Tutor	Isaac Computer Science	Python/SQL project, pseudocode, trace tables	50% programming project`;
+71: Y11/12 Child	Physical Education	GCSE Practical + Theory	PE Academy GCSE	GCSE PE Online	Sport Science Hub	Training principles, data analysis	B1-4 full moderation
+72: Y11/12 Child	PSHE/Citizenship	GCSE Relationships/Law	BBC Newsround Explains	Citizenship Today	PSHCE Association	Parliament, rights, county lines	Mock interviews/debates
+73: Y11/12 Child	Computing	GCSE Programming Project	Craig'n'Dave GCSE	Computer Science Tutor	Isaac Computer Science	Python/SQL project, pseudocode, trace tables	50% programming project`;
 
-const PROFILE_MAP: Record<string, ProfileTemplate> = {
-  'Y1/2 Child': 'Y1-2',
-  'Y3/4 Child': 'Y3-4',
-  'Y5/6 Child': 'Y5-6',
-  'Y7/8 Child': 'Y7-9',
-  'Y7/8/9 Child': 'Y7-9',
-  'Y7/9 Child': 'Y7-9',
-  'Y9/10 Child': 'Y10-11',
-  'Y10/11 Child': 'Y10-11',
-  'Y11/12 Child': 'Y12-13',
-  'Y12/13 Child': 'Y12-13',
+const PROFILE_MAP = {
+    'Y1/2 Child': 'Y1-2',
+    'Y3/4 Child': 'Y3-4',
+    'Y5/6 Child': 'Y5-6',
+    'Y7/8 Child': 'Y7-9',
+    'Y7/8/9 Child': 'Y7-9',
+    'Y7/9 Child': 'Y7-9',
+    'Y9/10 Child': 'Y10-11',
+    'Y10/11 Child': 'Y10-11',
+    'Y11/12 Child': 'Y12-13',
+    'Y12/13 Child': 'Y12-13',
 };
 
-const SUBJECT_MAP: Record<string, string> = {
-  'MFL (French/Spanish)': 'Modern Language',
-  'MFL': 'Modern Language',
-  'Modern Foreign Languages': 'Modern Language',
-  'Design & Technology': 'Design & Technology',
-  'DT': 'Design & Technology',
-  'Art & Design': 'Art & Design',
-  'Physical Education': 'PE',
-  'PE': 'PE',
-  'PSHE/Citizenship': 'PSHE',
-  'Citizenship/PSHE': 'PSHE',
-  'Citizenship': 'PSHE',
-  'PSHE': 'PSHE',
-  'Computing': 'Computing',
-  'Science (Triple)': 'Science',
+const SUBJECT_MAP = {
+    'MFL (French/Spanish)': 'Modern Language',
+    'MFL': 'Modern Language',
+    'Modern Foreign Languages': 'Modern Language',
+    'Design & Technology': 'Design & Technology',
+    'DT': 'Design & Technology',
+    'Art & Design': 'Art & Design',
+    'Physical Education': 'PE',
+    'PE': 'PE',
+    'PSHE/Citizenship': 'PSHE',
+    'Citizenship/PSHE': 'PSHE',
+    'Citizenship': 'PSHE',
+    'PSHE': 'PSHE',
+    'Computing': 'Computing',
+    'Science (Triple)': 'Science',
 };
 
-export const parseRawData = (): PlaylistRow[] => {
-  const lines = RAW_DATA.split('\n').filter(l => l.trim());
-  const rows: PlaylistRow[] = [];
+const fs = require('fs');
+const path = require('path');
 
-  for (const line of lines) {
+const lines = RAW_DATA.split('\n').filter(l => l.trim());
+const yearGroups = {};
+
+for (const line of lines) {
     const cols = line.split('\t');
     if (cols.length < 4) continue;
 
     const profile = cols[0]?.trim();
-    if (!profile || profile === 'Profile') continue;
-
     const yearGroup = PROFILE_MAP[profile];
-    if (!yearGroup) {
-      console.warn('Unknown profile:', profile);
-      continue;
-    }
+    if (!yearGroup) continue;
 
     let subject = cols[1]?.trim() || '';
     let focus = cols[2]?.trim() || '';
-
     subject = SUBJECT_MAP[subject] || subject;
 
-    const topic = focus.split(' ')[0] || subject;
+    if (!yearGroups[yearGroup]) yearGroups[yearGroup] = [];
 
-    rows.push({
-      profile: yearGroup,
-      subject,
-      topic,
-      focus,
-      primaryPlaylist: cols[3]?.trim() || '',
-      backupPlaylist1: cols[4]?.trim() || '',
-      backupPlaylist2: cols[5]?.trim() || '',
-      notes: cols[6]?.trim() || '',
-      outcomes: cols[7]?.trim() || '',
-    });
-  }
+    const card = {
+        id: `${yearGroup}_${subject}_${focus}`.replace(/\s+/g, '_'),
+        yearGroup,
+        subject,
+        focus,
+        playlists: [
+            { title: cols[3]?.trim(), url: '', videos: [], isPrimary: true, index: 0 },
+            { title: cols[4]?.trim() || 'Backup 1', url: '', videos: [], isPrimary: false, index: 1 },
+            { title: cols[5]?.trim() || 'Backup 2', url: '', videos: [], isPrimary: false, index: 2 }
+        ]
+    };
 
-  return rows;
-};
+    yearGroups[yearGroup].push(card);
+}
 
-export const validateAllPlaylists = () => {
-  const rows = parseRawData();
-  const results: {
-    row: PlaylistRow;
-    validation: CurriculumValidationResult;
-    valid: boolean;
-  }[] = [];
+const outputDir = process.argv[2] || '.';
 
-  for (const row of rows) {
-    const validation = validateTopic(
-      row.profile as ProfileTemplate,
-      row.subject,
-      row.topic,
-      row.focus
-    );
-    results.push({ row, validation, valid: validation.isValid });
-  }
-
-  return results;
-};
-
-export const getValidationSummary = () => {
-  const results = validateAllPlaylists();
-  const summary = {
-    total: results.length,
-    valid: results.filter(r => r.valid).length,
-    invalid: results.filter(r => !r.valid).length,
-    byYear: {} as Record<string, { total: number; valid: number }>,
-    issues: [] as string[],
-  };
-
-  for (const r of results) {
-    if (!summary.byYear[r.row.profile]) {
-      summary.byYear[r.row.profile] = { total: 0, valid: 0 };
-    }
-    summary.byYear[r.row.profile].total++;
-    if (r.valid) summary.byYear[r.row.profile].valid++;
-
-    if (!r.valid) {
-      r.validation.issues.forEach(issue => {
-        if (!summary.issues.includes(issue)) {
-          summary.issues.push(issue);
-        }
-      });
-    }
-  }
-
-  return { results, summary };
-};
+for (const [yg, cards] of Object.entries(yearGroups)) {
+    const fileName = `backup_${yg}_2026-03-05.json`;
+    const dirPath = path.join(outputDir, `${yg} Subject Cards`);
+    if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+    fs.writeFileSync(path.join(dirPath, fileName), JSON.stringify(cards, null, 2));
+    console.log(`Generated ${path.join(dirPath, fileName)}`);
+}

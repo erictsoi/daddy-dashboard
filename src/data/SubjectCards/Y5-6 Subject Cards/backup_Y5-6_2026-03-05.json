@@ -1,0 +1,350 @@
+[
+  {
+    "id": "Y5-6_English_Plays_&_poetry",
+    "yearGroup": "Y5-6",
+    "subject": "English",
+    "focus": "Plays & poetry",
+    "playlists": [
+      {
+        "title": "BBC Bitesize KS2 English",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Oak National Y5-6 Reading",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Twinkl Y6 English",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y5-6_Maths_Decimals/percentages",
+    "yearGroup": "Y5-6",
+    "subject": "Maths",
+    "focus": "Decimals/percentages",
+    "playlists": [
+      {
+        "title": "Khan Academy Y5 Maths",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Corbettmaths Y5-6",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "White Rose Maths Y6",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y5-6_Science_Earth/space",
+    "yearGroup": "Y5-6",
+    "subject": "Science",
+    "focus": "Earth/space",
+    "playlists": [
+      {
+        "title": "BBC Bitesize Y5-6 Science",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "SciShow Kids Earth",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Oak Solar System",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y5-6_History_Ancient_Greeks/Egypt",
+    "yearGroup": "Y5-6",
+    "subject": "History",
+    "focus": "Ancient Greeks/Egypt",
+    "playlists": [
+      {
+        "title": "BBC History KS2",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "OverSimplified Greeks",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "FreeSchool Ancient Civilisations",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y5-6_Geography_Biomes/rivers",
+    "yearGroup": "Y5-6",
+    "subject": "Geography",
+    "focus": "Biomes/rivers",
+    "playlists": [
+      {
+        "title": "Geography Now Kids Series",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Kids Learning Tube Biomes",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Twinkl Rivers Y5",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y5-6_Modern_Language_Sentences/conversations",
+    "yearGroup": "Y5-6",
+    "subject": "Modern Language",
+    "focus": "Sentences/conversations",
+    "playlists": [
+      {
+        "title": "Duolingo Kids Spanish",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "BBC Languages Y5-6",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Butterfly Spanish Y5",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y5-6_Design_&_Technology_Textiles/electronics",
+    "yearGroup": "Y5-6",
+    "subject": "Design & Technology",
+    "focus": "Textiles/electronics",
+    "playlists": [
+      {
+        "title": "Twinkl DT Y5-6",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Bosch Kids Make",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "GreatScott Simple Projects",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y5-6_Art_&_Design_3D_modelling/sculpture",
+    "yearGroup": "Y5-6",
+    "subject": "Art & Design",
+    "focus": "3D modelling/sculpture",
+    "playlists": [
+      {
+        "title": "Art for Kids Hub Y5",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "BBC Art Y5-6",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Draw So Cute 3D",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y5-6_Music_World_music/notation",
+    "yearGroup": "Y5-6",
+    "subject": "Music",
+    "focus": "World music/notation",
+    "playlists": [
+      {
+        "title": "BBC Ten Pieces Y5",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Out of the Ark World Music",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Charanga Y5-6",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y5-6_PE_Invasion_games",
+    "yearGroup": "Y5-6",
+    "subject": "PE",
+    "focus": "Invasion games",
+    "playlists": [
+      {
+        "title": "GoNoodle PE",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Real PE Y5-6",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Cosmic Kids Sports",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y5-6_PSHE_Democracy/relationships",
+    "yearGroup": "Y5-6",
+    "subject": "PSHE",
+    "focus": "Democracy/relationships",
+    "playlists": [
+      {
+        "title": "BBC PSHE Y5-6",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "School of Life Children",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Twinkl Growth Mindset",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y5-6_Computing_Variables/databases",
+    "yearGroup": "Y5-6",
+    "subject": "Computing",
+    "focus": "Variables/databases",
+    "playlists": [
+      {
+        "title": "Code.org Y5-6",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Scratch Advanced",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Barefoot Computing Y5",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  }
+]

@@ -8,7 +8,22 @@
 
 ---
 
-## Current Version: 3.13.2
+## Current Version: 3.15.0
+
+---
+
+## Recent Changes (2026-03-05)
+
+### v3.15.0 - Curriculum Finalization & Data Refactor
+- **Curriculum Expansion**: Added placeholder JSON files for Y1-2, Y3-4, Y10-11, and Y12-13 in `src/data/SubjectCards/`.
+- **Lazy Loading**: Refactored `src/lib/subjectCards.ts` to use `import()` for JSON files, moving ~5MB of data out of the main bundle.
+- **Hook Refactor**: Decomposed `useAppData.ts` into:
+  - `useChildData.ts`: Core profile and group management.
+  - `useLessonData.ts`: Lesson progress and bulk imports.
+  - `useSettingsData.ts`: Admin/Parent settings.
+- **Import Hub**: Added JSON file import functionality to `CurriculumLibrary.tsx`.
+- **UI Refinement**: Swapped static "Loading..." with `LoadingFallback` using Framer Motion (already in project) and Lucide.
+- **Bug Fix**: Corrected Music search terms in `CurriculumSearch.tsx`.
 
 ---
 

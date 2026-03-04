@@ -24,7 +24,7 @@ export const toCuratedPlaylist = (data: any): CuratedPlaylist => ({
   primaryPlaylist: data.primaryPlaylist || data.primary_playlist || '',
   backupPlaylist1: data.backupPlaylist1 || data.backup_playlist_1,
   backupPlaylist2: data.backupPlaylist2 || data.backup_playlist_2,
-  notes: data.notes || data.outcomes,
+  notes: data.notes,
   outcomes: data.outcomes,
   verified: !!data.verified,
   addedBy: data.addedBy || data.added_by || 'admin',
@@ -151,7 +151,7 @@ export const isTopicAppropriate = (
   topic: string
 ): boolean => {
   const inappropriate = INAPPROPRIATE_TOPICS[yearGroup] || []
-  return !inappropriate.some(t => 
+  return !inappropriate.some(t =>
     topic.toLowerCase().includes(t.toLowerCase()) ||
     t.toLowerCase().includes(topic.toLowerCase())
   )
@@ -169,12 +169,12 @@ export const getSubjectsForYearGroup = (
   yearGroup: ProfileTemplate
 ): string[] => {
   const inappropriateTopics = INAPPROPRIATE_TOPICS[yearGroup] || []
-  
+
   const ALL_SUBJECTS = [
     'English', 'Maths', 'Science', 'History', 'Geography',
     'Modern Language', 'Art & Design', 'Music', 'Drama',
     'Computing', 'Design & Technology', 'PE', 'PSHE', 'RE'
   ]
-  
+
   return ALL_SUBJECTS
 }

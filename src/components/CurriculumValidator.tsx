@@ -38,14 +38,14 @@ export const CurriculumValidator: React.FC<Props> = ({ onBack }) => {
   const runValidation = () => {
     const data = validateAllPlaylists();
     setResults(data);
-    
+
     const totals = {
       total: data.length,
       valid: data.filter(r => r.valid).length,
       invalid: data.filter(r => !r.valid).length,
       byYear: {} as Record<string, { total: number; valid: number }>,
     };
-    
+
     for (const r of data) {
       if (!totals.byYear[r.row.profile]) {
         totals.byYear[r.row.profile] = { total: 0, valid: 0 };
@@ -53,7 +53,7 @@ export const CurriculumValidator: React.FC<Props> = ({ onBack }) => {
       totals.byYear[r.row.profile].total++;
       if (r.valid) totals.byYear[r.row.profile].valid++;
     }
-    
+
     setSummary(totals);
   };
 
@@ -196,42 +196,44 @@ export const CurriculumValidator: React.FC<Props> = ({ onBack }) => {
 
         <div className="space-y-2">
           {filteredResults.map((r, idx) => (
-            <Card key={idx} className={`p-3 ${r.valid ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'}`}>
-              <div className="flex items-start gap-3">
-                <div className="mt-1">
-                  {r.valid ? (
-                    <Check size={18} className="text-green-600" />
-                  ) : (
-                    <X size={18} className="text-red-600" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm">{r.row.profile}</span>
-                    <span className="text-gray-400">|</span>
-                    <span className="font-medium">{r.row.subject}</span>
-                    <span className="text-gray-400">|</span>
-                    <span className="text-sm text-gray-600">{r.row.topic}</span>
+            <div key={idx}>
+              <Card className={`p-3 ${r.valid ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'}`}>
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">
+                    {r.valid ? (
+                      <Check size={18} className="text-green-600" />
+                    ) : (
+                      <X size={18} className="text-red-600" />
+                    )}
                   </div>
-                  <div className="text-sm text-gray-500">{r.row.focus}</div>
-                  {!r.valid && r.validation.issues.length > 0 && (
-                    <div className="mt-2 flex items-start gap-2 text-sm text-red-600">
-                      <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
-                      <div>
-                        {r.validation.issues.map((issue, i) => (
-                          <div key={i}>{issue}</div>
-                        ))}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm">{r.row.profile}</span>
+                      <span className="text-gray-400">|</span>
+                      <span className="font-medium">{r.row.subject}</span>
+                      <span className="text-gray-400">|</span>
+                      <span className="text-sm text-gray-600">{r.row.topic}</span>
+                    </div>
+                    <div className="text-sm text-gray-500">{r.row.focus}</div>
+                    {!r.valid && r.validation.issues.length > 0 && (
+                      <div className="mt-2 flex items-start gap-2 text-sm text-red-600">
+                        <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                        <div>
+                          {r.validation.issues.map((issue, i) => (
+                            <div key={i}>{issue}</div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {!r.valid && r.validation.suggestions.length > 0 && (
-                    <div className="mt-1 text-sm text-gray-500">
-                      Suggestion: {r.validation.suggestions[0]}
-                    </div>
-                  )}
+                    )}
+                    {!r.valid && r.validation.suggestions.length > 0 && (
+                      <div className="mt-1 text-sm text-gray-500">
+                        Suggestion: {r.validation.suggestions[0]}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           ))}
         </div>
       </div>

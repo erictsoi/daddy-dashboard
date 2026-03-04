@@ -1,0 +1,350 @@
+[
+  {
+    "id": "Y7-9_English_Text_analysis",
+    "yearGroup": "Y7-9",
+    "subject": "English",
+    "focus": "Text analysis",
+    "playlists": [
+      {
+        "title": "BBC Bitesize KS3 English",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Crash Course Literature",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Twinkl KS3 English",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y7-9_Maths_Algebra_equations",
+    "yearGroup": "Y7-9",
+    "subject": "Maths",
+    "focus": "Algebra equations",
+    "playlists": [
+      {
+        "title": "Khan Academy Algebra Basics",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Corbettmaths KS3 Algebra",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Math Antics Algebra",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y7-9_Science_Electricity_circuits",
+    "yearGroup": "Y7-9",
+    "subject": "Science",
+    "focus": "Electricity circuits",
+    "playlists": [
+      {
+        "title": "SciShow Science Circuits",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Engineering Mindset Circuits",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Physics Online KS3",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y7-9_History_Cold_War",
+    "yearGroup": "Y7-9",
+    "subject": "History",
+    "focus": "Cold War",
+    "playlists": [
+      {
+        "title": "Crash Course World History",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "OverSimplified Cold War",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Simple History Cold War",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y7-9_Geography_Country_capitals",
+    "yearGroup": "Y7-9",
+    "subject": "Geography",
+    "focus": "Country capitals",
+    "playlists": [
+      {
+        "title": "Geography Now Full Series",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Kids Learning Tube Geography",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "FreeSchool Geography",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y7-9_Modern_Language_Spanish_GCSE",
+    "yearGroup": "Y7-9",
+    "subject": "Modern Language",
+    "focus": "Spanish GCSE",
+    "playlists": [
+      {
+        "title": "Butterfly Spanish KS3",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Duolingo Spanish Teens",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "SpanishPod101 Beginners",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y7-9_Design_&_Technology_Electronics",
+    "yearGroup": "Y7-9",
+    "subject": "Design & Technology",
+    "focus": "Electronics",
+    "playlists": [
+      {
+        "title": "GreatScott! Circuits",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "ElectroBOOM Fun Electronics",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Bosley Booth Electronics",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y7-9_Art_&_Design_Graffiti_art",
+    "yearGroup": "Y7-9",
+    "subject": "Art & Design",
+    "focus": "Graffiti art",
+    "playlists": [
+      {
+        "title": "Proko Perspective Drawing",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Art Assignment Street Art",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Draw So Cute Graffiti",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y7-9_Music_Garageband_basics",
+    "yearGroup": "Y7-9",
+    "subject": "Music",
+    "focus": "Garageband basics",
+    "playlists": [
+      {
+        "title": "MusicTechTeacher GarageBand",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Andrew Huang Music Production",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "YouSician Production",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y7-9_PE_Basketball_drills",
+    "yearGroup": "Y7-9",
+    "subject": "PE",
+    "focus": "Basketball drills",
+    "playlists": [
+      {
+        "title": "ILoveBasketballTV Drills",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Coach Dan Youth Drills",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Pro Skills Basketball",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y7-9_PSHE_Democracy",
+    "yearGroup": "Y7-9",
+    "subject": "PSHE",
+    "focus": "Democracy",
+    "playlists": [
+      {
+        "title": "FreeSchool Government",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "School of Life Politics",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Crash Course Government",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y7-9_Computing_Python_basics",
+    "yearGroup": "Y7-9",
+    "subject": "Computing",
+    "focus": "Python basics",
+    "playlists": [
+      {
+        "title": "freeCodeCamp Python Kids",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "CS50 Python Intro",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Code.org Python KS3",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  }
+]

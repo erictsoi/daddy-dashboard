@@ -1,3 +1,20 @@
+## 2026-03-05 - v3.15.0 - Curriculum Expansion & Hub Import
+
+### Added
+- **Curriculum Library**: New "Import from Applet" feature to import JSON curriculum data from external tools.
+- **Curriculum Search**: Integrated API Key status panel with missing key warnings and instructions.
+- **Year Groups**: Expanded data coverage for Y1-2, Y3-4, Y10-11, and Y12-13 with generated placeholder subject cards.
+- **Hooks**: Modularized data layer by splitting `useAppData` into `useSettingsData`, `useChildData`, and `useLessonData`.
+- **UI**: Implemented a premium `LoadingFallback` component with centered spinner and themed background.
+
+### Changed
+- **Performance**: Implemented dynamic dynamic (lazy) loading for large subject card JSON files to reduce initial bundle size.
+- **UK Curriculum**: Enriched all year groups with granular topics and detailed descriptions for better search context.
+- **Search Logic**: Refined Y7-9 Music search terms to prioritize generic performance playlists over specific curriculum codes.
+- **Architecture**: Refactored `useAppData` to act as a unified Facade for modular child/lesson/settings hooks.
+
+---
+
 ## 2026-03-04 - v3.14.3 - Bug Fixes
 
 ### Fixed

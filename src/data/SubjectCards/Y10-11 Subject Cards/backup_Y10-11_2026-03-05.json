@@ -1,0 +1,350 @@
+[
+  {
+    "id": "Y10-11_English_GCSE_Language_Paper_1",
+    "yearGroup": "Y10-11",
+    "subject": "English",
+    "focus": "GCSE Language Paper 1",
+    "playlists": [
+      {
+        "title": "BBC GCSE English Language",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Mr Bruff GCSE English",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "GCSE English Tutor",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y10-11_Maths_GCSE_Foundation",
+    "yearGroup": "Y10-11",
+    "subject": "Maths",
+    "focus": "GCSE Foundation",
+    "playlists": [
+      {
+        "title": "Corbettmaths GCSE Foundation",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Khan Academy GCSE",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Maths Genie Foundation",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y10-11_Science_GCSE_Combined_Trilogy",
+    "yearGroup": "Y10-11",
+    "subject": "Science",
+    "focus": "GCSE Combined Trilogy",
+    "playlists": [
+      {
+        "title": "Freesci GCSE Science",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "SciShow Science",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Crash Course Chemistry",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y10-11_History_GCSE_Medicine/Weimar",
+    "yearGroup": "Y10-11",
+    "subject": "History",
+    "focus": "GCSE Medicine/Weimar",
+    "playlists": [
+      {
+        "title": "Simple History GCSE",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Crash Course History",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "OverSimplified WWII",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y10-11_Geography_GCSE_Physical/Coasts",
+    "yearGroup": "Y10-11",
+    "subject": "Geography",
+    "focus": "GCSE Physical/Coasts",
+    "playlists": [
+      {
+        "title": "Geography All The Way",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "BBC GCSE Geography",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Internet Geography",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y10-11_MFL_(Spanish)_GCSE_Themes",
+    "yearGroup": "Y10-11",
+    "subject": "MFL (Spanish)",
+    "focus": "GCSE Themes",
+    "playlists": [
+      {
+        "title": "Spanish GCSE Podcast",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Butterfly Edu Spanish",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Duolingo GCSE Spanish",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y10-11_Design_&_Technology_GCSE_Product_Design",
+    "yearGroup": "Y10-11",
+    "subject": "Design & Technology",
+    "focus": "GCSE Product Design",
+    "playlists": [
+      {
+        "title": "Bosch GCSE DT",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "GreatScott! Engineering",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Tech Wizard Projects",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y10-11_Art_&_Design_GCSE_Fine_Art",
+    "yearGroup": "Y10-11",
+    "subject": "Art & Design",
+    "focus": "GCSE Fine Art",
+    "playlists": [
+      {
+        "title": "BBC GCSE Art",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Art Of Education",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Draw So Cute Advanced",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y10-11_Music_GCSE_Listening/Performing",
+    "yearGroup": "Y10-11",
+    "subject": "Music",
+    "focus": "GCSE Listening/Performing",
+    "playlists": [
+      {
+        "title": "BBC Ten Pieces GCSE",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "4th Grade Music",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Charanga GCSE",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y10-11_PE_GCSE_Fitness_Training",
+    "yearGroup": "Y10-11",
+    "subject": "PE",
+    "focus": "GCSE Fitness Training",
+    "playlists": [
+      {
+        "title": "Pro Skills Basketball GCSE",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Coach Dan Advanced",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "PE Academy GCSE",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y10-11_PSHE_GCSE_Relationships",
+    "yearGroup": "Y10-11",
+    "subject": "PSHE",
+    "focus": "GCSE Relationships",
+    "playlists": [
+      {
+        "title": "BBC Life Skills",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "School of Life Teens",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Twinkl PSHE GCSE",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y10-11_Computing_GCSE_Computer_Science",
+    "yearGroup": "Y10-11",
+    "subject": "Computing",
+    "focus": "GCSE Computer Science",
+    "playlists": [
+      {
+        "title": "Computer Science Tutor",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Code.org GCSE",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Craig'n'Dave",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  }
+]

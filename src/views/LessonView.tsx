@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getDummyChild } from '../data/dummyData';
 import { ChildProfile } from '../types';
 import { DS, Texture, Blobs, Shadow } from '../components/design-system';
 import { toKidDash, toLessonView } from '../lib/routes';
 import { getSubjectCardsForYear } from '../lib/subjectCards';
+import { useAppContext } from '../context/AppContext';
 
 interface LessonViewProps {
     childId: string;
@@ -38,24 +38,28 @@ const GlobalStyles = () => (
     `}</style>
 );
 
-export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data = [], subjectId, topicId }) => {
+export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data: dataProp, subjectId, topicId }) => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    
+    const { children: contextData } = useAppContext();
+
+    // Use prop data if provided, fall back to context
+    const data = dataProp && dataProp.length > 0 ? dataProp : contextData;
+
     // Get subject and topic from params if not passed as props
     const subjectIdParam = subjectId || searchParams.get('subject') || '';
     const topicIdParam = topicId || searchParams.get('topic') || '';
     const playlistUrl = searchParams.get('url') || '';
-    
-    const child = data.find(c => c.id === childId) || getDummyChild(childId) || getDummyChild(`demo-${childId}`);
+
+    const child = data.find(c => c.id === childId);
 
     // Load from JSON SubjectCards if URL provided
     const jsonSubjectData = useMemo(() => {
         if (!playlistUrl) return { lessons: [], topics: [] };
-        
+
         const decodedUrl = decodeURIComponent(playlistUrl);
-        
+
         // Find the subject card and playlist that matches the URL
         const yearKeys = ['Y5-6', 'Y7-9'];
         for (const yearKey of yearKeys) {
@@ -83,11 +87,11 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
     // Collect all lessons for the subject grouped by topic
     const subjectData = useMemo(() => {
         if (jsonSubjectData.lessons.length > 0) return jsonSubjectData;
-        
+
         if (!child || !subjectIdParam) return { lessons: [], topics: [] };
         const lessons: { id: string; title: string; videoUrl?: string; completed: boolean; subjectName: string; topicName: string; topicId: string }[] = [];
         const topics: { id: string; name: string; lessonIds: string[] }[] = [];
-        
+
         for (const yearGroup of child.yearGroups || []) {
             for (const subject of yearGroup.subjects || []) {
                 if (subject.id === subjectIdParam || subject.name.toLowerCase() === subjectIdParam.toLowerCase()) {
@@ -108,22 +112,22 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
         }
         return { lessons, topics };
     }, [child, subjectIdParam, playlistUrl]);
-    
+
     const allSubjectLessons = subjectData.lessons;
     const allTopics = subjectData.topics;
-    
+
     // Find current lesson and topic
     const currentLessonIndex = allSubjectLessons.findIndex(l => l.id === lessonId);
     const currentTopicInfo = allTopics.find(t => t.lessonIds.includes(lessonId));
     const currentTopicIndex = allTopics.findIndex(t => t.id === currentTopicInfo?.id);
-    
+
     // Check if all lessons in current topic are completed
     const isCurrentTopicComplete = useMemo(() => {
         if (!currentTopicInfo) return false;
         const topicLessons = allSubjectLessons.filter(l => l.topicId === currentTopicInfo.id);
         return topicLessons.length > 0 && topicLessons.every(l => l.completed);
     }, [allSubjectLessons, currentTopicInfo]);
-    
+
     // Auto-advance to next topic when current topic is complete
     useMemo(() => {
         if (isCurrentTopicComplete && currentTopicIndex < allTopics.length - 1) {
@@ -139,7 +143,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
             }
         }
     }, [isCurrentTopicComplete]);
-    
+
     const playlist = allSubjectLessons.length > 0 ? allSubjectLessons : [
         { title: "What is an Ecosystem?", duration: "7:20", completed: true, active: false },
         { title: "Producers, Consumers & Decomposers", duration: "9:15", completed: true, active: false },
@@ -429,7 +433,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
                                     ← Previous
                                 </button>
                             </Shadow>
-                            
+
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 {allSubjectLessons.map((_, idx) => (
                                     <div
@@ -573,7 +577,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data 
                                 {playlist.map((item, i) => (
                                     <div
                                         key={i}
-                                        onClick={() => {}}
+                                        onClick={() => { }}
                                         style={{
                                             display: "flex",
                                             alignItems: "center",

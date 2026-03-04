@@ -1,0 +1,263 @@
+[
+  {
+    "id": "Y12-13_English_Language_GCSE_Paper_1/2_Technique",
+    "yearGroup": "Y12-13",
+    "subject": "English Language",
+    "focus": "GCSE Paper 1/2 Technique",
+    "playlists": [
+      {
+        "title": "Mr Bruff GCSE English",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "BBC GCSE English",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "GCSE English Tutor",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y12-13_English_Literature_GCSE_Texts_(Macbeth/AQA)",
+    "yearGroup": "Y12-13",
+    "subject": "English Literature",
+    "focus": "GCSE Texts (Macbeth/AQA)",
+    "playlists": [
+      {
+        "title": "Mr Bruff GCSE Literature",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "CGP Revision Macbeth",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Prime Study Guides",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y12-13_Maths_GCSE_Higher_Tier",
+    "yearGroup": "Y12-13",
+    "subject": "Maths",
+    "focus": "GCSE Higher Tier",
+    "playlists": [
+      {
+        "title": "Corbettmaths GCSE Higher",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "TLMaths",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "1st Class Maths",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y12-13_Science_GCSE_Chemistry/Physics",
+    "yearGroup": "Y12-13",
+    "subject": "Science",
+    "focus": "GCSE Chemistry/Physics",
+    "playlists": [
+      {
+        "title": "Freesci GCSE Science",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "MaChemGuy",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Physics Online",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y12-13_History_GCSE_Superpower_Relations",
+    "yearGroup": "Y12-13",
+    "subject": "History",
+    "focus": "GCSE Superpower Relations",
+    "playlists": [
+      {
+        "title": "Simple History GCSE",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "History with Higgins",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "SchoolshistoryGCSE",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y12-13_Geography_GCSE_Natural_Hazards",
+    "yearGroup": "Y12-13",
+    "subject": "Geography",
+    "focus": "GCSE Natural Hazards",
+    "playlists": [
+      {
+        "title": "Geography All The Way",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Internet Geography",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Miss Geographer",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y12-13_MFL_(Spanish)_GCSE_Higher_Writing",
+    "yearGroup": "Y12-13",
+    "subject": "MFL (Spanish)",
+    "focus": "GCSE Higher Writing",
+    "playlists": [
+      {
+        "title": "Spanish GCSE Podcast",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Butterfly Edu GCSE",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Senor Jordan",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y12-13_Design_&_Technology_GCSE_NEA_+_Theory",
+    "yearGroup": "Y12-13",
+    "subject": "Design & Technology",
+    "focus": "GCSE NEA + Theory",
+    "playlists": [
+      {
+        "title": "DT Guru GCSE",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Tech Award D&T",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Product Design Online",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y12-13_Art_&_Design_GCSE_Component_1",
+    "yearGroup": "Y12-13",
+    "subject": "Art & Design",
+    "focus": "GCSE Component 1",
+    "playlists": [
+      {
+        "title": "The Arty Teacher",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Art Of Education UK",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "GCSE Art & Design",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  }
+]

@@ -22,7 +22,16 @@ const CurriculumValidator = lazy(() => import('./components/CurriculumValidator'
 const CurriculumSearch = lazy(() => import('./components/CurriculumSearch').then(m => ({ default: m.CurriculumSearch })));
 
 // Reusable loading fallback
-const LoadingFallback = () => <div>Loading...</div>;
+const LoadingFallback = () => (
+  <div className="min-h-screen bg-[#FAF6F0] flex flex-col items-center justify-center relative overflow-hidden">
+    {/* Subtle texture match to KidDash */}
+    <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+    <div className="relative z-10 flex flex-col items-center gap-4">
+      <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+      <div className="font-['Nunito'] font-bold text-blue-600 tracking-wide animate-pulse">Loading Daddy Dashboard...</div>
+    </div>
+  </div>
+);
 
 const AppInner: React.FC = () => {
   const navigate = useNavigate();
@@ -73,7 +82,6 @@ const AppInner: React.FC = () => {
             lessonId={lessonId}
             subjectId={lessonSubjectId}
             topicId={lessonTopicId}
-            data={data}
           />
         </Suspense>} />
 

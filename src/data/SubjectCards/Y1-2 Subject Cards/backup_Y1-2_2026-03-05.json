@@ -1,0 +1,350 @@
+[
+  {
+    "id": "Y1-2_English_Phonics_&_stories",
+    "yearGroup": "Y1-2",
+    "subject": "English",
+    "focus": "Phonics & stories",
+    "playlists": [
+      {
+        "title": "BBC Alphablocks Phonics",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Letters and Sounds",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Twinkl Phonics",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y1-2_Maths_Number_bonds/counting",
+    "yearGroup": "Y1-2",
+    "subject": "Maths",
+    "focus": "Number bonds/counting",
+    "playlists": [
+      {
+        "title": "Numberblocks Series 1-2",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "BBC Bitesize Y1 Maths",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Corbettmaths KS1",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y1-2_Science_Plants/animals",
+    "yearGroup": "Y1-2",
+    "subject": "Science",
+    "focus": "Plants/animals",
+    "playlists": [
+      {
+        "title": "BBC Bitesize Y1 Science",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "SciShow Kids Animals",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Mystery Doug Plants",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y1-2_History_Famous_people",
+    "yearGroup": "Y1-2",
+    "subject": "History",
+    "focus": "Famous people",
+    "playlists": [
+      {
+        "title": "FreeSchool Famous People",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "BBC History KS1",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Simple History Kids",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y1-2_Geography_Local_area/weather",
+    "yearGroup": "Y1-2",
+    "subject": "Geography",
+    "focus": "Local area/weather",
+    "playlists": [
+      {
+        "title": "Twinkl Geography KS1",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Geography Now Kids",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Kids Learning Tube",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y1-2_Modern_Language_Colours/numbers",
+    "yearGroup": "Y1-2",
+    "subject": "Modern Language",
+    "focus": "Colours/numbers",
+    "playlists": [
+      {
+        "title": "Duolingo Kids ABC",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "BBC Mini Mash Languages",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Butterfly Spanish KS1",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y1-2_Design_&_Technology_Joining_materials",
+    "yearGroup": "Y1-2",
+    "subject": "Design & Technology",
+    "focus": "Joining materials",
+    "playlists": [
+      {
+        "title": "Twinkl DT KS1",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Bosch Kids Explore",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Design Technology Fun",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y1-2_Art_&_Design_Painting/collage",
+    "yearGroup": "Y1-2",
+    "subject": "Art & Design",
+    "focus": "Painting/collage",
+    "playlists": [
+      {
+        "title": "Art for Kids Hub KS1",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "BBC Art KS1",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Draw So Cute Easy",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y1-2_Music_Rhythm/singing",
+    "yearGroup": "Y1-2",
+    "subject": "Music",
+    "focus": "Rhythm/singing",
+    "playlists": [
+      {
+        "title": "BBC Ten Pieces KS1",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Out of the Ark Songs",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Charanga Musical School",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y1-2_PE_Movement/games",
+    "yearGroup": "Y1-2",
+    "subject": "PE",
+    "focus": "Movement/games",
+    "playlists": [
+      {
+        "title": "GoNoodle Movement",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Cosmic Kids Yoga",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Real PE Fundamentals",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y1-2_PSHE_Feelings/friendship",
+    "yearGroup": "Y1-2",
+    "subject": "PSHE",
+    "focus": "Feelings/friendship",
+    "playlists": [
+      {
+        "title": "BBC PSHE KS1",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "CBeebies Get Well Soon",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Twinkl Feelings",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y1-2_Computing_Algorithms",
+    "yearGroup": "Y1-2",
+    "subject": "Computing",
+    "focus": "Algorithms",
+    "playlists": [
+      {
+        "title": "Code.org Pre-Reader",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Barefoot Computing KS1",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Scratch Jr Tutorials",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  }
+]

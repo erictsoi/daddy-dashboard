@@ -22,16 +22,16 @@ export const UK_CURRICULUM: UKCurriculumYear[] = [
     ageRange: '5-6 years',
     statutory: 10,
     subjects: [
-      { subject: 'English', topic: 'English', focus: 'English', description: 'Word reading, comprehension, spelling, composition, SPaG' },
-      { subject: 'Maths', topic: 'Maths', focus: 'Maths', description: 'Number/place value, addition/subtraction, measures, geometry' },
-      { subject: 'Science', topic: 'Science', focus: 'Science', description: 'Plants, Animals inc humans, Everyday materials, Seasonal change' },
-      { subject: 'Design & Technology', topic: 'Design & Technology', focus: 'Design & Technology', description: 'Designing, making, using materials' },
-      { subject: 'History', topic: 'History', focus: 'History', description: 'Changes within living memory' },
-      { subject: 'Geography', topic: 'Geography', focus: 'Geography', description: 'UK, seasonal features' },
-      { subject: 'Art & Design', topic: 'Art & Design', focus: 'Art & Design', description: 'Drawing, painting, craft' },
-      { subject: 'Music', topic: 'Music', focus: 'Music', description: 'Singing, instruments' },
-      { subject: 'PE', topic: 'PE', focus: 'PE', description: 'Movement, games, swimming' },
-      { subject: 'Computing', topic: 'Computing', focus: 'Computing', description: 'Digital literacy, basic computing' },
+      { subject: 'English', topic: 'Phonics & stories', focus: 'Phonics', description: 'Word reading, phonemic awareness, simple stories' },
+      { subject: 'Maths', topic: 'Number bonds/counting', focus: 'Arithmetic', description: 'Counting to 100, addition/subtraction, number bonds' },
+      { subject: 'Science', topic: 'Plants/animals', focus: 'Biology', description: 'Identifying plants, animals, life cycles' },
+      { subject: 'Science', topic: 'Materials', focus: 'Chemistry', description: 'Everyday materials and their properties' },
+      { subject: 'History', topic: 'Famous people', focus: 'Historical figures', description: 'Kings, queens, inventors, explorers' },
+      { subject: 'Geography', topic: 'Local area/weather', focus: 'Location', description: 'UK maps, seasonal weather patterns' },
+      { subject: 'Computing', topic: 'Algorithms', focus: 'Coding', description: 'Sequencing, simple directions, logic' },
+      { subject: 'Art & Design', topic: 'Painting/collage', focus: 'Creative', description: 'Primary colors, textures, simple drawings' },
+      { subject: 'Music', topic: 'Rhythm/singing', focus: 'Performance', description: 'Action songs, clapping, copy rhythms' },
+      { subject: 'PE', topic: 'Movement/games', focus: 'Physical', description: 'Balance, coordination, fundamental games' },
     ]
   },
 
@@ -41,17 +41,15 @@ export const UK_CURRICULUM: UKCurriculumYear[] = [
     ageRange: '7-8 years',
     statutory: 12,
     subjects: [
-      { subject: 'English', topic: 'English', focus: 'English', description: 'Word reading, comprehension, grammar, composition' },
-      { subject: 'Maths', topic: 'Maths', focus: 'Maths', description: 'Number, add/subtract, multiplication/division, fractions, measurement, statistics, geometry' },
-      { subject: 'Science', topic: 'Science', focus: 'Science', description: 'Plants, Animals inc humans, Rocks, Light, Forces/magnets' },
-      { subject: 'Design & Technology', topic: 'Design & Technology', focus: 'Design & Technology', description: 'Designing, making, evaluation' },
-      { subject: 'History', topic: 'History', focus: 'History', description: 'Stone Age to Iron Age' },
-      { subject: 'Geography', topic: 'Geography', focus: 'Geography', description: 'Settlement, land use' },
-      { subject: 'Art & Design', topic: 'Art & Design', focus: 'Art & Design', description: 'Art techniques, creativity' },
-      { subject: 'Music', topic: 'Music', focus: 'Music', description: 'Performance, composition' },
-      { subject: 'PE', topic: 'PE', focus: 'PE', description: 'Games, athletics, swimming' },
-      { subject: 'Computing', topic: 'Computing', focus: 'Computing', description: 'Programming, digital skills' },
-      { subject: 'Modern Language', topic: 'Modern Language', focus: 'Modern Foreign Languages', description: 'French or Spanish basics' },
+      { subject: 'English', topic: 'Stories & poems', focus: 'Reading', description: 'Fairy tales, poetry, inference skills' },
+      { subject: 'Maths', topic: 'Fractions basics', focus: 'Arithmetic', description: 'Equivalence, decimals intro, fractions' },
+      { subject: 'Science', topic: 'Living things', focus: 'Biology', description: 'Food chains, habitats, classification' },
+      { subject: 'Science', topic: 'Forces/magnets', focus: 'Physics', description: 'Magnets, friction, simple machines' },
+      { subject: 'History', topic: 'Romans/Vikings', focus: 'British History', description: 'Invasions, settlements, timelines' },
+      { subject: 'Geography', topic: 'UK regions', focus: 'Human Geography', description: 'Counties, rivers, map reading' },
+      { subject: 'Computing', topic: 'Algorithms', focus: 'Programming', description: 'Scratch basics, debugging, loops' },
+      { subject: 'Modern Language', topic: 'Basic vocab', focus: 'MFL', description: 'Greetings, numbers, simple phrases (French/Spanish)' },
+      { subject: 'Music', topic: 'Rhythm/singing', focus: 'Ensemble', description: 'Recorders, improvisation, rhythmic notation' },
     ]
   },
 
@@ -61,17 +59,15 @@ export const UK_CURRICULUM: UKCurriculumYear[] = [
     ageRange: '9-10 years',
     statutory: 12,
     subjects: [
-      { subject: 'English', topic: 'English', focus: 'English', description: 'Word reading, comprehension (themes), advanced grammar, composition, SPaG' },
-      { subject: 'Maths', topic: 'Maths', focus: 'Maths', description: 'Number, add/subtract, multiplication/division, fractions/decimals/%, measurement, geometry, statistics' },
-      { subject: 'Science', topic: 'Science', focus: 'Science', description: 'Living things/habitats, Animals inc humans, Materials/states, Earth/space, Forces' },
-      { subject: 'Design & Technology', topic: 'Design & Technology', focus: 'Design & Technology', description: 'Designing, making, technical knowledge' },
-      { subject: 'History', topic: 'History', focus: 'History', description: 'Ancient Greece, British history' },
-      { subject: 'Geography', topic: 'Geography', focus: 'Geography', description: 'Biomes, climate, physical features' },
-      { subject: 'Art & Design', topic: 'Art & Design', focus: 'Art & Design', description: 'Art techniques, observation' },
-      { subject: 'Music', topic: 'Music', focus: 'Music', description: 'Performance, composition, appraisal' },
-      { subject: 'PE', topic: 'PE', focus: 'PE', description: 'Games, athletics, swimming' },
-      { subject: 'Computing', topic: 'Computing', focus: 'Computing', description: 'Programming, algorithms, debugging' },
-      { subject: 'Modern Language', topic: 'Modern Language', focus: 'Modern Foreign Languages', description: 'French or Spanish vocabulary, grammar' },
+      { subject: 'English', topic: 'Plays & poetry', focus: 'Literacy', description: 'Shakespeare, performance poetry, analysis' },
+      { subject: 'Maths', topic: 'Decimals/percentages', focus: 'Numbers', description: 'Ratio, percentage conversion, complex arithmetic' },
+      { subject: 'Science', topic: 'Earth/space', focus: 'Physics', description: 'Solar system, rock cycles, day/night' },
+      { subject: 'Science', topic: 'Living things', focus: 'Biology', description: 'Life cycles, inheritance, evolution intro' },
+      { subject: 'History', topic: 'Ancient Greeks/Egypt', focus: 'World History', description: 'Democracy, pyramids, comparisons' },
+      { subject: 'Geography', topic: 'Biomes/rivers', focus: 'Physical Geo', description: 'Climate zones, water cycle, fieldwork' },
+      { subject: 'Computing', topic: 'Variables/databases', focus: 'Data', description: 'Sorting data, conditional loops, interactive stories' },
+      { subject: 'Modern Language', topic: 'Sentences/conversations', focus: 'Language', description: 'Adjectives, shopping, write short paragraphs' },
+      { subject: 'Music', topic: 'World music/notation', focus: 'Musicology', description: 'Samba, staff notation, improvisation' },
     ]
   },
 
@@ -81,18 +77,16 @@ export const UK_CURRICULUM: UKCurriculumYear[] = [
     ageRange: '11-14 years',
     statutory: 12,
     subjects: [
-      { subject: 'English', topic: 'English', focus: 'English', description: 'Reading, writing, spoken language' },
-      { subject: 'Maths', topic: 'Maths', focus: 'Maths', description: 'Number, algebra, geometry, statistics' },
-      { subject: 'Science', topic: 'Science', focus: 'Science', description: 'Biology, Chemistry, Physics' },
-      { subject: 'Citizenship', topic: 'Citizenship', focus: 'Citizenship', description: 'Democracy, rights, responsibilities' },
-      { subject: 'Computing', topic: 'Computing', focus: 'Computing', description: 'Computing, digital literacy' },
-      { subject: 'Design & Technology', topic: 'Design & Technology', focus: 'Design & Technology', description: 'Design, making, technology' },
-      { subject: 'Modern Language', topic: 'Modern Language', focus: 'Modern Foreign Languages', description: 'Languages' },
-      { subject: 'Geography', topic: 'Geography', focus: 'Geography', description: 'Physical and human geography' },
-      { subject: 'History', topic: 'History', focus: 'History', description: 'British and world history' },
-      { subject: 'Music', topic: 'Music', focus: 'Music', description: 'Music performance, composition' },
-      { subject: 'Art & Design', topic: 'Art & Design', focus: 'Art & Design', description: 'Art and design' },
-      { subject: 'PE', topic: 'PE', focus: 'PE', description: 'Physical education' },
+      { subject: 'English', topic: 'Text analysis', focus: 'Literature', description: 'Analysis skills, language techniques, essays' },
+      { subject: 'Maths', topic: 'Algebra equations', focus: 'Algebra', description: 'Linear equations, substitution, multi-step solve' },
+      { subject: 'Science', topic: 'Electricity circuits', focus: 'Physics', description: 'Ohm’s Law, series/parallel circuits' },
+      { subject: 'Science', topic: 'Biology basics', focus: 'Biology', description: 'Cells, human systems, ecosystems' },
+      { subject: 'History', topic: 'Cold War', focus: 'Modern History', description: '1945-91, superpower relations' },
+      { subject: 'Geography', topic: 'Country capitals', focus: 'Locational', description: 'Global population, human geography' },
+      { subject: 'Computing', topic: 'Python basics', focus: 'Development', description: 'Variables, functions, program flow' },
+      { subject: 'Modern Language', topic: 'Spanish GCSE basics', focus: 'MFL', description: 'Verb tenses, basic conversations' },
+      { subject: 'Music', topic: 'Music performance', focus: 'Music secondary', description: 'Ensemble playing, performance skills' },
+      { subject: 'Music', topic: 'Garageband basics', focus: 'Production', description: 'Digital music creation, loops, beats' },
     ]
   },
 
@@ -142,7 +136,7 @@ export const getCurriculumForYear = (yearGroup: ProfileTemplate): UKCurriculumYe
 export const getSubjectsForYear = (yearGroup: ProfileTemplate): string[] => {
   const curriculum = getCurriculumForYear(yearGroup);
   if (!curriculum) return [];
-  
+
   const subjects = new Set<string>();
   curriculum.subjects.forEach(s => subjects.add(s.subject));
   return Array.from(subjects);
@@ -151,7 +145,7 @@ export const getSubjectsForYear = (yearGroup: ProfileTemplate): string[] => {
 export const getTopicsForSubject = (yearGroup: ProfileTemplate, subject: string): UKCurriculumTopic[] => {
   const curriculum = getCurriculumForYear(yearGroup);
   if (!curriculum) return [];
-  
+
   return curriculum.subjects
     .filter(s => s.subject === subject)
     .sort((a, b) => a.topic.localeCompare(b.topic));

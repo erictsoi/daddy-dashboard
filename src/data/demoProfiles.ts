@@ -62,6 +62,3 @@ export const ADMIN_DEMO_PROFILE: DemoProfile = {
   interests: ['Dashboard', 'Settings'],
   isAdmin: true,
 };
-
-/** Backward compatibility alias */
-export const DUMMY_PROFILES = DEMO_PROFILES;

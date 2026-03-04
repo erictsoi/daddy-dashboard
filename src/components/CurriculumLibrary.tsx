@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Trash2, Check, X, Save, Filter, Eye, EyeOff, AlertTriangle, CheckCircle } from 'lucide-react';
-import { 
-  fetchCurriculumLibrary, 
-  saveCuratedPlaylist, 
+import {
+  fetchCurriculumLibrary,
+  saveCuratedPlaylist,
   deleteCuratedPlaylist,
-  verifyPlaylist,
-  CuratedPlaylist
+  verifyPlaylist
 } from '../lib/curriculumLibrary';
 import { validateTopic, getCurriculumSuggestions, isAgeAppropriate } from '../lib/curriculumValidator';
-import { ProfileTemplate } from '../types';
+import { CuratedPlaylist, ProfileTemplate } from '../types';
 import { generateUuid } from '../lib/helpers';
 import { DS, Card, Shadow } from './design-system';
 
@@ -71,6 +70,37 @@ export const CurriculumLibrary: React.FC<Props> = ({ onBack }) => {
     if (!showUnverified && !p.verified) return false;
     return true;
   });
+
+  const handleImport = async (data: any) => {
+    // data can be an array or a single object
+    const items = Array.isArray(data) ? data : [data];
+    let count = 0;
+    for (const item of items) {
+      // Basic validation
+      if (!item.topic && !item.subject) continue;
+
+      const playlist = {
+        id: item.id || generateUuid(),
+        yearGroup: item.yearGroup || item.year_group || 'Y5-6',
+        subject: item.subject || '',
+        topic: item.topic || '',
+        focus: item.focus || '',
+        primaryPlaylist: item.primaryPlaylist || item.primary_playlist || '',
+        backupPlaylist1: item.backupPlaylist1 || item.backup_playlist_1,
+        backupPlaylist2: item.backupPlaylist2 || item.backup_playlist_2,
+        notes: item.notes,
+        outcomes: item.outcomes,
+        verified: !!item.verified,
+        addedBy: item.addedBy || item.added_by || 'admin',
+        createdAt: item.createdAt || item.created_at || new Date().toISOString()
+      };
+
+      await saveCuratedPlaylist(playlist);
+      count++;
+    }
+    alert(`Imported ${count} playlists`);
+    await loadLibrary();
+  };
 
   const handleSave = async () => {
     if (!formData.topic || !formData.focus || !formData.primaryPlaylist) {
@@ -212,8 +242,31 @@ export const CurriculumLibrary: React.FC<Props> = ({ onBack }) => {
           </label>
 
           <button
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = '.json';
+              input.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (!file) return;
+                const text = await file.text();
+                try {
+                  const imported = JSON.parse(text);
+                  handleImport(imported);
+                } catch (err) {
+                  alert('Invalid JSON file');
+                }
+              };
+              input.click();
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+          >
+            <Filter size={18} /> Import from Applet
+          </button>
+
+          <button
             onClick={() => setShowAddForm(true)}
-            className="ml-auto flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             <Plus size={18} /> Add Playlist
           </button>
@@ -228,50 +281,52 @@ export const CurriculumLibrary: React.FC<Props> = ({ onBack }) => {
         ) : (
           <div className="space-y-3">
             {filteredPlaylists.map(p => (
-              <Card key={p.id} className="p-4">
-                <div className="flex items-start gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold">{p.subject}</span>
-                      <span className="text-gray-400">|</span>
-                      <span className="text-sm text-gray-600">{p.yearGroup}</span>
-                      {p.verified ? (
-                        <Check size={16} className="text-green-600" />
-                      ) : (
-                        <X size={16} className="text-red-500" />
-                      )}
-                      {getAgeWarning(p)}
+              <div key={p.id}>
+                <Card className="p-4">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold">{p.subject}</span>
+                        <span className="text-gray-400">|</span>
+                        <span className="text-sm text-gray-600">{p.yearGroup}</span>
+                        {p.verified ? (
+                          <Check size={16} className="text-green-600" />
+                        ) : (
+                          <X size={16} className="text-red-500" />
+                        )}
+                        {getAgeWarning(p)}
+                      </div>
+                      <div className="font-medium">{p.topic}</div>
+                      <div className="text-sm text-gray-500">{p.focus}</div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        Primary: {p.primaryPlaylist.slice(0, 50)}...
+                        {p.backupPlaylist1 && <span> | Backup1: {p.backupPlaylist1.slice(0, 30)}...</span>}
+                      </div>
                     </div>
-                    <div className="font-medium">{p.topic}</div>
-                    <div className="text-sm text-gray-500">{p.focus}</div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      Primary: {p.primaryPlaylist.slice(0, 50)}...
-                      {p.backupPlaylist1 && <span> | Backup1: {p.backupPlaylist1.slice(0, 30)}...</span>}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleVerify(p.id, !p.verified)}
+                        className={`p-2 rounded ${p.verified ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
+                        title={p.verified ? 'Unverify' : 'Verify'}
+                      >
+                        {p.verified ? <Eye size={16} /> : <EyeOff size={16} />}
+                      </button>
+                      <button
+                        onClick={() => handleEdit(p)}
+                        className="p-2 bg-blue-100 text-blue-700 rounded"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(p.id)}
+                        className="p-2 bg-red-100 text-red-700 rounded"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleVerify(p.id, !p.verified)}
-                      className={`p-2 rounded ${p.verified ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
-                      title={p.verified ? 'Unverify' : 'Verify'}
-                    >
-                      {p.verified ? <Eye size={16} /> : <EyeOff size={16} />}
-                    </button>
-                    <button
-                      onClick={() => handleEdit(p)}
-                      className="p-2 bg-blue-100 text-blue-700 rounded"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(p.id)}
-                      className="p-2 bg-red-100 text-red-700 rounded"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </div>
             ))}
           </div>
         )}
@@ -284,7 +339,7 @@ export const CurriculumLibrary: React.FC<Props> = ({ onBack }) => {
               <h2 className="text-xl font-bold mb-4">
                 {editingId ? 'Edit Playlist' : 'Add New Playlist'}
               </h2>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Year Group</label>

@@ -59,13 +59,13 @@ export interface ChildProfile {
 export type ProfileTemplate = 'Y1-2' | 'Y3-4' | 'Y5-6' | 'Y7-9' | 'Y10-11' | 'Y12-13';
 
 // Stack Types (7 Subject Stacks)
-export type StackType = 
-  | 'coreAcademics' 
-  | 'languages' 
-  | 'creativePerforming' 
-  | 'stemDigital' 
-  | 'physicalWellbeing' 
-  | 'characterEnrichment' 
+export type StackType =
+  | 'coreAcademics'
+  | 'languages'
+  | 'creativePerforming'
+  | 'stemDigital'
+  | 'physicalWellbeing'
+  | 'characterEnrichment'
   | 'additionalSubjects';
 
 // Curriculum Card (for template mode)
@@ -184,4 +184,21 @@ export interface CuratedPlaylist {
   verified: boolean;
   addedBy: string;
   createdAt: string;
+}
+
+// Snake_case DB representation used by Firestore
+export interface DbCuratedPlaylist {
+  id: string;
+  year_group: ProfileTemplate;
+  subject: string;
+  topic: string;
+  focus: string;
+  primary_playlist: string;
+  backup_playlist_1?: string;
+  backup_playlist_2?: string;
+  notes?: string;
+  outcomes?: string;
+  verified: boolean;
+  added_by: string;
+  created_at: string;
 }

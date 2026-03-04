@@ -1,0 +1,350 @@
+[
+  {
+    "id": "Y3-4_English_Stories_&_poems",
+    "yearGroup": "Y3-4",
+    "subject": "English",
+    "focus": "Stories & poems",
+    "playlists": [
+      {
+        "title": "BBC Bitesize Y4 English",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Oak National Y4 Reading",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Twinkl Y4 Stories",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y3-4_Maths_Fractions_basics",
+    "yearGroup": "Y3-4",
+    "subject": "Maths",
+    "focus": "Fractions basics",
+    "playlists": [
+      {
+        "title": "BBC Bitesize Y4 Maths",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Corbettmaths Y4 Fractions",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Numberblocks Y4",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y3-4_Science_Living_things",
+    "yearGroup": "Y3-4",
+    "subject": "Science",
+    "focus": "Living things",
+    "playlists": [
+      {
+        "title": "BBC Bitesize Y4 Science",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Oak Y4 Animals",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "SciShow Kids",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y3-4_History_Romans/Vikings",
+    "yearGroup": "Y3-4",
+    "subject": "History",
+    "focus": "Romans/Vikings",
+    "playlists": [
+      {
+        "title": "BBC History Y4",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "OverSimplified Romans",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "FreeSchool History",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y3-4_Geography_UK_regions",
+    "yearGroup": "Y3-4",
+    "subject": "Geography",
+    "focus": "UK regions",
+    "playlists": [
+      {
+        "title": "Geography Now Kids",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Nattefrost UK Maps",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Twinkl Geo Y4",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y3-4_Modern_Language_Basic_vocab",
+    "yearGroup": "Y3-4",
+    "subject": "Modern Language",
+    "focus": "Basic vocab",
+    "playlists": [
+      {
+        "title": "BBC Bitesize French Y4",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Duolingo Kids French",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Language Angels",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y3-4_Design_&_Technology_Structures",
+    "yearGroup": "Y3-4",
+    "subject": "Design & Technology",
+    "focus": "Structures",
+    "playlists": [
+      {
+        "title": "Design Technology Y4",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Twinkl DT Frames",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Bosch Kids Explore",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y3-4_Art_&_Design_Drawing/collage",
+    "yearGroup": "Y3-4",
+    "subject": "Art & Design",
+    "focus": "Drawing/collage",
+    "playlists": [
+      {
+        "title": "BBC Art Y4",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Art for Kids Hub",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Twinkl Art",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y3-4_Music_Rhythm/singing",
+    "yearGroup": "Y3-4",
+    "subject": "Music",
+    "focus": "Rhythm/singing",
+    "playlists": [
+      {
+        "title": "BBC Ten Pieces Y4",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Out of the Ark Songs",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Charanga Music",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y3-4_PE_Gymnastics/dance",
+    "yearGroup": "Y3-4",
+    "subject": "PE",
+    "focus": "Gymnastics/dance",
+    "playlists": [
+      {
+        "title": "BBC PE Y4",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Cosmic Yoga",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "GoNoodle Dance",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y3-4_PSHE_Feelings/rules",
+    "yearGroup": "Y3-4",
+    "subject": "PSHE",
+    "focus": "Feelings/rules",
+    "playlists": [
+      {
+        "title": "BBC PSHE Y4",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "School of Life Kids",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Twinkl PSHE",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "id": "Y3-4_Computing_Algorithms",
+    "yearGroup": "Y3-4",
+    "subject": "Computing",
+    "focus": "Algorithms",
+    "playlists": [
+      {
+        "title": "BBC Code Y4",
+        "url": "",
+        "videos": [],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Code.org Y4",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Barefoot Computing",
+        "url": "",
+        "videos": [],
+        "isPrimary": false,
+        "index": 2
+      }
+    ]
+  }
+]

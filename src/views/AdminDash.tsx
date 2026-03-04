@@ -32,7 +32,7 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
   const [searchParams] = useSearchParams();
   const singleChildId = searchParams.get('child');
 
-const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'MARKETPLACE' | 'CURRICULUM' | 'PROFILES' | 'LIBRARY' | 'VALIDATOR' | 'SEARCH'; childId?: string }) => {
+  const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'MARKETPLACE' | 'CURRICULUM' | 'PROFILES' | 'LIBRARY' | 'VALIDATOR' | 'SEARCH'; childId?: string }) => {
     if (view.type === 'KIDSDASH' && view.childId) navigate(toKidDash(view.childId));
     else if (view.type === 'ADMIN' || view.type === 'HOME') navigate(toAdminDash());
     else if (view.type === 'LANDING') navigate(toLanding());
@@ -82,7 +82,7 @@ const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'M
     return children.map((child) => {
       // Use profileData.stacks if available, otherwise fall back to yearGroups
       let subjects: any[] = [];
-      
+
       if (child.profileData?.stacks?.length > 0) {
         // New template format: show each subject as its own stack with 3 cards
         subjects = child.profileData.stacks
@@ -120,7 +120,7 @@ const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'M
             });
           });
         });
-        
+
         // Group by subject
         const groupedSubjects = allSubjectTopics.reduce((acc, item) => {
           if (!acc[item.subject]) {
@@ -142,7 +142,7 @@ const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'M
           }
           return acc;
         }, {} as Record<string, any>);
-        
+
         subjects = Object.values(groupedSubjects);
       }
 
@@ -174,7 +174,7 @@ const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'M
         totalHours: getTotalTimeHours(child)
       };
     });
-    
+
     // Sort kids by year group order
     const yearGroupOrder: Record<string, number> = {
       'Y1-2': 1,
@@ -184,7 +184,7 @@ const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'M
       'Y10-11': 5,
       'Y12-13': 6
     };
-    
+
     // Sort by year group, then by name
     kids.sort((a, b) => {
       const aOrder = yearGroupOrder[a.profile.year] || 99;
@@ -194,8 +194,8 @@ const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'M
     });
   }, [children, subjectColors]);
 
-  const filteredKids = singleChildId 
-    ? kids.filter(k => k.profile.id === singleChildId) 
+  const filteredKids = singleChildId
+    ? kids.filter(k => k.profile.id === singleChildId)
     : kids;
 
   const cycleFreqMode = (kidIndex: number, subjectName: string) => {
@@ -411,81 +411,83 @@ const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'M
 
         {/* OVERVIEW SECTION - hide when single child */}
         {!singleChildId && (
-        <div id="section-overview">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
-            <div>
-              <h1 className="b t-h1" style={{ color: DS.ink }}>Today's Overview</h1>
-              <p className="n t-small" style={{ color: DS.inkSoft, marginTop: 3 }}>
-                {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
-            </div>
-            <Shadow offset={2} size={2} radius={DS.radius.md}>
-              <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, background: DS.card, border: DS.border, borderRadius: DS.radius.md, padding: "9px 16px" }}>
-                <span className="blink" style={{ width: 8, height: 8, borderRadius: "50%", background: "#F5A623", flexShrink: 0 }} />
-                <span className="n t-small" style={{ color: DS.ink, fontWeight: 700 }}>
-                  {kids.length > 0 && kids.some(k => k.done > 0) 
-                    ? `${kids.find(k => k.done > 0)?.profile.name} is learning now`
-                    : kids.length > 0 
-                      ? `${kids[0].profile.name} hasn't started yet`
-                      : 'No children added yet'}
-                </span>
+          <div id="section-overview">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
+              <div>
+                <h1 className="b t-h1" style={{ color: DS.ink }}>Today's Overview</h1>
+                <p className="n t-small" style={{ color: DS.inkSoft, marginTop: 3 }}>
+                  {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
               </div>
-            </Shadow>
-          </div>
-
-          {/* KIDS SCHEDULES */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
-            {kids.map(({ profile: pr, schedule, done, total, streak }, ki) => (
-              <Shadow key={pr.id} offset={3} size={2.5} radius={DS.radius.lg} style={{ animation: `fadeUp .32s ${ki * .08}s ease-out both` }}>
-                <div style={{ position: "relative", background: DS.card, border: DS.border, borderRadius: DS.radius.lg, padding: 26 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-                    <Shadow offset={2} size={1.5} radius={13}>
-                      <div style={{ position: "relative", width: 46, height: 46, borderRadius: 13, background: `${pr.color}20`, border: DS.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{pr.emoji}</div>
-                    </Shadow>
-                    <div style={{ flex: 1 }}>
-                      <div className="b t-h2" style={{ color: DS.ink }}>{pr.name}</div>
-                      <div className="n t-label" style={{ color: pr.color }}>{pr.year}</div>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div className="b" style={{ fontSize: 22, fontWeight: 800, color: pr.color }}>{done}/{total}</div>
-                      <div className="n t-label" style={{ color: DS.inkFade }}>done today</div>
-                    </div>
-                  </div>
-
-                  <div style={{ height: 7, background: "#EDE8F0", borderRadius: 100, marginBottom: 18, overflow: "hidden", border: "1.5px solid #1A1A2E" }}>
-                    <div style={{ height: "100%", width: `${(done / total) * 100}%`, background: pr.color, borderRadius: 100, transition: "width .6s" }} />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                    {schedule.map((item: any, i: number) =>
-                      item.status === "lunch"
-                        ? <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
-                          <div style={{ flex: 1, height: 1, background: "#EDE8F0" }} />
-                          <span className="n t-label" style={{ color: DS.inkFade }}>LUNCH 12–1PM</span>
-                          <div style={{ flex: 1, height: 1, background: "#EDE8F0" }} />
-                        </div>
-                        : <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", borderRadius: DS.radius.sm, background: item.status === "active" ? `${pr.color}15` : "transparent", border: item.status === "active" ? `1.5px solid ${pr.color}` : "1.5px solid transparent" }}>
-                          <div style={{ width: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <Dot status={item.status} color={pr.color} />
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div className="n t-small" style={{ fontWeight: 700, color: item.status === "done" ? DS.inkFade : DS.ink, textDecoration: item.status === "done" ? "line-through" : "none" }}>{item.subject}</div>
-                            <div className="n t-label" style={{ color: DS.inkFade }}>{item.topic}</div>
-                          </div>
-                          {item.status === "active" && <span className="n t-label" style={{ color: pr.color, background: `${pr.color}18`, padding: "2px 8px", borderRadius: DS.radius.pill }}>NOW</span>}
-                          {item.status === "stretch" && <span className="n t-label" style={{ color: DS.inkFade }}>bonus</span>}
-                        </div>
-                    )}
-                  </div>
-                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid #EDE8E0`, display: "flex", alignItems: "center", gap: 6 }}>
-                    <span>🔥</span>
-                    <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 700 }}>{streak} day streak</span>
-                  </div>
+              <Shadow offset={2} size={2} radius={DS.radius.md}>
+                <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, background: DS.card, border: DS.border, borderRadius: DS.radius.md, padding: "9px 16px" }}>
+                  <span className="blink" style={{ width: 8, height: 8, borderRadius: "50%", background: "#F5A623", flexShrink: 0 }} />
+                  <span className="n t-small" style={{ color: DS.ink, fontWeight: 700 }}>
+                    {kids.length > 0 && kids.some(k => k.done > 0)
+                      ? `${kids.find(k => k.done > 0)?.profile.name} is learning now`
+                      : kids.length > 0
+                        ? `${kids[0].profile.name} hasn't started yet`
+                        : 'No children added yet'}
+                  </span>
                 </div>
               </Shadow>
-            ))}
+            </div>
+
+            {/* KIDS SCHEDULES */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
+              {kids.map(({ profile: pr, schedule, done, total, streak }, ki) => (
+                <div key={pr.id}>
+                  <Shadow offset={3} size={2.5} radius={DS.radius.lg} style={{ animation: `fadeUp .32s ${ki * .08}s ease-out both` }}>
+                    <div style={{ position: "relative", background: DS.card, border: DS.border, borderRadius: DS.radius.lg, padding: 26 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
+                        <Shadow offset={2} size={1.5} radius={13}>
+                          <div style={{ position: "relative", width: 46, height: 46, borderRadius: 13, background: `${pr.color}20`, border: DS.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{pr.emoji}</div>
+                        </Shadow>
+                        <div style={{ flex: 1 }}>
+                          <div className="b t-h2" style={{ color: DS.ink }}>{pr.name}</div>
+                          <div className="n t-label" style={{ color: pr.color }}>{pr.year}</div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div className="b" style={{ fontSize: 22, fontWeight: 800, color: pr.color }}>{done}/{total}</div>
+                          <div className="n t-label" style={{ color: DS.inkFade }}>done today</div>
+                        </div>
+                      </div>
+
+                      <div style={{ height: 7, background: "#EDE8F0", borderRadius: 100, marginBottom: 18, overflow: "hidden", border: "1.5px solid #1A1A2E" }}>
+                        <div style={{ height: "100%", width: `${(done / total) * 100}%`, background: pr.color, borderRadius: 100, transition: "width .6s" }} />
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                        {schedule.map((item: any, i: number) =>
+                          item.status === "lunch"
+                            ? <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
+                              <div style={{ flex: 1, height: 1, background: "#EDE8F0" }} />
+                              <span className="n t-label" style={{ color: DS.inkFade }}>LUNCH 12–1PM</span>
+                              <div style={{ flex: 1, height: 1, background: "#EDE8F0" }} />
+                            </div>
+                            : <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", borderRadius: DS.radius.sm, background: item.status === "active" ? `${pr.color}15` : "transparent", border: item.status === "active" ? `1.5px solid ${pr.color}` : "1.5px solid transparent" }}>
+                              <div style={{ width: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <Dot status={item.status} color={pr.color} />
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div className="n t-small" style={{ fontWeight: 700, color: item.status === "done" ? DS.inkFade : DS.ink, textDecoration: item.status === "done" ? "line-through" : "none" }}>{item.subject}</div>
+                                <div className="n t-label" style={{ color: DS.inkFade }}>{item.topic}</div>
+                              </div>
+                              {item.status === "active" && <span className="n t-label" style={{ color: pr.color, background: `${pr.color}18`, padding: "2px 8px", borderRadius: DS.radius.pill }}>NOW</span>}
+                              {item.status === "stretch" && <span className="n t-label" style={{ color: DS.inkFade }}>bonus</span>}
+                            </div>
+                        )}
+                      </div>
+                      <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid #EDE8E0`, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>🔥</span>
+                        <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 700 }}>{streak} day streak</span>
+                      </div>
+                    </div>
+                  </Shadow>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
         )}
 
         {/* KID SECTIONS */}
