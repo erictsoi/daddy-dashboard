@@ -8,7 +8,6 @@ import {
 } from '../lib/dataService';
 import { saveData, generateUuid } from '../lib/helpers';
 import { logger } from '../lib/logger';
-import { DUMMY_CHILDREN } from '../data/dummyData';
 import { getSubjectCardsForYear, SubjectCard } from '../lib/subjectCards';
 
 const YEAR_GROUP_MAP: Record<string, string> = {
@@ -174,14 +173,14 @@ export const useAppData = (user: any, authLoading: boolean) => {
                 } else {
                     setChildProfile(null);
                     const localData = getLocalData();
-                    const dataWithSubjectCards = injectSubjectCardsData(localData.length > 0 ? localData : DUMMY_CHILDREN);
+                    const dataWithSubjectCards = injectSubjectCardsData(localData);
                     setData(dataWithSubjectCards);
                     setIsDemoMode(localData.length === 0);
                 }
             } catch (err) {
                 logger.error('Error loading data:', err);
                 const localData = getLocalData();
-                const dataWithSubjectCards = injectSubjectCardsData(localData.length > 0 ? localData : DUMMY_CHILDREN);
+                const dataWithSubjectCards = injectSubjectCardsData(localData);
                 setData(dataWithSubjectCards);
                 setIsDemoMode(localData.length === 0);
             }
