@@ -26,7 +26,12 @@ export const CurriculumValidator: React.FC<Props> = ({ onBack }) => {
     runValidation();
     const saved = localStorage.getItem('curriculum_test_data');
     if (saved) {
-      setSavedData(JSON.parse(saved));
+      try {
+        setSavedData(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse saved curriculum data:', e);
+        localStorage.removeItem('curriculum_test_data');
+      }
     }
   }, []);
 

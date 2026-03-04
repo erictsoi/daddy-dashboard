@@ -26,28 +26,6 @@ export interface DemoProfile {
 
 export const DEMO_PROFILES: DemoProfile[] = [
   {
-    id: 'demo-amara',
-    name: 'Amara',
-    year: 'Year 1 and 2',
-    age: '5–7',
-    color: '#FF6B6B',
-    tint: '#FFF0F0',
-    emoji: '🦋',
-    image: '/profile-pics/amara.jpg',
-    interests: ['Animals', 'Drawing', 'Singing', 'Nature'],
-  },
-  {
-    id: 'demo-marcus',
-    name: 'Marcus',
-    year: 'Year 3 and 4',
-    age: '7–9',
-    color: '#4CAF8A',
-    tint: '#EDFAF4',
-    emoji: '🦖',
-    image: '/profile-pics/marcus.jpg',
-    interests: ['Dinosaurs', 'Football', 'Building', 'Comics'],
-  },
-  {
     id: 'demo-sophia',
     name: 'Sophia',
     year: 'Year 5 and 6',
@@ -59,17 +37,6 @@ export const DEMO_PROFILES: DemoProfile[] = [
     interests: ['Art', 'Dance', 'Music', 'Sports'],
   },
   {
-    id: 'demo-kai',
-    name: 'Kai',
-    year: 'Year 10 and 11',
-    age: '14–16',
-    color: '#F5A623',
-    tint: '#FFF8EC',
-    emoji: '🛹',
-    image: '/profile-pics/kai.jpg',
-    interests: ['Gaming', 'Skateboarding', 'History', 'Film'],
-  },
-  {
     id: 'demo-adrian',
     name: 'Adrian',
     year: 'Year 7/8 and 9',
@@ -79,17 +46,6 @@ export const DEMO_PROFILES: DemoProfile[] = [
     emoji: '🏀',
     image: '/profile-pics/adrian.jpg',
     interests: ['Design', 'Maths', 'Science', 'Basketball'],
-  },
-  {
-    id: 'demo-rohan',
-    name: 'Rohan',
-    year: 'Year 12 and 13',
-    age: '16–18',
-    color: '#E8507A',
-    tint: '#FFF0F5',
-    emoji: '📸',
-    image: '/profile-pics/rohan.jpg',
-    interests: ['Coding', 'Photography', 'Film', 'Economics'],
   },
 ];
 

@@ -434,12 +434,12 @@ export const useAppData = (user: any, authLoading: boolean) => {
                 'y3/4': 'Y3-4',
                 'y5/6 child': 'Y5-6',
                 'y5/6': 'Y5-6',
-                'y7/8 child': 'Y7-8',
-                'y7/8': 'Y7-8',
-                'y9/10 child': 'Y9-10',
-                'y9/10': 'Y9-10',
-                'y11/12 child': 'Y11-12',
-                'y11/12': 'Y11-12'
+                'y7/9 child': 'Y7-9',
+                'y7/9': 'Y7-9',
+                'y10/11 child': 'Y10-11',
+                'y10/11': 'Y10-11',
+                'y12/13 child': 'Y12-13',
+                'y12/13': 'Y12-13'
             };
             const profileTemplate = profileMap[row.profile.toLowerCase()] || 'Y5-6';
 
@@ -448,9 +448,9 @@ export const useAppData = (user: any, authLoading: boolean) => {
                 'Y1-2': 'Year 1',
                 'Y3-4': 'Year 3',
                 'Y5-6': 'Year 5',
-                'Y7-8': 'Year 7',
-                'Y9-10': 'Year 9',
-                'Y11-12': 'Year 11'
+                'Y7-9': 'Year 7',
+                'Y10-11': 'Year 10',
+                'Y12-13': 'Year 12'
             };
             const defaultYear = profileToYear[profileTemplate] || 'Year 5';
 

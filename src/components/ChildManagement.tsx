@@ -63,6 +63,7 @@ export const ChildManagement: React.FC<ChildManagementProps> = ({
         avatar: children.find(c => c.id === editingId)?.avatar || '👶',
         themeColor: children.find(c => c.id === editingId)?.themeColor || 'blue',
         dob: formData.dob,
+        googleEmail: formData.googleEmail,
       });
     }
     resetForm();
@@ -72,7 +73,7 @@ export const ChildManagement: React.FC<ChildManagementProps> = ({
     setFormData({
       name: child.name,
       dob: child.dob,
-      googleEmail: '',
+      googleEmail: child.googleEmail || '',
     });
     setEditingId(child.id);
     setIsAdding(false);

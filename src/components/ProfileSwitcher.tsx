@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChildProfile } from '../types';
 import { LogOut } from 'lucide-react';
+import { getThemeColor } from './design-system';
 
 interface ProfileSwitcherProps {
   user: any;
@@ -108,7 +109,7 @@ export const ProfileSwitcher: React.FC<ProfileSwitcherProps> = ({
                 onClick={() => { onSwitchProfile(child.id); setIsOpen(false); }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition text-left"
               >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl`} style={{ backgroundColor: child.themeColor === 'indigo' ? '#3730a3' : child.themeColor === 'rose' ? '#be123c' : '#065f46' }}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl`} style={{ backgroundColor: getThemeColor(child.themeColor || 'blue').main }}>
                   {child.avatar || '👤'}
                 </div>
                 <span className="font-medium">{child.name || 'Student'}</span>

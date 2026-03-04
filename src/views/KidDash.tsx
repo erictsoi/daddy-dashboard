@@ -274,7 +274,7 @@ export const KidDash: React.FC = () => {
 
                 {/* SUBJECTS */}
                 <SectionHead label="MY SUBJECTS" color={profile.color} />
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 16 }}>
                     {(() => {
                         const coreSubjects = ['English', 'Maths', 'Science', 'History', 'Geography'];
                         const sortedSubjects = [...subjects].sort((a, b) => {

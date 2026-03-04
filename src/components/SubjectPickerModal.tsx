@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { DS } from '../components/design-system';
-import { ProfileTemplate, TopicFrequency } from '../types';
-import { UK_CURRICULUM, getCurriculumForYear } from '../data/ukCurriculum';
-import { getSubjectHexColor, getSubjectIcon } from '../utils/subjects';
+import { TopicFrequency } from '../types';
+import { getSubjectHexColor, getSubjectIcon, normalizeYearGroup } from '../utils/subjects';
+import { getCurriculumForYear } from '../data/ukCurriculum';
 import { X, Plus } from 'lucide-react';
 
 interface SubjectConfig {
@@ -20,21 +20,7 @@ interface Props {
   onClose: () => void;
 }
 
-const normalizeYearGroup = (year: string): ProfileTemplate => {
-  const yearMatch = year.match(/Year\s*(\d+)/i);
-  if (yearMatch) {
-    const yearNum = parseInt(yearMatch[1]);
-    if (yearNum <= 2) return 'Y1-2';
-    if (yearNum <= 4) return 'Y3-4';
-    if (yearNum <= 6) return 'Y5-6';
-    if (yearNum <= 9) return 'Y7-9';
-    if (yearNum <= 11) return 'Y10-11';
-    return 'Y12-13';
-  }
-  const direct = UK_CURRICULUM.find(c => c.yearGroup.toLowerCase() === year.toLowerCase());
-  if (direct) return direct.yearGroup;
-  return 'Y5-6';
-};
+// Removed duplicate normalizeYearGroup - now imported from utils/subjects
 
 const CORE_SUBJECTS = ['English', 'Maths', 'Science'];
 

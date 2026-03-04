@@ -1,4 +1,22 @@
 export type SubjectCategory = 'core' | 'science' | 'languages' | 'creative' | 'stem' | 'physical' | 'additional';
+import { ProfileTemplate } from '../types';
+import { UK_CURRICULUM } from '../data/ukCurriculum';
+
+export const normalizeYearGroup = (year: string): ProfileTemplate => {
+  const yearMatch = year.match(/Year\s*(\d+)/i);
+  if (yearMatch) {
+    const yearNum = parseInt(yearMatch[1]);
+    if (yearNum <= 2) return 'Y1-2';
+    if (yearNum <= 4) return 'Y3-4';
+    if (yearNum <= 6) return 'Y5-6';
+    if (yearNum <= 9) return 'Y7-9';
+    if (yearNum <= 11) return 'Y10-11';
+    return 'Y12-13';
+  }
+  const direct = UK_CURRICULUM.find(c => c.yearGroup.toLowerCase() === year.toLowerCase());
+  if (direct) return direct.yearGroup;
+  return 'Y5-6';
+};
 
 export interface SubjectColor {
   category: SubjectCategory;

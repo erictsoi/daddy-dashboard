@@ -13,20 +13,14 @@ import {
   UserSettings, DEFAULT_SETTINGS, ProfileTemplateData
 } from '../types'
 import { generateUuid } from './helpers'
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const isValidUuid = (id: string) => UUID_REGEX.test(id);
 import { logger } from './logger'
 import { createEmptyStacks } from '../constants'
 
 // --- Constants ---
 const STORAGE_KEY = 'daddy_dashboard_data'
-
-// Firestore path constants
-const PATHS = {
-  USERS: 'users',
-  CHILDREN: 'children',
-  SETTINGS: 'settings',
-  PROFILE: 'profile',
-  LINKED_ACCOUNTS: 'linkedAccounts'
-} as const;
 
 // --- Data Mappers ---
 
@@ -46,9 +40,9 @@ export const toLesson = (data: any): Lesson => ({
   lessonFocus: data.lessonFocus || data.lesson_focus || '',
   lessonNotes: data.lessonNotes || data.lesson_notes || '',
   deleted: !!data.deleted,
-  timeSpentSeconds: data.timeSpentSeconds || data.time_spent_seconds || 0,
-  videoPosition: data.videoPosition || data.video_position || 0,
-  orderIndex: data.orderIndex || data.order_index || 0
+  timeSpentSeconds: data.timeSpentSeconds ?? data.time_spent_seconds ?? 0,
+  videoPosition: data.videoPosition ?? data.video_position ?? 0,
+  orderIndex: data.orderIndex ?? data.order_index ?? 0
 });
 
 export const toTopic = (data: any): Topic => ({
@@ -58,7 +52,7 @@ export const toTopic = (data: any): Topic => ({
   youtubeUrls: Array.isArray(data.youtubeUrls) ? data.youtubeUrls : [],
   focus: data.focus || '',
   notes: data.notes || '',
-  timeSpentSeconds: data.timeSpentSeconds || 0,
+  timeSpentSeconds: data.timeSpentSeconds ?? 0,
   frequency: mapFrequencyToType(data.frequency)
 });
 
@@ -130,7 +124,7 @@ export const saveFullCurriculum = async (
 
   try {
     for (const child of children) {
-      const childId = child.id?.length > 10 ? child.id : generateUuid()
+      const childId = child.id && isValidUuid(child.id) ? child.id : generateUuid()
       const childRef = doc(db, 'users', userId, 'children', childId)
 
       const childData = {

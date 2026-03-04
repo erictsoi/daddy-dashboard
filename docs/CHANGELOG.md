@@ -1,3 +1,34 @@
+## 2026-03-04 - v3.14.3 - Bug Fixes
+
+### Fixed
+- **LessonPlayer.tsx**: Added missing `text600` to themeColors
+- **ProfileSwitcher.tsx**: Now uses dynamic theme colors instead of hardcoded values
+- **CurriculumValidator.tsx**: Added try/catch around localStorage parse
+- **dataService.ts**: Changed `||` to `??` for zero-value fields (timeSpentSeconds, videoPosition, orderIndex)
+- **dataService.ts**: Replaced fragile ID length check with proper UUID validation
+- **ChildManagement.tsx**: Preserved googleEmail when editing child profiles
+- **SubjectFields.tsx**: Replaced useMemo with useEffect for side effect (clearConfigs)
+- **SubjectFields.tsx**: Removed duplicate normalizeYearGroup function
+- **SubjectPickerModal.tsx**: Removed duplicate normalizeYearGroup function
+- **utils/subjects.ts**: Consolidated normalizeYearGroup function
+- **useAppData.ts**: Fixed year group identifiers (Y7-8→Y7-9, Y9-10→Y10-11, Y11-12→Y12-13)
+- **EditProfile.tsx**: Removed duplicate avatars from AVATARS array
+- **dataService.ts**: Removed unused PATHS constant
+- **types.ts**: Removed unused Db* types (DbProfile, DbChild, DbYearGroup, DbSubject, DbTopic, DbLesson, DbCuratedPlaylist) and joined types
+- **demoProfiles.ts**: Reordered profiles (Amara, Marcus, Sophia, Adrian, Kai, Rohan)
+- **KidDash.tsx**: Changed subjects grid from 2 to 5 columns
+- **SubjectFields.tsx**: Removed "Core Subjects" and "Optional Subjects" headings
+- **SubjectFields.tsx**: Combined name and year in header ("ROHAN'S SUBJECTS Y12-13")
+- **SubjectFields.tsx**: Removed fallback to curriculum data (now only uses real JSON data)
+- **SubjectFields.tsx**: Clear dummy configs on init
+- **youtube.ts**: Added apiKey parameter to searchYouTubePlaylists
+
+### Changed
+- **SubjectCards grid**: 5 columns on KidDash, auto-fill on AdminDash
+- **LandingView**: Profile card order is Amara → Marcus → Sophia → Adrian → Kai → Rohan
+
+---
+
 ## 2026-02-27 - v3.14.2 - Admin Card Image
 
 ### Added

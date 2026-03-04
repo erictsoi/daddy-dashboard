@@ -521,7 +521,7 @@ export async function fetchWithFallback(
 }
 
 // Search YouTube using scraping (no API key needed)
-export async function searchYouTubePlaylists(query: string, maxResults: number = 10): Promise<{ id: string; title: string; thumbnail: string }[]> {
+export async function searchYouTubePlaylists(query: string, maxResults: number = 10, apiKey?: string): Promise<{ id: string; title: string; thumbnail: string }[]> {
   const searchUrl = `https://r.jina.ai/http://www.youtube.com/results?search_query=${encodeURIComponent(query + ' playlist')}`;
   
   try {

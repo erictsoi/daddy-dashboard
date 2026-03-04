@@ -757,11 +757,43 @@ const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'M
                 {/* Bar chart */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {(() => {
-                    if (kids.length === 0) return null;
+                    const fallbackData = [
+                      { subject: "Maths", percent: 85 },
+                      { subject: "English", percent: 72 },
+                      { subject: "Science", percent: 60 },
+                      { subject: "History", percent: 45 },
+                      { subject: "Art", percent: 38 },
+                    ];
+
+                    if (kids.length === 0) {
+                      return fallbackData.map((item, idx) => (
+                        <div key={idx}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                            <span className="n t-small" style={{ color: DS.ink, fontWeight: 600 }}>{item.subject}</span>
+                            <span className="n t-small" style={{ color: DS.inkFade }}>{item.percent}%</span>
+                          </div>
+                          <div style={{ height: 8, background: "#EDE8E0", borderRadius: 4, overflow: "hidden", border: "1px solid #1A1A2E" }}>
+                            <div style={{ height: "100%", width: `${item.percent}%`, background: getSubjectColor(item.subject), borderRadius: 4, transition: "width 0.5s" }} />
+                          </div>
+                        </div>
+                      ));
+                    }
 
                     const firstKid = kids[0];
                     const sourceChild = children.find(c => c.id === firstKid.profile.id);
-                    if (!sourceChild) return null;
+                    if (!sourceChild) {
+                      return fallbackData.map((item, idx) => (
+                        <div key={idx}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                            <span className="n t-small" style={{ color: DS.ink, fontWeight: 600 }}>{item.subject}</span>
+                            <span className="n t-small" style={{ color: DS.inkFade }}>{item.percent}%</span>
+                          </div>
+                          <div style={{ height: 8, background: "#EDE8E0", borderRadius: 4, overflow: "hidden", border: "1px solid #1A1A2E" }}>
+                            <div style={{ height: "100%", width: `${item.percent}%`, background: getSubjectColor(item.subject), borderRadius: 4, transition: "width 0.5s" }} />
+                          </div>
+                        </div>
+                      ));
+                    }
 
                     return getSubjectStats(sourceChild).slice(0, 5).map((item, idx) => (
                       <div key={idx}>
@@ -774,23 +806,7 @@ const onNavigate = (view: { type: 'LANDING' | 'KIDSDASH' | 'ADMIN' | 'HOME' | 'M
                         </div>
                       </div>
                     ));
-                  })() || [
-                    { subject: "Maths", percent: 85 },
-                    { subject: "English", percent: 72 },
-                    { subject: "Science", percent: 60 },
-                    { subject: "History", percent: 45 },
-                    { subject: "Art", percent: 38 },
-                  ].map((item, idx) => (
-                    <div key={idx}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                        <span className="n t-small" style={{ color: DS.ink, fontWeight: 600 }}>{item.subject}</span>
-                        <span className="n t-small" style={{ color: DS.inkFade }}>{item.percent}%</span>
-                      </div>
-                      <div style={{ height: 8, background: "#EDE8E0", borderRadius: 4, overflow: "hidden", border: "1px solid #1A1A2E" }}>
-                        <div style={{ height: "100%", width: `${item.percent}%`, background: getSubjectColor(item.subject), borderRadius: 4, transition: "width 0.5s" }} />
-                      </div>
-                    </div>
-                  ])}
+                  })()}
                 </div>
               </div>
             </Shadow>

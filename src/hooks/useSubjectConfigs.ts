@@ -19,8 +19,9 @@ const STORAGE_KEY = 'child_subject_configs';
 
 export const useSubjectConfigs = () => {
   const [configs, setConfigs] = useState<Record<string, SubjectConfig[]>>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : {};
+    // Clear all saved configs on init
+    localStorage.removeItem(STORAGE_KEY);
+    return {};
   });
 
   useEffect(() => {
@@ -67,6 +68,11 @@ export const useSubjectConfigs = () => {
     }));
   };
 
+  const clearConfigs = () => {
+    setConfigs({});
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
   return {
     configs,
     getConfig,
@@ -74,6 +80,7 @@ export const useSubjectConfigs = () => {
     addSubject,
     removeSubject,
     updateFrequency,
-    toggleCore
+    toggleCore,
+    clearConfigs
   };
 };

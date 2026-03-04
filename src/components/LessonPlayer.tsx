@@ -28,6 +28,7 @@ const getThemeColors = (themeColor: string) => {
     bg: colors.main,
     tint: colors.tint,
     text: colors.main,
+    text600: 'text-600',
   };
 };
 
