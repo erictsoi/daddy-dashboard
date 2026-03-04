@@ -1,12 +1,13 @@
+import { logger } from '../lib/logger';
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { 
-  User, 
+import {
+  User,
   onAuthStateChanged,
   signInWithPopup,
-  signOut as firebaseSignOut 
+  signOut as firebaseSignOut
 } from 'firebase/auth'
 import { auth, googleProvider } from './firebase'
-import { INITIAL_DATA } from '../../constants'
+import { INITIAL_DATA } from '../constants'
 
 export type UserRole = 'daddy' | 'child' | 'guest'
 
@@ -27,7 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log('AuthContext: Firebase user:', firebaseUser?.email || 'none')
+      logger.log('AuthContext: Firebase user:', firebaseUser?.email || 'none')
       setUser(firebaseUser)
       setLoading(false)
     })
@@ -39,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await signInWithPopup(auth, googleProvider)
     } catch (error) {
-      console.error('Error signing in with Google:', error)
+      logger.error('Error signing in with Google:', error)
     }
   }
 
@@ -47,10 +48,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await firebaseSignOut(auth)
       setUserRole('guest')
-      localStorage.setItem('daddy_dashboard_data', JSON.stringify(INITIAL_DATA))
       window.location.reload()
     } catch (error) {
-      console.error('Error signing out:', error)
+      logger.error('Error signing out:', error)
     }
   }
 

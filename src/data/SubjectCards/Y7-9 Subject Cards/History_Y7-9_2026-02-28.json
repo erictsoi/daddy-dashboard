@@ -1,0 +1,297 @@
+[
+  {
+    "subject": "History",
+    "focus": "British, World",
+    "yearGroup": "Y7-9",
+    "playlists": [
+      {
+        "title": "Britain 1066-1500: BBC bitesize - Weimar and Hitler&#39;s Rise",
+        "url": "https://www.youtube.com/playlist?list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS",
+        "videos": [
+          {
+            "id": "nqDR8kvs9gY",
+            "title": "Why the Treaty of Versailles was unpopular in Germany",
+            "url": "https://www.youtube.com/watch?v=nqDR8kvs9gY&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+          },
+          {
+            "id": "cqPKRPHohRk",
+            "title": "The establishment of the Weimar Republic",
+            "url": "https://www.youtube.com/watch?v=cqPKRPHohRk&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+          },
+          {
+            "id": "vN33UXM_7po",
+            "title": "Why were the Germans unwilling to support the Weimar Republic",
+            "url": "https://www.youtube.com/watch?v=vN33UXM_7po&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+          },
+          {
+            "id": "6PPeszzSQvo",
+            "title": "Problems and solutions in the Weimar Republic, 1919 1929",
+            "url": "https://www.youtube.com/watch?v=6PPeszzSQvo&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+          },
+          {
+            "id": "ZVu_E71dzWE",
+            "title": "How the Depression helped Hitler come to power",
+            "url": "https://www.youtube.com/watch?v=ZVu_E71dzWE&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+          },
+          {
+            "id": "Bj4YlfKCGoA",
+            "title": "The role of Hitler's public appeal in the Nazi rise to power",
+            "url": "https://www.youtube.com/watch?v=Bj4YlfKCGoA&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+          },
+          {
+            "id": "aOzWBMKOBtI",
+            "title": "How Hitler became chancellor",
+            "url": "https://www.youtube.com/watch?v=aOzWBMKOBtI&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+          }
+        ],
+        "isPrimary": true,
+        "index": 0
+      },
+      {
+        "title": "Britain 1500-Present: KS3 History- The Tudors and Stuarts",
+        "url": "https://www.youtube.com/playlist?list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS",
+        "videos": [
+          {
+            "id": "4RkyV17ntUM",
+            "title": "KS3 History - Who were the Tudors? Henry VII",
+            "url": "https://www.youtube.com/watch?v=4RkyV17ntUM&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+          },
+          {
+            "id": "WyC8vhgfO0c",
+            "title": "KS3 History- What sort of king was Henry VIII",
+            "url": "https://www.youtube.com/watch?v=WyC8vhgfO0c&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+          },
+          {
+            "id": "BPDj40zHeVo",
+            "title": "KS3 History - The Six Wives of Henry VIII",
+            "url": "https://www.youtube.com/watch?v=BPDj40zHeVo&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+          },
+          {
+            "id": "5y6Md4_V4Jo",
+            "title": "KS3 History - The Break with Rome and Dissolution of the Monasteries",
+            "url": "https://www.youtube.com/watch?v=5y6Md4_V4Jo&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+          },
+          {
+            "id": "VjmqlSURzpc",
+            "title": "KS3 History - Edward VI: The Boy King and the Reformation",
+            "url": "https://www.youtube.com/watch?v=VjmqlSURzpc&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+          },
+          {
+            "id": "Mtfrqj79dDw",
+            "title": "KS3 History - Was Mary I really 'Bloody Mary?'",
+            "url": "https://www.youtube.com/watch?v=Mtfrqj79dDw&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+          },
+          {
+            "id": "WysKJZZMEg4",
+            "title": "KS3 History- The Spanish Armada, 1588",
+            "url": "https://www.youtube.com/watch?v=WysKJZZMEg4&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+          },
+          {
+            "id": "83RwumV1JfA",
+            "title": "KS3 History - Elizabeth I's Portraits",
+            "url": "https://www.youtube.com/watch?v=83RwumV1JfA&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+          },
+          {
+            "id": "M_tfkA3dQic",
+            "title": "KS3 History: Edgehill and Marston Moor - How Were English Civil War Battles Fought?",
+            "url": "https://www.youtube.com/watch?v=M_tfkA3dQic&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+          },
+          {
+            "id": "7yYFp3-0Llo",
+            "title": "KS3 History- Naseby or Torrington: The Last Battle of the English Civil War?",
+            "url": "https://www.youtube.com/watch?v=7yYFp3-0Llo&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+          },
+          {
+            "id": "feP3502-74Q",
+            "title": "KS3 History- The Execution of Charles I",
+            "url": "https://www.youtube.com/watch?v=feP3502-74Q&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+          },
+          {
+            "id": "B5qTbcICzs0",
+            "title": "KS3 History - How Should Oliver Cromwell be Remembered?",
+            "url": "https://www.youtube.com/watch?v=B5qTbcICzs0&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+          }
+        ],
+        "isPrimary": false,
+        "index": 1
+      },
+      {
+        "title": "Wider World: KS3 History - The Industrial Revolution and British Empire",
+        "url": "https://www.youtube.com/playlist?list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW",
+        "videos": [
+          {
+            "id": "X0P9VDH6dSw",
+            "title": "KS3 History - The Industrial Revolution: Introduction and Abraham Darby's Iron works.",
+            "url": "https://www.youtube.com/watch?v=X0P9VDH6dSw&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+          },
+          {
+            "id": "yXtxqmFg-6c",
+            "title": "KS3 History - Industrial Revolution: Factories and Child Labour",
+            "url": "https://www.youtube.com/watch?v=yXtxqmFg-6c&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+          },
+          {
+            "id": "t2P09rgLVlw",
+            "title": "KS3 History - The Atlantic Slave Trade and Middle Passage",
+            "url": "https://www.youtube.com/watch?v=t2P09rgLVlw&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+          },
+          {
+            "id": "G8rsXdWxqZc",
+            "title": "KS3 History - Slave Plantations and Slave Rebellions",
+            "url": "https://www.youtube.com/watch?v=G8rsXdWxqZc&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+          },
+          {
+            "id": "IJ8bu1B-mPI",
+            "title": "KS3 History- The British Empire",
+            "url": "https://www.youtube.com/watch?v=IJ8bu1B-mPI&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+          },
+          {
+            "id": "UqnqcaiO-vE",
+            "title": "KS3 History - Industrial Revolution: Public Health in Towns",
+            "url": "https://www.youtube.com/watch?v=UqnqcaiO-vE&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+          },
+          {
+            "id": "6OW6Ch4hFVE",
+            "title": "KS3 History - Industrial Revolution: Canals, Turnpikes and Railways",
+            "url": "https://www.youtube.com/watch?v=6OW6Ch4hFVE&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+          }
+        ],
+        "isPrimary": false,
+        "index": 2
+      }
+    ],
+    "allVideos": [
+      {
+        "id": "nqDR8kvs9gY",
+        "title": "Why the Treaty of Versailles was unpopular in Germany",
+        "url": "https://www.youtube.com/watch?v=nqDR8kvs9gY&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+      },
+      {
+        "id": "cqPKRPHohRk",
+        "title": "The establishment of the Weimar Republic",
+        "url": "https://www.youtube.com/watch?v=cqPKRPHohRk&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+      },
+      {
+        "id": "vN33UXM_7po",
+        "title": "Why were the Germans unwilling to support the Weimar Republic",
+        "url": "https://www.youtube.com/watch?v=vN33UXM_7po&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+      },
+      {
+        "id": "6PPeszzSQvo",
+        "title": "Problems and solutions in the Weimar Republic, 1919 1929",
+        "url": "https://www.youtube.com/watch?v=6PPeszzSQvo&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+      },
+      {
+        "id": "ZVu_E71dzWE",
+        "title": "How the Depression helped Hitler come to power",
+        "url": "https://www.youtube.com/watch?v=ZVu_E71dzWE&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+      },
+      {
+        "id": "Bj4YlfKCGoA",
+        "title": "The role of Hitler's public appeal in the Nazi rise to power",
+        "url": "https://www.youtube.com/watch?v=Bj4YlfKCGoA&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+      },
+      {
+        "id": "aOzWBMKOBtI",
+        "title": "How Hitler became chancellor",
+        "url": "https://www.youtube.com/watch?v=aOzWBMKOBtI&list=PLHZk29-IIwv3F6UOGTlWT5dBnlqG7B7OS"
+      },
+      {
+        "id": "4RkyV17ntUM",
+        "title": "KS3 History - Who were the Tudors? Henry VII",
+        "url": "https://www.youtube.com/watch?v=4RkyV17ntUM&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+      },
+      {
+        "id": "WyC8vhgfO0c",
+        "title": "KS3 History- What sort of king was Henry VIII",
+        "url": "https://www.youtube.com/watch?v=WyC8vhgfO0c&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+      },
+      {
+        "id": "BPDj40zHeVo",
+        "title": "KS3 History - The Six Wives of Henry VIII",
+        "url": "https://www.youtube.com/watch?v=BPDj40zHeVo&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+      },
+      {
+        "id": "5y6Md4_V4Jo",
+        "title": "KS3 History - The Break with Rome and Dissolution of the Monasteries",
+        "url": "https://www.youtube.com/watch?v=5y6Md4_V4Jo&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+      },
+      {
+        "id": "VjmqlSURzpc",
+        "title": "KS3 History - Edward VI: The Boy King and the Reformation",
+        "url": "https://www.youtube.com/watch?v=VjmqlSURzpc&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+      },
+      {
+        "id": "Mtfrqj79dDw",
+        "title": "KS3 History - Was Mary I really 'Bloody Mary?'",
+        "url": "https://www.youtube.com/watch?v=Mtfrqj79dDw&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+      },
+      {
+        "id": "WysKJZZMEg4",
+        "title": "KS3 History- The Spanish Armada, 1588",
+        "url": "https://www.youtube.com/watch?v=WysKJZZMEg4&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+      },
+      {
+        "id": "83RwumV1JfA",
+        "title": "KS3 History - Elizabeth I's Portraits",
+        "url": "https://www.youtube.com/watch?v=83RwumV1JfA&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+      },
+      {
+        "id": "M_tfkA3dQic",
+        "title": "KS3 History: Edgehill and Marston Moor - How Were English Civil War Battles Fought?",
+        "url": "https://www.youtube.com/watch?v=M_tfkA3dQic&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+      },
+      {
+        "id": "7yYFp3-0Llo",
+        "title": "KS3 History- Naseby or Torrington: The Last Battle of the English Civil War?",
+        "url": "https://www.youtube.com/watch?v=7yYFp3-0Llo&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+      },
+      {
+        "id": "feP3502-74Q",
+        "title": "KS3 History- The Execution of Charles I",
+        "url": "https://www.youtube.com/watch?v=feP3502-74Q&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+      },
+      {
+        "id": "B5qTbcICzs0",
+        "title": "KS3 History - How Should Oliver Cromwell be Remembered?",
+        "url": "https://www.youtube.com/watch?v=B5qTbcICzs0&list=PL9bgSdxfgbwpSGB8IYHMCDEqk_sng3mlS"
+      },
+      {
+        "id": "X0P9VDH6dSw",
+        "title": "KS3 History - The Industrial Revolution: Introduction and Abraham Darby's Iron works.",
+        "url": "https://www.youtube.com/watch?v=X0P9VDH6dSw&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+      },
+      {
+        "id": "yXtxqmFg-6c",
+        "title": "KS3 History - Industrial Revolution: Factories and Child Labour",
+        "url": "https://www.youtube.com/watch?v=yXtxqmFg-6c&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+      },
+      {
+        "id": "t2P09rgLVlw",
+        "title": "KS3 History - The Atlantic Slave Trade and Middle Passage",
+        "url": "https://www.youtube.com/watch?v=t2P09rgLVlw&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+      },
+      {
+        "id": "G8rsXdWxqZc",
+        "title": "KS3 History - Slave Plantations and Slave Rebellions",
+        "url": "https://www.youtube.com/watch?v=G8rsXdWxqZc&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+      },
+      {
+        "id": "IJ8bu1B-mPI",
+        "title": "KS3 History- The British Empire",
+        "url": "https://www.youtube.com/watch?v=IJ8bu1B-mPI&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+      },
+      {
+        "id": "UqnqcaiO-vE",
+        "title": "KS3 History - Industrial Revolution: Public Health in Towns",
+        "url": "https://www.youtube.com/watch?v=UqnqcaiO-vE&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+      },
+      {
+        "id": "6OW6Ch4hFVE",
+        "title": "KS3 History - Industrial Revolution: Canals, Turnpikes and Railways",
+        "url": "https://www.youtube.com/watch?v=6OW6Ch4hFVE&list=PL9bgSdxfgbwpSPCOU1j9flMAwoHiTdeVW"
+      }
+    ],
+    "saved": true,
+    "isOptional": false
+  }
+]
