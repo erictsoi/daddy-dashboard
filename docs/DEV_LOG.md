@@ -382,7 +382,32 @@ Keep Tailwind for complex views while using v6 for:
 
 ---
 
+### v3.15.0 - Curriculum Expansion & Hub Import (2026-03-05)
+- **Curriculum Library**: New "Import from Applet" feature to import JSON curriculum data.
+- **Curriculum Search**: Integrated API Key status panel with missing key warnings.
+- **Year Groups**: Expanded data coverage for Y1-2, Y3-4, Y10-11, and Y12-13.
+- **Hooks**: Modularized data layer by splitting `useAppData` into `useSettingsData`, `useChildData`, and `useLessonData`.
+- **UK Curriculum**: Fixed year ranges in `UK_CURRICULUM.md` and enriched topic data in `src/data/ukCurriculum.ts`.
+- **UI**: Added premium `LoadingFallback` and 5-column subject grid on `KidDash`.
+
+---
+
+## Next Steps
+
+1. Implement URL routing (optional - requires significant changes)
+2. Connect remaining demo views to real Firebase data
+3. Refine LessonPlayer interaction for mobile-first experience
+4. Add browser history support for curriculum search tabs
+
+---
+
 ## History
+
+### v3.15.0 - Curriculum Expansion & Hub Import (2026-03-05)
+- Integrated Video Applet curriculum data
+- Added placeholder subject cards for new year groups
+- Refactored AppContext to support modular data fetching
+- Fixed UK Curriculum metadata consistency
 
 ### v3.4.0 - Complete Supabase Removal (2026-02-19)
 - Removed `@supabase/ssr` and `@supabase/supabase-js` from package.json
@@ -427,18 +452,23 @@ src/
 │   ├── firebase.ts          # Firebase config, auth
 │   ├── dataService.ts       # Firestore CRUD operations
 │   └── AuthContext.tsx      # Firebase auth context
+├── context/
+│   └── AppContext.tsx       # Unified data context (v3.15.0)
+├── hooks/
+│   ├── useSettingsData.ts   # Modular settings hook
+│   ├── useChildData.ts      # Modular child data hook
+│   └── useLessonData.ts     # Modular lesson data hook
 ├── components/
 │   ├── design-system.tsx   # v6 design system
-│   └── ...
+│   └── CurriculumSearch.tsx # API Key & Filter logic
 └── views/
     ├── LandingView.tsx     # v6 design
-    ├── ReturningView.tsx    # v6 design
+    ├── KidDash.tsx         # Updated 5-col grid
     ├── AdminDashboardDemo.tsx    # NEW v6 demo
-    ├── ChildDashboardDemo.tsx    # NEW v6 demo
-    ├── LessonDemo.tsx       demo
     └── ...
 ```
 
 ---
 
-* # NEW v6Last Updated: 2026-02-20*
+*Last Updated: 2026-03-05*
+

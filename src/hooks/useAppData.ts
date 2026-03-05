@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../lib/AuthContext';
 import { useSettingsData } from './useSettingsData';
 import { useChildData } from './useChildData';
 import { useLessonData } from './useLessonData';
 
 export const useAppData = () => {
-    const { user, loading: authLoading } = useAuth();
+    const { user, loading: authLoading } = useAuth() || { user: null, loading: false };
 
     // 1. Settings state & handlers
     const {
@@ -20,14 +20,14 @@ export const useAppData = () => {
         setData, setChildProfile, handleAddChild, handleDeleteChild,
         handleUpdateChild, handleUpdateChildProfile,
         handleAddYearGroup, handleRemoveYearGroup
-    } = useChildData(user, authLoading);
+    } = useChildData(user ?? undefined, authLoading);
 
     // 3. Lesson & Import handlers
     const {
         handleBulkImport, handleTemplateImport, handleCompleteLesson,
         handleDeleteSubject, handleAddLesson, handleRestoreLesson,
         handleHardDeleteLesson, handleSoftDeleteLesson, handleUpdateTopicFrequency
-    } = useLessonData(user, setData);
+    } = useLessonData(user ?? undefined, setData);
 
     // 4. Derived helpers (preserving functionality)
     const getChildById = (id: string) => data.find(c => c.id === id);

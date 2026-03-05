@@ -1,6 +1,6 @@
 # UK National Curriculum - Video Applet Subject List
 
-## Year 1 (Key Stage 1) - Ages 5-6
+## Year 1-2 (Key Stage 1) - Ages 5-7
 **Statutory Subjects: 10**
 
 | Subject | Focus Area |
@@ -18,7 +18,7 @@
 
 ---
 
-## Year 3 (Key Stage 2 Lower) - Ages 7-8
+## Year 3-4 (Key Stage 2) - Ages 7-9
 **Statutory Subjects: 12**
 
 | Subject | Focus Area |
@@ -37,7 +37,7 @@
 
 ---
 
-## Year 5 (Key Stage 2 Upper) - Ages 9-10
+## Year 5-6 (Key Stage 2) - Ages 9-11
 **Statutory Subjects: 12**
 
 | Subject | Focus Area |
@@ -56,7 +56,7 @@
 
 ---
 
-## Year 7/8 (Key Stage 3) - Ages 11-13
+## Year 7-9 (Key Stage 3) - Ages 11-14
 **Statutory Subjects: 12** (Exact from gov.uk)
 
 | Subject | Focus Area |
@@ -76,7 +76,7 @@
 
 ---
 
-## Year 9/10 (Key Stage 4 - GCSE) - Ages 13-15
+## Year 10-11 (Key Stage 4 - GCSE) - Ages 14-16
 **Statutory Subjects: 10**
 
 ### Core (3)
@@ -103,7 +103,7 @@
 
 ---
 
-## Year 11/12 (Key Stage 5 - A-Level) - Ages 15-17
+## Year 12-13 (Key Stage 5 - A-Level) - Ages 16-18
 **Typical Subjects: 10**
 
 | Subject | Focus Area |
@@ -123,9 +123,10 @@
 
 ## Notes
 - **Key Stage 1 (Y1-2)**: No foreign languages (starts Year 3)
-- **Key Stage 2 (Y3-6)**: Modern foreign languages required
+- **Key Stage 2 (Y3-6)**: Modern foreign languages required from Year 3
 - **Key Stage 3 (Y7-9)**: 12 compulsory subjects
 - **Key Stage 4 (Y10-11)**: Core + Foundation + Options structure
+- **Key Stage 5 (Y12-13)**: A-Level options
 - **Swimming** must be taught at KS1 and KS2
 
 *Source: gov.uk/national-curriculum*

@@ -292,7 +292,7 @@ export const LandingView: React.FC = () => {
   }, [readingProfileId]);
 
   const handleCardClick = useCallback((index: number, profileId: string) => {
-    if (animationStage !== 'carousel' || readingProfileId) return;
+    if (readingProfileId) return;
     if (isFiller(profileId)) return;
 
     const returningIndex = RETURNING_PROFILES.findIndex(p => p.id === profileId);
@@ -305,13 +305,12 @@ export const LandingView: React.FC = () => {
         } else {
           onNavigate({ type: 'KIDSDASH', childId: profileId });
         }
-        // Cleanup reading state in case navigation takes time or user stays on page
         setReadingProfileId(null);
       }, NAVIGATE_TIMEOUT);
     } else {
       setActiveIndex(returningIndex);
     }
-  }, [animationStage, readingProfileId, activeIndex, RETURNING_PROFILES, onNavigate]);
+  }, [readingProfileId, activeIndex, RETURNING_PROFILES, onNavigate]);
 
   const goToPrev = () => {
     if (readingProfileId) return;
@@ -518,7 +517,7 @@ export const LandingView: React.FC = () => {
                   isActive={isCentered}
                   isReading={profile.id === readingProfileId}
                   scale={scale}
-                  onClick={isReturning && animationStage === 'carousel' ? () => handleCardClick(index, profile.id) : undefined}
+                  onClick={isReturning ? () => handleCardClick(index, profile.id) : undefined}
                 />
               </div>
             );

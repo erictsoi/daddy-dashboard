@@ -1,11 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Navigate } from 'react-router-dom';
 import { getSubjectHexColor, getSubjectIcon } from '../utils/subjects';
 import { DS, Texture, Deco, Shadow, Chip, SectionHead } from '../components/design-system';
 import { toLessonView } from '../lib/routes';
 import { useAppContext } from '../context/AppContext';
-import { getSubjectCardsForYear } from '../lib/subjectCards';
+import { getSubjectCardsForYear, loadSubjectCardsForYear } from '../lib/subjectCards';
 import { SubjectCard } from '../components/SubjectCard';
+import { DEMO_PROFILES } from '../data/demoProfiles';
 
 
 export const KidDash: React.FC = () => {
@@ -13,11 +14,72 @@ export const KidDash: React.FC = () => {
     const [searchParams] = useSearchParams();
     const childId = searchParams.get('child');
     const { children } = useAppContext();
-    const child = children.find(c => c.id === childId);
+    
+    // First check real children, then fall back to demo profiles
+    let child = children.find(c => c.id === childId);
+    if (!child) {
+        const demoProfile = DEMO_PROFILES.find(p => p.id === childId);
+        if (demoProfile) {
+            // Convert demo profile to ChildProfile format
+            const colorMap: Record<string, string> = {
+                '#9B6DD6': 'purple',
+                '#2B8ED4': 'blue',
+                '#4CAF8A': 'green',
+                '#F5A623': 'amber',
+                '#FF6B6B': 'rose'
+            };
+            const themeColorName = Object.entries(colorMap).find(([hex]) => hex === demoProfile.color)?.[1] || 'purple';
+            child = {
+                id: demoProfile.id,
+                name: demoProfile.name,
+                year: demoProfile.year,
+                age: demoProfile.age,
+                color: demoProfile.color,
+                themeColor: themeColorName,
+                emoji: demoProfile.emoji,
+                avatar: demoProfile.emoji,
+                image: demoProfile.image,
+                interests: demoProfile.interests,
+                yearGroups: [{
+                    id: 'demo-year',
+                    name: demoProfile.year,
+                    subjects: []
+                }]
+            };
+        }
+    }
 
     if (!childId || !child) {
         return <Navigate to="/" replace />;
     }
+
+    const [loading, setLoading] = useState(true);
+
+    const yearKeyMap: Record<string, string> = {
+        'Y5-6': 'Y5-6',
+        'Y7-9': 'Y7-9',
+        'Y10-11': 'Y7-9',
+        'Y12-13': 'Y7-9'
+    };
+    const rawYear = child.yearGroups?.[0]?.name || 'Y5-6';
+    const yearMatch = rawYear.match(/Year\s*(\d+)/i);
+    let normalizedYear = 'Y5-6';
+    if (yearMatch) {
+        const yearNum = parseInt(yearMatch[1]);
+        if (yearNum <= 2) normalizedYear = 'Y1-2';
+        else if (yearNum <= 4) normalizedYear = 'Y3-4';
+        else if (yearNum <= 6) normalizedYear = 'Y5-6';
+        else if (yearNum <= 9) normalizedYear = 'Y7-9';
+        else if (yearNum <= 11) normalizedYear = 'Y10-11';
+        else normalizedYear = 'Y12-13';
+    }
+    const jsonYearKey = yearKeyMap[normalizedYear] || 'Y5-6';
+
+    useEffect(() => {
+        loadSubjectCardsForYear(jsonYearKey).then(() => {
+            setLoading(false);
+        });
+    }, [jsonYearKey]);
 
     const themeColor = child.themeColor === 'purple' ? '#9B6DD6'
         : child.themeColor === 'blue' ? '#2B8ED4'
@@ -40,26 +102,7 @@ export const KidDash: React.FC = () => {
         emoji: child.avatar
     };
 
-    const yearKeyMap: Record<string, string> = {
-        'Y5-6': 'Y5-6',
-        'Y7-9': 'Y7-9',
-        'Y10-11': 'Y7-9',
-        'Y12-13': 'Y7-9'
-    };
-    const rawYear = child.yearGroups?.[0]?.name || 'Y5-6';
-    const yearMatch = rawYear.match(/Year\s*(\d+)/i);
-    let normalizedYear = 'Y5-6';
-    if (yearMatch) {
-        const yearNum = parseInt(yearMatch[1]);
-        if (yearNum <= 2) normalizedYear = 'Y1-2';
-        else if (yearNum <= 4) normalizedYear = 'Y3-4';
-        else if (yearNum <= 6) normalizedYear = 'Y5-6';
-        else if (yearNum <= 9) normalizedYear = 'Y7-9';
-        else if (yearNum <= 11) normalizedYear = 'Y10-11';
-        else normalizedYear = 'Y12-13';
-    }
-    const jsonYearKey = yearKeyMap[normalizedYear] || 'Y5-6';
-    const jsonSubjectCards = useMemo(() => getSubjectCardsForYear(jsonYearKey), [jsonYearKey]);
+    const jsonSubjectCards = useMemo(() => getSubjectCardsForYear(jsonYearKey), [jsonYearKey, loading]);
 
     const subjects: { name: string; icon: string; progress: number; total: number; topic: string; color: string; subjectId?: string; topicId?: string; lessons: { id: string; title: string; videoUrl?: string; completed: boolean }[]; topicCards: { title: string; videoCount: number; url: string; firstVideoId?: string }[] }[] = [];
 
@@ -170,6 +213,23 @@ export const KidDash: React.FC = () => {
     const totalToday = subjects.reduce((sum, s) => sum + s.total, 0) || 1;
     const streak = 5;
     const xp = 120;
+
+    if (loading) {
+        return (
+            <div style={{
+                minHeight: "100vh",
+                background: DS.cream,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+            }}>
+                <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 24, marginBottom: 8 }}>Loading subjects...</div>
+                    <div style={{ color: DS.inkFade }}>Loading {jsonYearKey} curriculum</div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div style={{

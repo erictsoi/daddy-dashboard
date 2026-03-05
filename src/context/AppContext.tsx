@@ -51,7 +51,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { user, loading: authLoading } = useAuth() || {};
-    const appData = useAppData(user, authLoading);
+    const appData = useAppData();
 
     const value: AppContextValue = {
         children: appData.data,
