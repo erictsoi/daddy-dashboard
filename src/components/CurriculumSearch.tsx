@@ -221,6 +221,13 @@ const EditModal: React.FC<{
     setNewPlaylistUrl('');
   };
 
+  const handleQuickSearch = (topic: string) => {
+    const query = `${topic} ${subject.subject} ${subject.yearGroup} tutorial playlist`;
+    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=EgIQAw%253D%253D`, '_blank');
+  };
+
+  const topics = getTopicsForSubject(subject.yearGroup as ProfileTemplate, subject.subject);
+
   const deletePlaylist = (idx: number) => {
     const newPl = playlists.filter((_, i) => i !== idx).map((p, i) => ({ ...p, isPrimary: i === 0, index: i }));
     setPlaylists(newPl);
@@ -326,6 +333,28 @@ const EditModal: React.FC<{
             <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">{allVideos.length} videos</span>
           </div>
 
+          <div className="mb-6">
+            <h4 className="text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Curriculum Blueprint</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {topics.map((t, i) => (
+                <div key={i} className="p-2 border rounded bg-blue-50/30 border-blue-100 flex items-center justify-between group">
+                  <div>
+                    <div className="text-sm font-semibold text-blue-900">{t.topic}</div>
+                    <div className="text-xs text-blue-700/70">{t.focus}</div>
+                  </div>
+                  <button
+                    onClick={() => handleQuickSearch(t.topic)}
+                    className="p-1.5 hover:bg-blue-100 rounded text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Search on YouTube"
+                  >
+                    <Search size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <h4 className="text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Playlists</h4>
           <div className="mb-4 p-3 bg-gray-50 rounded">
             <h4 className="font-medium mb-2">Add New Playlist</h4>
             <div className="flex gap-2">
