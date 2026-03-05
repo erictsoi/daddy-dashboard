@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Search, Play, Loader2, ExternalLink, Youtube, Check, X, AlertTriangle, Plus, Trash2, GripVertical, Star, Download, Upload } from 'lucide-react';
-import { getCurriculumForYear, UKCurriculumYear, UKCurriculumTopic, getTopicsForSubject } from '../data/ukCurriculum';
+import { ArrowLeft, Search, Play, Loader2, Youtube, Check, AlertTriangle, Star, Download, Upload } from 'lucide-react';
+import { getCurriculumForYear, getTopicsForSubject } from '../data/ukCurriculum';
+import { SEARCH_QUERIES } from '../data/searchQueries';
 import { ProfileTemplate } from '../types';
 import { PROFILE_TEMPLATES } from '../constants';
-import { Card, Shadow, DS } from './design-system';
+import { Card, Shadow, DS, IconButton } from './design-system';
 
 interface YouTubeVideo {
   id: string;
@@ -33,8 +34,6 @@ interface Props {
 }
 
 const STORAGE_KEY = 'curriculum_search_data';
-
-// SUBJECT_TOPICS removed in favor of UK_CURRICULUM from ukCurriculum.ts
 
 const loadSavedData = (): SubjectData[] => {
   try {
@@ -75,7 +74,7 @@ const fetchPlaylistVideos = async (playlistUrl: string): Promise<YouTubeVideo[]>
   if (!match) return [];
 
   const videos: YouTubeVideo[] = [];
-  let pageToken = '';
+  let pageToken: string | null = '';
   const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
 
   if (!apiKey) return [];
@@ -312,8 +311,8 @@ const EditModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2" onClick={onClose}>
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[95vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-2" onClick={onClose}>
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[95vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white">
           <div>
             <h2 className="text-xl font-bold">{subject.subject}</h2>
@@ -322,25 +321,25 @@ const EditModal: React.FC<{
           <div className="flex gap-2 items-center">
             <button onClick={exportSubject} className="text-xs px-2 py-1 bg-blue-500 text-white rounded flex items-center gap-1"><Download size={12} />Export</button>
             <button onClick={importSubject} className="text-xs px-2 py-1 bg-purple-500 text-white rounded flex items-center gap-1"><Upload size={12} />Import</button>
-            <button onClick={onClose} className="text-2xl">&times;</button>
+            <button onClick={onClose} className="text-2xl text-slate-400 hover:text-slate-600 transition-colors">&times;</button>
           </div>
         </div>
 
         <div className="p-4">
-          <div className="flex gap-2 mb-4 text-sm">
-            <span className="bg-gray-100 px-2 py-1 rounded">{subject.yearGroup}</span>
-            <span className="bg-green-100 text-green-700 px-2 py-1 rounded">{playlists.length} playlists</span>
-            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">{allVideos.length} videos</span>
+          <div className="flex gap-2 mb-4 text-sm font-bold">
+            <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full">{subject.yearGroup}</span>
+            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full">{playlists.length} playlists</span>
+            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full">{allVideos.length} videos</span>
           </div>
 
           <div className="mb-6">
-            <h4 className="text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Curriculum Blueprint</h4>
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Curriculum Blueprint</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {topics.map((t, i) => (
-                <div key={i} className="p-2 border rounded bg-blue-50/30 border-blue-100 flex items-center justify-between group">
+                <div key={i} className="p-3 border-2 border-slate-50 rounded-xl bg-slate-50/30 flex items-center justify-between group">
                   <div>
-                    <div className="text-sm font-semibold text-blue-900">{t.topic}</div>
-                    <div className="text-xs text-blue-700/70">{t.focus}</div>
+                    <div className="text-sm font-bold text-slate-700">{t.topic}</div>
+                    <div className="text-[10px] font-medium text-slate-400 leading-tight mt-0.5">{t.focus}</div>
                   </div>
                   <button
                     onClick={() => handleQuickSearch(t.topic)}
@@ -354,21 +353,21 @@ const EditModal: React.FC<{
             </div>
           </div>
 
-          <h4 className="text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Playlists</h4>
-          <div className="mb-4 p-3 bg-gray-50 rounded">
-            <h4 className="font-medium mb-2">Add New Playlist</h4>
+          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Playlists</h4>
+          <div className="mb-4 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl">
+            <h4 className="text-xs font-black text-slate-700 mb-2 uppercase tracking-tight">Add New Playlist</h4>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={newPlaylistUrl}
                 onChange={(e) => setNewPlaylistUrl(e.target.value)}
                 placeholder="Paste YouTube playlist URL..."
-                className="flex-1 border rounded px-3 py-2 text-sm"
+                className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2 text-sm focus:border-blue-400 focus:outline-none transition-colors"
               />
               <button
                 onClick={() => { if (newPlaylistUrl) { addPlaylist(); } }}
                 disabled={!!searching}
-                className="px-4 py-2 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
+                className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-100 disabled:opacity-50"
               >
                 {searching || 'Add'}
               </button>
@@ -392,18 +391,18 @@ const EditModal: React.FC<{
           ))}
 
           {playlists.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No playlists yet. Add one above!
+            <div className="text-center py-12 text-slate-400 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100 italic">
+              No playlists associated with this subject yet.
             </div>
           )}
 
           {allVideos.length > 0 && (
             <div className="mt-6">
-              <h4 className="font-bold mb-2">All Videos ({allVideos.length})</h4>
-              <div className="max-h-48 overflow-y-auto space-y-1 border rounded p-2">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">All Compiled Videos ({allVideos.length})</h4>
+              <div className="max-h-48 overflow-y-auto space-y-1 border-2 border-slate-100 rounded-2xl p-2 bg-white">
                 {allVideos.map((v, i) => (
-                  <a key={i} href={v.url} target="_blank" className="flex items-center gap-2 text-sm p-1 hover:bg-gray-50 rounded">
-                    <span className="text-red-500">▶</span>
+                  <a key={i} href={v.url} target="_blank" className="flex items-center gap-3 text-xs p-2 hover:bg-slate-50 rounded-xl transition-colors font-bold text-slate-600">
+                    <span className="text-red-500 bg-red-50 p-1 rounded-lg"><Play size={10} fill="currentColor" /></span>
                     <span className="truncate">{v.title}</span>
                   </a>
                 ))}
@@ -411,11 +410,11 @@ const EditModal: React.FC<{
             </div>
           )}
 
-          <div className="mt-6 flex gap-2">
-            <button onClick={save} className="flex-1 py-3 bg-green-600 text-white rounded font-medium hover:bg-green-700">
-              Save Changes
+          <div className="mt-6 flex gap-3 sticky bottom-0 bg-white py-2 border-t pt-4">
+            <button onClick={save} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-black shadow-lg shadow-green-100 hover:bg-green-700 transition-all">
+              Save Subject Data
             </button>
-            <button onClick={onClose} className="px-6 py-3 border rounded hover:bg-gray-50">
+            <button onClick={onClose} className="px-6 py-3 border-2 border-slate-100 rounded-xl font-bold text-slate-400 hover:bg-slate-50 transition-all">
               Cancel
             </button>
           </div>
@@ -425,17 +424,106 @@ const EditModal: React.FC<{
   );
 };
 
+const SearchPreviewModal: React.FC<{
+  subject: SubjectData;
+  topics: string[];
+  onSearch: (selected: string[]) => void;
+  onClose: () => void;
+}> = ({ subject, topics, onSearch, onClose }) => {
+  const searchQueries = SEARCH_QUERIES[subject.yearGroup]?.[subject.subject] || [[`${subject.subject} ${subject.yearGroup} tutorial playlist`]];
+  const flatQueries = searchQueries.flat();
+  const [selectedTerms, setSelectedTerms] = useState(topics.length > 0 ? topics : [flatQueries[0]]);
+  const isUsingTopics = topics.length > 0;
+
+  const toggleTerm = (term: string) => {
+    if (selectedTerms.includes(term)) {
+      setSelectedTerms(selectedTerms.filter(t => t !== term));
+    } else {
+      setSelectedTerms([...selectedTerms, term]);
+    }
+  };
+
+  const estimatedAPI = isUsingTopics ? topics.length * 3 : flatQueries.length * 3;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={onClose}>
+      <Shadow offset={4} size={4} radius={DS.radius.lg} className="max-w-lg w-full">
+        <div className="bg-white rounded-lg overflow-hidden border-2 border-white shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="p-5 border-b flex items-center justify-between bg-slate-50">
+            <div>
+              <h2 className="text-lg font-black text-slate-800 tracking-tight">{subject.subject}</h2>
+              <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">Search Strategy Confirmation</p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">&times;</button>
+          </div>
+
+          <div className="p-6">
+            <div className="mb-5">
+              <h3 className="font-black text-[10px] text-slate-500 uppercase tracking-widest mb-4">
+                {isUsingTopics ? "Topics to search" : "Curated Search Queries"}
+              </h3>
+              <div className="flex flex-wrap gap-2 max-h-[40vh] overflow-y-auto p-1">
+                {(isUsingTopics ? topics : flatQueries).map((term, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => toggleTerm(term)}
+                    className={`px-4 py-2 rounded-xl text-xs font-black border-2 transition-all ${selectedTerms.includes(term)
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100'
+                      : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300'
+                      }`}
+                  >
+                    {selectedTerms.includes(term) && <Check size={12} className="inline mr-1" />} {term}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border-2 border-amber-100 rounded-2xl p-4 mb-6 flex gap-4">
+              <div className="text-amber-500 pt-1"><AlertTriangle size={20} /></div>
+              <div className="text-xs text-amber-900 font-bold leading-relaxed">
+                <strong>Curriculum Match:</strong> We recommend searching for these specific terms to ensure video quality.
+                <div className="mt-1.5 opacity-70">Estimated YouTube API Impact: ~{estimatedAPI} units.</div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => onSearch(selectedTerms)}
+                disabled={selectedTerms.length === 0}
+                className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50"
+              >
+                Launch Search ({selectedTerms.length})
+              </button>
+              <button
+                onClick={onClose}
+                className="px-6 py-4 border-2 border-slate-100 rounded-2xl font-black text-slate-400 hover:bg-slate-50 transition-all"
+              >
+                Abort
+              </button>
+            </div>
+          </div>
+        </div>
+      </Shadow>
+    </div>
+  );
+};
+
 const TopicCard: React.FC<{ topicName: string; playlist?: Playlist }> = ({ topicName, playlist }) => {
   const videoCount = playlist?.videos?.length || 0;
   const hasVideos = videoCount > 0;
 
   return (
-    <div className={`p-2 rounded border flex flex-col items-center justify-center min-w-[100px] ${hasVideos ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'}`}>
-      <div className="text-xs font-medium text-center truncate w-full">{topicName}</div>
-      <div className={`text-xs mt-1 ${hasVideos ? 'text-green-600 font-bold' : 'text-gray-400'}`}>
-        {hasVideos ? `${videoCount} videos` : 'No videos'}
+    <Shadow offset={hasVideos ? 2 : 1} size={1} radius={DS.radius.md}>
+      <div className={`p-3 rounded-xl border-2 flex flex-col items-center justify-center min-w-[110px] transition-all h-full ${hasVideos
+        ? 'bg-green-50 border-green-200 shadow-green-50 text-green-800'
+        : 'bg-white border-slate-100 text-slate-400'
+        }`}>
+        <div className="text-[10px] font-black text-center uppercase tracking-tight w-full truncate mb-1">{topicName}</div>
+        <div className={`text-[10px] flex items-center gap-1 font-black ${hasVideos ? 'text-green-600' : 'text-slate-200'}`}>
+          {hasVideos ? (<><Youtube size={10} /> {videoCount} VIDEOS</>) : 'EMPTY'}
+        </div>
       </div>
-    </div>
+    </Shadow>
   );
 };
 
@@ -480,57 +568,81 @@ const SubjectSection: React.FC<{
   };
 
   return (
-    <div
-      className={`bg-white rounded-lg border-2 overflow-hidden mb-4 ${hasAnyVideos ? 'border-green-400' : 'border-gray-200'} ${isDragging ? 'border-blue-500 bg-blue-50' : ''}`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {isDragging && (
-        <div className="absolute inset-0 bg-blue-500/10 flex items-center justify-center pointer-events-none z-10">
-          <span className="bg-blue-500 text-white px-4 py-2 rounded font-medium">Drop to import</span>
+    <Shadow offset={hasAnyVideos ? 3 : 2} size={2} radius={DS.radius.lg} className="mb-6">
+      <div
+        className={`bg-white rounded-2xl border-2 overflow-hidden transition-all ${hasAnyVideos ? 'border-green-400 shadow-2xl shadow-green-100' : 'border-slate-200'
+          } ${isDragging ? 'border-blue-500 ring-8 ring-blue-500/10' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <div className={`p-4 ${hasAnyVideos ? 'bg-green-50/40' : 'bg-slate-50/50'} border-b flex items-center justify-between`}>
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 shadow-sm ${hasAnyVideos ? 'bg-white border-green-200 text-green-600' : 'bg-white border-slate-100 text-slate-300'
+              }`}>
+              <Youtube size={24} />
+            </div>
+            <div>
+              <h3 className="font-black text-xl text-slate-800 leading-tight">{subject.subject}</h3>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2.5 py-1 bg-white border border-slate-100 rounded-full shadow-sm">
+                  {subject.yearGroup}
+                </span>
+                {hasAnyVideos && (
+                  <span className="text-[10px] font-black text-green-600 uppercase tracking-widest flex items-center gap-1 ml-1 bg-green-100/50 px-2 py-1 rounded-lg">
+                    <Check size={10} strokeWidth={4} /> SYNCED
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={onFind}
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2"
+            >
+              <Search size={14} /> EXPLORE
+            </button>
+            {playlists.length > 0 && (
+              <button
+                onClick={onEdit}
+                className="px-5 py-2.5 bg-white border-2 border-green-300 text-green-700 rounded-xl text-xs font-black hover:bg-green-50 active:scale-95 transition-all flex items-center gap-2 shadow-sm"
+              >
+                <Play size={14} fill="currentColor" /> MANAGE
+              </button>
+            )}
+          </div>
         </div>
-      )}
-      <div className="p-3 bg-gray-50 border-b flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h3 className="font-bold text-base">{subject.subject}</h3>
-        </div>
-      </div>
 
-      <div className="p-3">
-        <p className="text-xs text-blue-600 font-medium mb-3">{subject.focus}</p>
+        <div className="p-6">
+          <div className="mb-6">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <Star size={12} className="text-amber-400" /> Daddy's Learning Goals
+            </h4>
+            <div className="relative">
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-full" />
+              <p className="pl-5 text-sm text-slate-600 font-bold leading-relaxed italic">
+                "{subject.focus}"
+              </p>
+            </div>
+          </div>
 
-        {topicNames.length > 0 ? (
-          playlists.length > 0 ? (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mb-3">
+          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Curriculum Mapping</h4>
+          {topicNames.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {topicNames.map((topic, idx) => {
                 const playlist = playlists.find(p => p.index === idx);
                 return <TopicCard key={idx} topicName={topic} playlist={playlist} />;
               })}
             </div>
           ) : (
-            <div className="text-sm text-gray-500 mb-3">
-              No playlists yet. Click "Find All" to search for {topicNames.length} topics.
+            <div className="p-10 border-2 border-dashed border-slate-100 rounded-3xl text-center text-slate-300 text-xs font-black uppercase tracking-widest">
+              General Curriculum Search Mode
             </div>
-          )
-        ) : (
-          <div className="text-sm text-gray-500 mb-3">
-            No playlists yet. Click "Find All" to search for playlists.
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <button onClick={onFind} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm flex items-center gap-1">
-            <Search size={14} /> Find All
-          </button>
-          {playlists.length > 0 && (
-            <button onClick={onEdit} className="px-3 py-1.5 bg-green-600 text-white rounded text-sm flex items-center gap-1">
-              <Play size={14} /> Edit
-            </button>
           )}
         </div>
       </div>
-    </div>
+    </Shadow>
   );
 };
 
@@ -538,6 +650,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
   const [selectedYear, setSelectedYear] = useState<ProfileTemplate | null>(null);
   const [savedData, setSavedData] = useState<SubjectData[]>([]);
   const [editingSubject, setEditingSubject] = useState<SubjectData | null>(null);
+  const [previewSubject, setPreviewSubject] = useState<SubjectData | null>(null);
   const [searching, setSearching] = useState('');
   const savedDataRef = useRef<SubjectData[]>([]);
 
@@ -575,22 +688,26 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
     return [...savedForYear, ...newSubjects];
   };
 
-  const handleFindAll = async (subjects: SubjectData[]) => {
+  const handleFindAll = async (subjects: SubjectData[], customQueries?: string[]) => {
     if (!hasApiKey) {
       alert('YouTube API key required. Please set VITE_YOUTUBE_API_KEY in your .env file.');
       return;
     }
 
-    setSearching('Searching...');
+    setSearching('Performing Audit Search...');
 
     for (const subject of subjects) {
       const topics = getTopicsForSubject(subject.yearGroup as ProfileTemplate, subject.subject);
-      const newPlaylists: Playlist[] = [];
+      const searchQueries = SEARCH_QUERIES[subject.yearGroup]?.[subject.subject] || [];
+      const flatQueries = searchQueries.flat();
 
-      for (let i = 0; i < Math.min(topics.length, 3); i++) {
-        const topic = topics[i];
+      const newPlaylists: Playlist[] = [];
+      const itemsToSearch = customQueries || (topics.length > 0 ? topics.map(t => `${t.topic} ${t.focus}`) : flatQueries);
+
+      for (let i = 0; i < Math.min(itemsToSearch.length, 5); i++) {
+        const queryTerm = itemsToSearch[i];
         try {
-          const searchQuery = `${topic.topic} ${topic.focus} ${subject.subject} ${subject.yearGroup} tutorial playlist`;
+          const searchQuery = `${queryTerm} ${subject.subject} ${subject.yearGroup} educational playlist`;
           const response = await fetch(
             `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=${encodeURIComponent(searchQuery)}&type=playlist&key=${apiKey}`
           );
@@ -656,37 +773,58 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
 
   if (!selectedYear) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white border-b px-6 py-4 flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded">
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="text-xl font-bold">Curriculum Video Finder</h1>
+      <div className="min-h-screen bg-[#FAF9F6]">
+        <div className="bg-white border-b-2 border-slate-200 px-8 py-5 flex items-center gap-8 sticky top-0 z-50">
+          <IconButton onClick={onBack} size={42} title="Exit Library">
+            <ArrowLeft size={18} />
+          </IconButton>
+          <div>
+            <h1 className="b t-h1" style={{ fontSize: 28, color: DS.ink }}>Curriculum Video Library</h1>
+            <p className="n t-small" style={{ color: DS.inkSoft, fontWeight: 900 }}>UK NATIONAL STANDARDS COMPLIANT SEARCH</p>
+          </div>
         </div>
 
-        <div className="p-6 max-w-2xl mx-auto">
+        <div className="p-8 max-w-4xl mx-auto">
           {!hasApiKey && (
-            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex gap-3 text-amber-800">
-              <AlertTriangle className="flex-shrink-0" size={24} />
-              <div>
-                <div className="font-bold">YouTube API Key Missing</div>
-                <div className="text-sm">Please set VITE_YOUTUBE_API_KEY in your .env file to enable search.</div>
+            <Shadow offset={4} size={3} radius={DS.radius.lg} className="mb-10">
+              <div className="p-6 bg-amber-50 border-2 border-amber-200 rounded-3xl flex gap-5 text-amber-800 shadow-xl shadow-amber-50">
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-amber-500 shadow-sm border border-amber-100">
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <div className="font-black text-sm uppercase tracking-widest mb-1 text-amber-900">Automation Paused</div>
+                  <div className="text-sm font-bold opacity-80 leading-relaxed">Search API key required. Please configure <strong>VITE_YOUTUBE_API_KEY</strong> in your environment settings.</div>
+                </div>
               </div>
-            </div>
+            </Shadow>
           )}
 
-          <h2 className="text-lg font-semibold mb-4">Select Year Group</h2>
-          <div className="grid grid-cols-2 gap-4">
-            {PROFILE_TEMPLATES.map(template => (
-              <button
-                key={template.id}
-                onClick={() => setSelectedYear(template.id as ProfileTemplate)}
-                className="p-6 bg-white border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-left"
-              >
-                <div className="font-semibold text-lg">{template.label}</div>
-                <div className="text-gray-500">{template.ageRange}</div>
-              </button>
-            ))}
+          <div className="mb-10">
+            <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Select Child's Year Group</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {PROFILE_TEMPLATES.map(template => (
+                <Shadow key={template.id} offset={4} size={3} radius={DS.radius.lg}>
+                  <button
+                    onClick={() => setSelectedYear(template.id as ProfileTemplate)}
+                    className="w-full text-left p-8 bg-white border-2 border-slate-100 rounded-3xl hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-50 transition-all group relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                      <Star size={80} strokeWidth={3} />
+                    </div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 transition-colors">
+                        <span className="text-2xl group-hover:scale-110 transition-transform">🎓</span>
+                      </div>
+                      <div className="text-[10px] font-black bg-slate-100 px-3 py-1.5 rounded-full text-slate-500 group-hover:bg-blue-700 group-hover:text-white transition-all uppercase tracking-widest">
+                        {template.label}
+                      </div>
+                    </div>
+                    <div className="text-2xl font-black text-slate-800">Year {template.label}</div>
+                    <p className="text-xs text-slate-400 font-bold mt-2 uppercase tracking-tight">Primary Curriculum</p>
+                  </button>
+                </Shadow>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -696,53 +834,55 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
   const subjects = getSubjectsForYear(selectedYear);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b px-6 py-4 flex items-center gap-4">
-        <button onClick={() => setSelectedYear(null)} className="p-2 hover:bg-gray-100 rounded">
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-xl font-bold">Curriculum Video Finder</h1>
-        <span className="text-gray-500">|</span>
-        <span className="font-medium">{selectedYear}</span>
+    <div className="min-h-screen bg-[#FAF9F6]">
+      <div className="bg-white border-b-2 border-slate-200 px-8 py-5 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+        <div className="flex items-center gap-6">
+          <IconButton onClick={() => setSelectedYear(null)} size={42} title="Change Level">
+            <ArrowLeft size={18} />
+          </IconButton>
+          <div>
+            <h1 className="b t-h1" style={{ fontSize: 24, color: DS.ink }}>Year {selectedYear} Standards</h1>
+            <p className="n t-small" style={{ color: DS.inkSoft, fontWeight: 900 }}>VIDEO CURATION & AUDIT CONSOLE</p>
+          </div>
+        </div>
+        <div className="flex gap-4">
+          <button
+            onClick={() => handleFindAll(subjects)}
+            disabled={!!searching || !hasApiKey}
+            className="px-8 py-3 bg-blue-600 text-white rounded-2xl text-sm font-black shadow-xl shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
+          >
+            {searching ? <Loader2 className="animate-spin" size={18} /> : <Search size={18} strokeWidth={3} />}
+            AUDIT ALL SUBJECTS
+          </button>
+        </div>
+      </div>
 
-        {!hasApiKey && (
-          <div className="flex items-center gap-1 text-amber-600 px-2 py-1 bg-amber-50 rounded text-xs border border-amber-100">
-            <AlertTriangle size={12} />
-            <span>API Key Missing</span>
+      <div className="p-8 max-w-6xl mx-auto">
+        {searching && (
+          <div className="mb-8 bg-blue-600 text-white rounded-3xl p-6 flex items-center justify-center gap-4 shadow-2xl shadow-blue-200 animate-pulse">
+            <Loader2 className="animate-spin" size={24} />
+            <span className="font-black text-lg uppercase tracking-[0.2em]">{searching}</span>
           </div>
         )}
 
-        <button
-          onClick={() => handleFindAll(subjects)}
-          disabled={!!searching}
-          className="ml-auto flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        >
-          {searching ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
-          Find All
-        </button>
-      </div>
-
-      <div className="p-6 max-w-4xl mx-auto">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            {subjects.length} Subjects for {selectedYear}
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Drag and drop JSON files to import playlists
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          {subjects.map((sub, idx) => (
+        <div className="grid grid-cols-1 gap-8">
+          {subjects.map(s => (
             <SubjectSection
-              key={sub.id}
-              subject={sub}
-              onFind={() => handleFindAll([sub])}
-              onEdit={() => setEditingSubject(sub)}
+              key={s.id}
+              subject={s}
+              onFind={() => setPreviewSubject(s)}
+              onEdit={() => setEditingSubject(s)}
               onImport={handleImportSubject}
             />
           ))}
         </div>
+
+        {subjects.length === 0 && (
+          <div className="text-center py-32">
+            <div className="text-6xl mb-4 opacity-20">📚</div>
+            <h3 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Compiling Curriculum Map...</h3>
+          </div>
+        )}
       </div>
 
       {editingSubject && (
@@ -752,8 +892,18 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
           onSave={handleSaveSubject}
         />
       )}
+
+      {previewSubject && (
+        <SearchPreviewModal
+          subject={previewSubject}
+          topics={getTopicsForSubject(previewSubject.yearGroup as ProfileTemplate, previewSubject.subject).map(t => t.topic)}
+          onSearch={(selected) => {
+            handleFindAll([previewSubject], selected);
+            setPreviewSubject(null);
+          }}
+          onClose={() => setPreviewSubject(null)}
+        />
+      )}
     </div>
   );
 };
-
-export default CurriculumSearch;

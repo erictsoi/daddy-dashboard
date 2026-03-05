@@ -336,10 +336,13 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
         {/* Curriculum Search */}
         <div
           onClick={() => onNavigate({ type: 'SEARCH' })}
-          style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", borderLeft: "4px solid transparent" }}
+          style={{ padding: "11px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", borderLeft: "4px solid transparent", transition: "all .2s" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "#EBF5FF", e.currentTarget.style.borderLeft = "4px solid #3B82F6")}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent", e.currentTarget.style.borderLeft = "4px solid transparent")}
         >
           <span style={{ fontSize: 16 }}>🔍</span>
-          {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 600, whiteSpace: "nowrap" }}>Find Videos</span>}
+          {sidebarOpen && <span className="n t-small" style={{ color: DS.inkSoft, fontWeight: 800, whiteSpace: "nowrap" }}>Find Videos</span>}
+          {sidebarOpen && <span className="blink" style={{ fontSize: 8, color: "#3B82F6", marginLeft: "auto" }}>NEW</span>}
         </div>
 
         {/* Marketplace */}
@@ -664,36 +667,53 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
                   </div>
                 </div>
                 <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
-                  <button
-                    onClick={() => onNavigate({ type: 'CURRICULUM' })}
-                    style={{
-                      padding: "10px 20px",
-                      borderRadius: DS.radius.md,
-                      border: DS.border,
-                      background: DS.ink,
-                      color: "#fff",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      fontSize: 13
-                    }}
-                  >
-                    Curriculum Builder
-                  </button>
-                  <button
-                    onClick={() => onNavigate({ type: 'PROFILES' })}
-                    style={{
-                      padding: "10px 20px",
-                      borderRadius: DS.radius.md,
-                      border: DS.border,
-                      background: DS.card,
-                      color: DS.ink,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      fontSize: 13
-                    }}
-                  >
-                    Manage Profiles
-                  </button>
+                  <div style={{ marginTop: 28, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <Shadow offset={4} size={3} radius={DS.radius.md}>
+                      <div
+                        onClick={() => onNavigate({ type: 'SEARCH' })}
+                        style={{
+                          position: "relative", cursor: "pointer", padding: 20, background: "#EFF6FF", border: "2.5px solid #3B82F6", borderRadius: DS.radius.md,
+                          display: "flex", flexDirection: "column", gap: 8, transition: "transform .2s"
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
+                        onMouseLeave={e => e.currentTarget.style.transform = "none"}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <span style={{ fontSize: 24 }}>🔍</span>
+                          <span className="b" style={{ fontSize: 10, color: "#3B82F6", fontWeight: 900, background: "#fff", padding: "2px 8px", borderRadius: 100 }}>SEARCH APPLET</span>
+                        </div>
+                        <div className="b t-h3" style={{ color: "#1E3A8A" }}>Find Curriculum Videos</div>
+                        <p className="n t-small" style={{ color: "#3B82F6", fontWeight: 700 }}>Search, verify, and import age-appropriate videos for all year groups.</p>
+                      </div>
+                    </Shadow>
+
+                    <Shadow offset={4} size={3} radius={DS.radius.md}>
+                      <div
+                        onClick={() => onNavigate({ type: 'VALIDATOR' })}
+                        style={{
+                          position: "relative", cursor: "pointer", padding: 20, background: "#F0FDF4", border: "2.5px solid #22C55E", borderRadius: DS.radius.md,
+                          display: "flex", flexDirection: "column", gap: 8, transition: "transform .2s"
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
+                        onMouseLeave={e => e.currentTarget.style.transform = "none"}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <span style={{ fontSize: 24 }}>✅</span>
+                          <span className="b" style={{ fontSize: 10, color: "#22C55E", fontWeight: 900, background: "#fff", padding: "2px 8px", borderRadius: 100 }}>VALIDATION CENTER</span>
+                        </div>
+                        <div className="b t-h3" style={{ color: "#064E3B" }}>Validate Curriculum</div>
+                        <p className="n t-small" style={{ color: "#22C55E", fontWeight: 700 }}>Audit your current lessons against UK standards for quality and coverage.</p>
+                      </div>
+                    </Shadow>
+                  </div>
+
+                  <div style={{ marginTop: 24, padding: "16px 20px", background: "#FAF9F6", border: "2.5px dashed #C4BBAF", borderRadius: DS.radius.md }}>
+                    <div className="t-label" style={{ color: DS.inkFade, marginBottom: 8 }}>Quick Access</div>
+                    <div style={{ display: "flex", gap: 12 }}>
+                      <button onClick={() => onNavigate({ type: 'CURRICULUM' })} className="n" style={{ background: "none", border: "none", color: DS.ink, fontWeight: 800, cursor: "pointer", fontSize: 13 }}>• Curriculum Builder</button>
+                      <button onClick={() => onNavigate({ type: 'PROFILES' })} className="n" style={{ background: "none", border: "none", color: DS.ink, fontWeight: 800, cursor: "pointer", fontSize: 13 }}>• Manage Profiles</button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </Shadow>

@@ -7,142 +7,148 @@ export interface UKCurriculumTopic {
   description: string;
 }
 
-export interface UKCurriculumYear {
+export interface UKYearCurriculum {
   yearGroup: ProfileTemplate;
-  keyStage: number;
-  ageRange: string;
   statutory: number;
   subjects: UKCurriculumTopic[];
 }
 
-export const UK_CURRICULUM: UKCurriculumYear[] = [
+export const UK_CURRICULUM: UKYearCurriculum[] = [
   {
     yearGroup: 'Y1-2',
-    keyStage: 1,
-    ageRange: '5-7 years',
     statutory: 10,
     subjects: [
-      { subject: 'English', topic: 'Word reading', focus: 'Phonics', description: 'Word reading, comprehension, spelling, composition, SPaG' },
-      { subject: 'Maths', topic: 'Number', focus: 'Arithmetic', description: 'Number/place value, addition/subtraction, measures, geometry' },
-      { subject: 'Science', topic: 'Plants', focus: 'Biology', description: 'Plants, Animals inc humans' },
-      { subject: 'Science', topic: 'Materials', focus: 'Chemistry', description: 'Everyday materials, Seasonal change' },
-      { subject: 'Design & Technology', topic: 'Design & Technology', focus: 'DT', description: 'Designing, making, using materials' },
-      { subject: 'History', topic: 'Changes', focus: 'History', description: 'Changes within living memory' },
-      { subject: 'Geography', topic: 'UK', focus: 'Geography', description: 'UK, seasonal features' },
-      { subject: 'Art & Design', topic: 'Art', focus: 'Creative', description: 'Drawing, painting, craft' },
-      { subject: 'Music', topic: 'Music', focus: 'Performance', description: 'Singing, instruments' },
-      { subject: 'PE', topic: 'PE', focus: 'Physical', description: 'Movement, games, swimming' },
-      { subject: 'Computing', topic: 'Computing', focus: 'Digital', description: 'Digital literacy, basic computing' },
+      { subject: 'English', topic: 'Word reading', focus: 'Phonics, decoding, common exception words', description: 'Word reading, comprehension, spelling, composition, SPaG' },
+      { subject: 'English', topic: 'Comprehension', focus: 'Listening to and discussing texts, predicting', description: 'Word reading, comprehension, spelling, composition, SPaG' },
+      { subject: 'English', topic: 'Spelling', focus: 'Phonemes, spelling rules, suffixes', description: 'Word reading, comprehension, spelling, composition, SPaG' },
+      { subject: 'English', topic: 'Composition', focus: 'Writing sentences, planning, editing', description: 'Word reading, comprehension, spelling, composition, SPaG' },
+      { subject: 'English', topic: 'SPaG', focus: 'Grammar, punctuation, terminology', description: 'Word reading, comprehension, spelling, composition, SPaG' },
+      { subject: 'Maths', topic: 'Number', focus: 'Place value, counting, 1-100', description: 'Number/place value, addition/subtraction, measures, geometry' },
+      { subject: 'Maths', topic: 'Addition', focus: 'Mental and written addition/subtraction', description: 'Number/place value, addition/subtraction, measures, geometry' },
+      { subject: 'Maths', topic: 'Measures', focus: 'Length, mass, capacity, time, money', description: 'Number/place value, addition/subtraction, measures, geometry' },
+      { subject: 'Maths', topic: 'Geometry', focus: '2D and 3D shapes, position and direction', description: 'Number/place value, addition/subtraction, measures, geometry' },
+      { subject: 'Science', topic: 'Plants', focus: 'Identifying plants, structure', description: 'Plants, Animals inc humans, Everyday materials, Seasonal change' },
+      { subject: 'Science', topic: 'Animals', focus: 'Fish, amphibians, reptiles, birds, mammals', description: 'Plants, Animals inc humans, Everyday materials, Seasonal change' },
+      { subject: 'Science', topic: 'Materials', focus: 'Distinguishing between objects and materials', description: 'Plants, Animals inc humans, Everyday materials, Seasonal change' },
+      { subject: 'Science', topic: 'Seasons', focus: 'Seasonal changes, weather and day length', description: 'Plants, Animals inc humans, Everyday materials, Seasonal change' },
+      { subject: 'Design & Technology', topic: 'Design', focus: 'Designing products for a purpose', description: 'Designing, making, using materials' },
+      { subject: 'Design & Technology', topic: 'Making', focus: 'Making, evaluating and technical knowledge', description: 'Designing, making, using materials' },
+      { subject: 'History', topic: 'Living Memory', focus: 'Historical changes within living memory', description: 'Changes within living memory' },
+      { subject: 'Geography', topic: 'Local Area', focus: 'Identifying features of the UK and local area', description: 'UK, seasonal features' },
+      { subject: 'Art & Design', topic: 'Art Skills', focus: 'Drawing, painting and craft techniques', description: 'Drawing, painting, craft' },
+      { subject: 'Music', topic: 'Music Skills', focus: 'Singing and playing instruments', description: 'Singing, instruments' },
+      { subject: 'PE', topic: 'Physical education', focus: 'Movement, games, swimming', description: 'Movement, games, swimming' },
+      { subject: 'Computing', topic: 'Computing', focus: 'Digital literacy, basic computing', description: 'Digital literacy, basic computing' },
     ]
   },
-
   {
     yearGroup: 'Y3-4',
-    keyStage: 2,
-    ageRange: '7-9 years',
     statutory: 12,
     subjects: [
-      { subject: 'English', topic: 'English', focus: 'Literacy', description: 'Word reading, comprehension, grammar, composition' },
-      { subject: 'Maths', topic: 'Maths', focus: 'Arithmetic', description: 'Number, add/subtract, multiplication/division, fractions, measurement, statistics, geometry' },
-      { subject: 'Science', topic: 'Science', focus: 'Biology', description: 'Plants, Animals inc humans, Rocks, Light' },
-      { subject: 'Science', topic: 'Forces', focus: 'Physics', description: 'Forces/magnets' },
-      { subject: 'Design & Technology', topic: 'Design & Technology', focus: 'DT', description: 'Designing, making, evaluation' },
-      { subject: 'History', topic: 'History', focus: 'British History', description: 'Stone Age to Iron Age' },
-      { subject: 'Geography', topic: 'Geography', focus: 'Human Geography', description: 'Settlement, land use' },
-      { subject: 'Art & Design', topic: 'Art', focus: 'Creative', description: 'Art techniques, creativity' },
-      { subject: 'Music', topic: 'Music', focus: 'Performance', description: 'Performance, composition' },
-      { subject: 'PE', topic: 'PE', focus: 'Physical', description: 'Games, athletics, swimming' },
-      { subject: 'Computing', topic: 'Computing', focus: 'Programming', description: 'Programming, digital skills' },
-      { subject: 'Modern Language', topic: 'MFL', focus: 'Language', description: 'French or Spanish basics' },
+      { subject: 'English', topic: 'Reading', focus: 'Word reading, comprehension', description: 'Word reading, comprehension, grammar, composition' },
+      { subject: 'English', topic: 'Writing', focus: 'Grammar, composition', description: 'Word reading, comprehension, grammar, composition' },
+      { subject: 'Maths', topic: 'Number', focus: 'Place value, addition/subtraction', description: 'Number, add/subtract, multiplication/division, fractions, measurement, statistics, geometry' },
+      { subject: 'Maths', topic: 'Times Tables', focus: 'Multiplication and division', description: 'Number, add/subtract, multiplication/division, fractions, measurement, statistics, geometry' },
+      { subject: 'Maths', topic: 'Fractions', focus: 'Fractions and decimals', description: 'Number, add/subtract, multiplication/division, fractions, measurement, statistics, geometry' },
+      { subject: 'Science', topic: 'Plants', focus: 'Life cycles, structure', description: 'Plants, Animals inc humans, Rocks, Light, Forces/magnets' },
+      { subject: 'Science', topic: 'Animals', focus: 'Habitats, food chains', description: 'Plants, Animals inc humans, Rocks, Light, Forces/magnets' },
+      { subject: 'Science', topic: 'Rocks', focus: 'Types of rocks, fossils', description: 'Plants, Animals inc humans, Rocks, Light, Forces/magnets' },
+      { subject: 'Science', topic: 'Light', focus: 'Light and shadows', description: 'Plants, Animals inc humans, Rocks, Light, Forces/magnets' },
+      { subject: 'Science', topic: 'Forces', focus: 'Magnets and friction', description: 'Plants, Animals inc humans, Rocks, Light, Forces/magnets' },
+      { subject: 'Design & Technology', topic: 'DT', focus: 'Designing, making, evaluation', description: 'Designing, making, evaluation' },
+      { subject: 'History', topic: 'Prehistory', focus: 'Stone Age to Iron Age', description: 'Stone Age to Iron Age' },
+      { subject: 'Geography', topic: 'Human Geography', focus: 'Settlement, land use', description: 'Settlement, land use' },
+      { subject: 'Art & Design', topic: 'Art', focus: 'Techniques and creativity', description: 'Art techniques, creativity' },
+      { subject: 'Music', topic: 'Performance', focus: 'Singing, playing, composing', description: 'Performance, composition' },
+      { subject: 'PE', topic: 'PE', focus: 'Games, athletics, swimming', description: 'Games, athletics, swimming' },
+      { subject: 'Computing', topic: 'Computing', focus: 'Programming, digital skills', description: 'Programming, digital skills' },
+      { subject: 'Modern Language', topic: 'French', focus: 'French basics', description: 'French or Spanish basics' },
+      { subject: 'Modern Language', topic: 'Spanish', focus: 'Spanish basics', description: 'French or Spanish basics' },
     ]
   },
-
   {
     yearGroup: 'Y5-6',
-    keyStage: 2,
-    ageRange: '9-11 years',
     statutory: 12,
     subjects: [
-      { subject: 'English', topic: 'English', focus: 'Literacy', description: 'Word reading, comprehension (themes), advanced grammar, composition, SPaG' },
-      { subject: 'Maths', topic: 'Maths', focus: 'Numbers', description: 'Number, add/subtract, multiplication/division, fractions/decimals/%, measurement, geometry, statistics' },
-      { subject: 'Science', topic: 'Living things', focus: 'Biology', description: 'Living things/habitats, Animals inc humans' },
-      { subject: 'Science', topic: 'Materials', focus: 'Chemistry', description: 'Materials/states, Earth/space' },
-      { subject: 'Science', topic: 'Forces', focus: 'Physics', description: 'Forces' },
-      { subject: 'Design & Technology', topic: 'Design & Technology', focus: 'DT', description: 'Designing, making, technical knowledge' },
-      { subject: 'History', topic: 'History', focus: 'World History', description: 'Ancient Greece, British history' },
-      { subject: 'Geography', topic: 'Geography', focus: 'Physical Geo', description: 'Biomes, climate, physical features' },
-      { subject: 'Art & Design', topic: 'Art', focus: 'Creative', description: 'Art techniques, observation' },
-      { subject: 'Music', topic: 'Music', focus: 'Performance', description: 'Performance, composition, appraisal' },
-      { subject: 'PE', topic: 'PE', focus: 'Physical', description: 'Games, athletics, swimming' },
-      { subject: 'Computing', topic: 'Computing', focus: 'Programming', description: 'Programming, algorithms, debugging' },
-      { subject: 'Modern Language', topic: 'MFL', focus: 'Language', description: 'French or Spanish vocabulary, grammar' },
+      { subject: 'English', topic: 'Comprehension', focus: 'Advanced reading and themes', description: 'Word reading, comprehension (themes), advanced grammar, composition, SPaG' },
+      { subject: 'English', topic: 'Writing', focus: 'Composition and advanced grammar', description: 'Word reading, comprehension (themes), advanced grammar, composition, SPaG' },
+      { subject: 'English', topic: 'SPaG', focus: 'Grammar, punctuation and spelling', description: 'Word reading, comprehension (themes), advanced grammar, composition, SPaG' },
+      { subject: 'Maths', topic: 'Numbers', focus: 'Advanced number work', description: 'Number, add/subtract, multiplication/division, fractions/decimals/%, measurement, geometry, statistics' },
+      { subject: 'Maths', topic: 'Calculations', focus: 'Multiplication/division, fractions/decimals/%', description: 'Number, add/subtract, multiplication/division, fractions/decimals/%, measurement, geometry, statistics' },
+      { subject: 'Maths', topic: 'Data', focus: 'Geometry and statistics', description: 'Number, add/subtract, multiplication/division, fractions/decimals/%, measurement, geometry, statistics' },
+      { subject: 'Science', topic: 'Life Processes', focus: 'Living things and habitats', description: 'Living things/habitats, Animals inc humans, Materials/states, Earth/space, Forces' },
+      { subject: 'Science', topic: 'Earth & Space', focus: 'Planets and solar system', description: 'Living things/habitats, Animals inc humans, Materials/states, Earth/space, Forces' },
+      { subject: 'Science', topic: 'Physics', focus: 'Electricity and forces', description: 'Living things/habitats, Animals inc humans, Materials/states, Earth/space, Forces' },
+      { subject: 'Design & Technology', topic: 'DT', focus: 'Designing, making, technical knowledge', description: 'Designing, making, technical knowledge' },
+      { subject: 'History', topic: 'Ancient History', focus: 'Ancient Greece', description: 'Ancient Greece, British history' },
+      { subject: 'History', topic: 'British History', focus: 'British historical periods', description: 'Ancient Greece, British history' },
+      { subject: 'Geography', topic: 'Environment', focus: 'Biomes, climate, features', description: 'Biomes, climate, physical features' },
+      { subject: 'Art & Design', topic: 'Art', focus: 'Techniques and observation', description: 'Art techniques, observation' },
+      { subject: 'Music', topic: 'Music', focus: 'Performance, composition, appraisal', description: 'Performance, composition, appraisal' },
+      { subject: 'PE', topic: 'PE', focus: 'Games, athletics, swimming', description: 'Games, athletics, swimming' },
+      { subject: 'Computing', topic: 'Coding', focus: 'Programming, algorithms, debugging', description: 'Programming, algorithms, debugging' },
+      { subject: 'Modern Language', topic: 'Modern Language', focus: 'French or Spanish vocab', description: 'French or Spanish vocabulary, grammar' },
     ]
   },
-
   {
     yearGroup: 'Y7-9',
-    keyStage: 3,
-    ageRange: '11-14 years',
     statutory: 12,
     subjects: [
-      { subject: 'English', topic: 'English', focus: 'Literature', description: 'Reading, writing, spoken language' },
-      { subject: 'Maths', topic: 'Maths', focus: 'Algebra', description: 'Number, algebra, geometry, statistics' },
-      { subject: 'Science', topic: 'Biology', focus: 'Science', description: 'Biology, Chemistry, Physics' },
-      { subject: 'Science', topic: 'Chemistry', focus: 'Science', description: 'Biology, Chemistry, Physics' },
-      { subject: 'Science', topic: 'Physics', focus: 'Science', description: 'Biology, Chemistry, Physics' },
-      { subject: 'Citizenship', topic: 'Citizenship', focus: 'Citizenship', description: 'Democracy, rights, responsibilities' },
-      { subject: 'Computing', topic: 'Computing', focus: 'Digital', description: 'Computing, digital literacy' },
-      { subject: 'Design & Technology', topic: 'D&T', focus: 'DT', description: 'Design, making, technology' },
-      { subject: 'Modern Foreign Languages', topic: 'MFL', focus: 'Language', description: 'Languages' },
-      { subject: 'Geography', topic: 'Geography', focus: 'Geography', description: 'Physical and human geography' },
-      { subject: 'History', topic: 'History', focus: 'History', description: 'British and world history' },
-      { subject: 'Music', topic: 'Music', focus: 'Performance', description: 'Music performance, composition' },
-      { subject: 'Art & Design', topic: 'Art', focus: 'Creative', description: 'Art and design' },
-      { subject: 'PE', topic: 'PE', focus: 'Physical', description: 'Physical education' },
+      { subject: 'English', topic: 'Reading', focus: 'Literary analysis', description: 'Reading, writing, spoken language' },
+      { subject: 'English', topic: 'Writing', focus: 'Composition skills', description: 'Reading, writing, spoken language' },
+      { subject: 'Maths', topic: 'Algebra', focus: 'Equations and identities', description: 'Number, algebra, geometry, statistics' },
+      { subject: 'Maths', topic: 'Geometry', focus: 'Shape and space', description: 'Number, algebra, geometry, statistics' },
+      { subject: 'Science', topic: 'Biology', focus: 'Cells, genetics, ecology', description: 'Biology, Chemistry, Physics' },
+      { subject: 'Science', topic: 'Chemistry', focus: 'Atomic structure, reactions', description: 'Biology, Chemistry, Physics' },
+      { subject: 'Science', topic: 'Physics', focus: 'Forces, energy, space', description: 'Biology, Chemistry, Physics' },
+      { subject: 'Citizenship', topic: 'Democracy', focus: 'Government, rights, law', description: 'Democracy, rights, responsibilities' },
+      { subject: 'Computing', topic: 'Computing', focus: 'Computer science, digital literacy', description: 'Computing, digital literacy' },
+      { subject: 'Design & Technology', topic: 'DT', focus: 'Design, making, technology', description: 'Design, making, technology' },
+      { subject: 'Modern Language', topic: 'Languages', focus: 'Modern Foreign Languages', description: 'Languages' },
+      { subject: 'Geography', topic: 'Geography', focus: 'Physical and human geography', description: 'Physical and human geography' },
+      { subject: 'History', topic: 'History', focus: 'British and world history', description: 'British and world history' },
+      { subject: 'Music', topic: 'Music', focus: 'Performance, composition', description: 'Music performance, composition' },
+      { subject: 'Art & Design', topic: 'Art', focus: 'Art and design', description: 'Art and design' },
+      { subject: 'PE', topic: 'PE', focus: 'Physical education', description: 'Physical education' },
     ]
   },
-
   {
     yearGroup: 'Y10-11',
-    keyStage: 4,
-    ageRange: '14-16 years',
     statutory: 10,
     subjects: [
-      { subject: 'English Language', topic: 'English Language', focus: 'GCSE', description: 'GCSE English Language' },
-      { subject: 'English Literature', topic: 'English Literature', focus: 'GCSE', description: 'GCSE English Literature' },
-      { subject: 'Maths', topic: 'Maths', focus: 'GCSE', description: 'GCSE Maths' },
-      { subject: 'Science', topic: 'Science', focus: 'GCSE', description: 'GCSE Biology, Chemistry, Physics (Combined/Triple)' },
-      { subject: 'Computing', topic: 'Computing', focus: 'GCSE', description: 'GCSE Computer Science' },
-      { subject: 'PE', topic: 'PE', focus: 'GCSE', description: 'GCSE Physical Education' },
-      { subject: 'Citizenship', topic: 'Citizenship', focus: 'GCSE', description: 'Citizenship Studies' },
-      { subject: 'Modern Language', topic: 'MFL', focus: 'GCSE', description: 'French or Spanish GCSE' },
-      { subject: 'History', topic: 'History', focus: 'GCSE', description: 'GCSE History' },
-      { subject: 'Geography', topic: 'Geography', focus: 'GCSE', description: 'GCSE Geography' },
+      { subject: 'English', topic: 'English Language', focus: 'GCSE Language Paper 1 & 2', description: 'GCSE English Language' },
+      { subject: 'English', topic: 'English Literature', focus: 'GCSE Literature Texts', description: 'GCSE English Literature' },
+      { subject: 'Maths', topic: 'GCSE Maths', focus: 'Foundation or Higher Tier', description: 'GCSE Maths' },
+      { subject: 'Science', topic: 'Combined Science', focus: 'Biology, Chemistry, Physics', description: 'GCSE Biology, Chemistry, Physics (Combined/Triple)' },
+      { subject: 'Science', topic: 'Triple Science', focus: 'Separate Sci awards', description: 'GCSE Biology, Chemistry, Physics (Combined/Triple)' },
+      { subject: 'Computing', topic: 'Computer Science', focus: 'Theory and Programming', description: 'GCSE Computer Science' },
+      { subject: 'PE', topic: 'PE', focus: 'Physical Education', description: 'GCSE Physical Education' },
+      { subject: 'Citizenship', topic: 'Citizenship', focus: 'Citizenship Studies', description: 'Citizenship Studies' },
+      { subject: 'Modern Language', topic: 'Modern Language', focus: 'GCSE French or Spanish', description: 'GCSE French or Spanish' },
+      { subject: 'History', topic: 'History', focus: 'GCSE History', description: 'GCSE History' },
+      { subject: 'Geography', topic: 'Geography', focus: 'GCSE Geography', description: 'GCSE Geography' },
     ]
   },
-
   {
     yearGroup: 'Y12-13',
-    keyStage: 5,
-    ageRange: '16-18 years',
     statutory: 10,
     subjects: [
-      { subject: 'English Language', topic: 'English Language', focus: 'A-Level', description: 'A-Level English Language' },
-      { subject: 'English Literature', topic: 'English Literature', focus: 'A-Level', description: 'A-Level English Literature' },
-      { subject: 'Maths', topic: 'Maths', focus: 'A-Level', description: 'A-Level Mathematics (Pure, Mechanics, Statistics)' },
-      { subject: 'Science', topic: 'Science', focus: 'A-Level', description: 'A-Level Biology, Chemistry, Physics' },
-      { subject: 'History', topic: 'History', focus: 'A-Level', description: 'A-Level History' },
-      { subject: 'Geography', topic: 'Geography', focus: 'A-Level', description: 'A-Level Geography' },
-      { subject: 'Modern Language', topic: 'MFL', focus: 'A-Level', description: 'A-Level French or Spanish' },
-      { subject: 'Art & Design', topic: 'Art & Design', focus: 'A-Level', description: 'A-Level Art & Design' },
-      { subject: 'Computing', topic: 'Computing', focus: 'A-Level', description: 'A-Level Computer Science' },
-      { subject: 'PE', topic: 'PE', focus: 'A-Level', description: 'A-Level Physical Education' },
+      { subject: 'English', topic: 'English Language', focus: 'A-Level Language', description: 'A-Level English Language' },
+      { subject: 'English', topic: 'English Literature', focus: 'A-Level Literature', description: 'A-Level English Literature' },
+      { subject: 'Maths', topic: 'Mathematics', focus: 'Pure, Mechanics, Stats', description: 'A-Level Mathematics (Pure, Mechanics, Statistics)' },
+      { subject: 'Science', topic: 'Biology', focus: 'A-Level Biology', description: 'A-Level Biology, Chemistry, Physics' },
+      { subject: 'Science', topic: 'Chemistry', focus: 'A-Level Chemistry', description: 'A-Level Biology, Chemistry, Physics' },
+      { subject: 'Science', topic: 'Physics', focus: 'A-Level Physics', description: 'A-Level Biology, Chemistry, Physics' },
+      { subject: 'History', topic: 'History', focus: 'A-Level History', description: 'A-Level History' },
+      { subject: 'Geography', topic: 'Geography', focus: 'A-Level Geography', description: 'A-Level Geography' },
+      { subject: 'Art & Design', topic: 'Art', focus: 'A-Level Art & Design', description: 'A-Level Art & Design' },
+      { subject: 'Computing', topic: 'Computing', focus: 'A-Level Computer Science', description: 'A-Level Computer Science' },
     ]
-  },
+  }
 ];
 
-export const getCurriculumForYear = (yearGroup: ProfileTemplate): UKCurriculumYear | undefined => {
-  return UK_CURRICULUM.find(c => c.yearGroup === yearGroup);
+export const getCurriculumForYear = (yearGroup: ProfileTemplate): UKYearCurriculum | undefined => {
+  return UK_CURRICULUM.find(y => y.yearGroup === yearGroup);
 };
 
 export const getSubjectsForYear = (yearGroup: ProfileTemplate): string[] => {

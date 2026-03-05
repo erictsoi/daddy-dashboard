@@ -3,11 +3,14 @@
 ### Added
 - **Curriculum Library**: New "Import from Applet" feature to import JSON curriculum data from external tools.
 - **Curriculum Search**: Integrated API Key status panel with missing key warnings and instructions.
+- **Curriculum Search**: Added "Daddy's Learning Goals" and "Curriculum Mapping" sections to vividly display curriculum focus.
 - **Year Groups**: Expanded data coverage for Y1-2, Y3-4, Y10-11, and Y12-13 with generated placeholder subject cards.
 - **Hooks**: Modularized data layer by splitting `useAppData` into `useSettingsData`, `useChildData`, and `useLessonData`.
 - **UI**: Implemented a premium `LoadingFallback` component with centered spinner and themed background.
 
 ### Changed
+- **Curriculum Search**: "Find Videos" search preview now strictly targets exact topic recommendations derived from the `ukCurriculum.ts` file, drastically improving finding valid educational playlists.
+- **Curriculum Data**: Detailed topics, goals, and focus elements within `ukCurriculum.ts` now perfectly mirror the verified `UK_CURRICULUM.md` source of truth.
 - **Performance**: Implemented dynamic dynamic (lazy) loading for large subject card JSON files to reduce initial bundle size.
 - **UK Curriculum**: Enriched all year groups with granular topics and detailed descriptions for better search context.
 - **Search Logic**: Refined Y7-9 Music search terms to prioritize generic performance playlists over specific curriculum codes.

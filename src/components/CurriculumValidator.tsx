@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Check, X, AlertTriangle, Download, Upload, Trash2 } from 'lucide-react';
 import { parseRawData, validateAllPlaylists, PlaylistRow } from '../data/curriculumData';
 import { validateTopic, CurriculumValidationResult } from '../lib/curriculumValidator';
+import { getCurriculumForYear, getTopicsForSubject } from '../data/ukCurriculum';
 import { ProfileTemplate } from '../types';
-import { Card } from './design-system';
+import { Card, Shadow, DS, IconButton } from './design-system';
+import { Youtube, ExternalLink, Play, Search, Star, Info } from 'lucide-react';
 
 interface Props {
   onBack: () => void;
@@ -104,35 +106,56 @@ export const CurriculumValidator: React.FC<Props> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b px-6 py-4 flex items-center gap-4">
-        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded">
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-xl font-bold">Curriculum Validator</h1>
+    <div className="min-h-screen bg-[#FAF9F6]">
+      <div className="bg-white border-b-2 border-slate-200 px-8 py-5 flex items-center justify-between sticky top-0 z-50">
+        <div className="flex items-center gap-6">
+          <IconButton onClick={onBack} size={42} title="Back">
+            <ArrowLeft size={18} />
+          </IconButton>
+          <div>
+            <h1 className="b t-h1" style={{ fontSize: 28, color: DS.ink }}>Curriculum Quality Audit</h1>
+            <p className="n t-small" style={{ color: DS.inkSoft, fontWeight: 800 }}>UK NATIONAL STANDARDS COMPLIANCE</p>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={runValidation}
+            className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all"
+          >
+            Run Audit
+          </button>
+        </div>
       </div>
 
-      <div className="p-6">
+      <div className="p-8 max-w-7xl mx-auto">
         {summary && (
-          <div className="mb-6 grid grid-cols-4 gap-4">
-            <Card className="p-4 text-center">
-              <div className="text-3xl font-bold text-blue-600">{summary.total}</div>
-              <div className="text-gray-600">Total Playlists</div>
-            </Card>
-            <Card className="p-4 text-center">
-              <div className="text-3xl font-bold text-green-600">{summary.valid}</div>
-              <div className="text-gray-600">Valid (UK Curriculum)</div>
-            </Card>
-            <Card className="p-4 text-center">
-              <div className="text-3xl font-bold text-red-600">{summary.invalid}</div>
-              <div className="text-gray-600">Need Review</div>
-            </Card>
-            <Card className="p-4 text-center">
-              <div className="text-3xl font-bold text-amber-600">
-                {Math.round((summary.valid / summary.total) * 100)}%
+          <div className="mb-8 grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Shadow offset={4} size={3} radius={DS.radius.lg}>
+              <div className="bg-white p-6 border-2 border-slate-100 rounded-2xl text-center">
+                <div className="text-4xl font-black text-slate-800 mb-1">{summary.total}</div>
+                <div className="t-label" style={{ color: DS.inkFade }}>PLAYLISTS AUDITED</div>
               </div>
-              <div className="text-gray-600">Match Rate</div>
-            </Card>
+            </Shadow>
+            <Shadow offset={4} size={3} radius={DS.radius.lg}>
+              <div className="bg-white p-6 border-2 border-green-400 rounded-2xl text-center shadow-lg shadow-green-50">
+                <div className="text-4xl font-black text-green-600 mb-1">{summary.valid}</div>
+                <div className="t-label" style={{ color: DS.inkFade }}>VERIFIED COMPLIANT</div>
+              </div>
+            </Shadow>
+            <Shadow offset={4} size={3} radius={DS.radius.lg}>
+              <div className="bg-white p-6 border-2 border-rose-300 rounded-2xl text-center shadow-lg shadow-rose-50">
+                <div className="text-4xl font-black text-rose-600 mb-1">{summary.invalid}</div>
+                <div className="t-label" style={{ color: DS.inkFade }}>FAILED STANDARDS</div>
+              </div>
+            </Shadow>
+            <Shadow offset={4} size={3} radius={DS.radius.lg}>
+              <div className="bg-white p-6 border-2 border-amber-300 rounded-2xl text-center shadow-lg shadow-amber-50">
+                <div className="text-4xl font-black text-amber-600 mb-1">
+                  {Math.round((summary.valid / summary.total) * 100)}%
+                </div>
+                <div className="t-label" style={{ color: DS.inkFade }}>CURRICULUM SCORE</div>
+              </div>
+            </Shadow>
           </div>
         )}
 
@@ -194,47 +217,107 @@ export const CurriculumValidator: React.FC<Props> = ({ onBack }) => {
           </div>
         )}
 
-        <div className="space-y-2">
-          {filteredResults.map((r, idx) => (
-            <div key={idx}>
-              <Card className={`p-3 ${r.valid ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'}`}>
-                <div className="flex items-start gap-3">
-                  <div className="mt-1">
-                    {r.valid ? (
-                      <Check size={18} className="text-green-600" />
-                    ) : (
-                      <X size={18} className="text-red-600" />
+        <div className="flex flex-col gap-6">
+          {filteredResults.map((r, idx) => {
+            const curriculum = getCurriculumForYear(r.row.profile as ProfileTemplate);
+            const sub = curriculum?.subjects.find(s => s.subject === r.row.subject);
+
+            return (
+              <Shadow key={idx} offset={r.valid ? 2 : 4} size={r.valid ? 2 : 3} radius={DS.radius.lg}>
+                <div className={`bg-white rounded-2xl border-2 overflow-hidden transition-all ${r.valid ? 'border-slate-100 opacity-80' : 'border-rose-400 shadow-xl shadow-rose-50'
+                  }`}>
+                  <div className={`p-4 flex items-center justify-between border-b ${r.valid ? 'bg-slate-50' : 'bg-rose-50/50'
+                    }`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 ${r.valid ? 'bg-white border-slate-100 text-slate-400' : 'bg-white border-rose-200 text-rose-600'
+                        }`}>
+                        {r.valid ? <Check size={20} /> : <AlertTriangle size={20} />}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-slate-800">{r.row.subject}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 py-0.5 bg-white border border-slate-100 rounded-full">
+                            {r.row.profile}
+                          </span>
+                        </div>
+                        <div className="text-xs font-bold text-slate-400 uppercase tracking-tight">{r.row.topic}</div>
+                      </div>
+                    </div>
+                    {!r.valid && (
+                      <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-1 bg-white px-3 py-1.5 rounded-full border-2 border-rose-100">
+                        INCONSISTENT WITH UK CURRICULUM
+                      </span>
                     )}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">{r.row.profile}</span>
-                      <span className="text-gray-400">|</span>
-                      <span className="font-medium">{r.row.subject}</span>
-                      <span className="text-gray-400">|</span>
-                      <span className="text-sm text-gray-600">{r.row.topic}</span>
+
+                  <div className="p-5 flex flex-col md:flex-row gap-8">
+                    <div className="flex-1">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                        <Info size={10} className="text-blue-400" /> Learning Objective
+                      </h4>
+                      <p className="text-sm text-slate-600 font-bold mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100 italic">
+                        "{r.row.focus}"
+                      </p>
+
+                      {!r.valid && (
+                        <div className="space-y-3">
+                          <div className="bg-rose-50 border-2 border-rose-100 rounded-xl p-4">
+                            <h5 className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-2">CRITICAL ISSUES</h5>
+                            <div className="space-y-1">
+                              {r.validation.issues.map((issue, i) => (
+                                <div key={i} className="text-xs text-rose-800 font-bold flex gap-2">
+                                  <span className="text-rose-400">•</span> {issue}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {r.validation.suggestions.length > 0 && (
+                            <div className="bg-amber-50 border-2 border-amber-100 rounded-xl p-4">
+                              <h5 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">RECOMMENDED CORRECTION</h5>
+                              <div className="text-xs text-amber-800 font-bold leading-relaxed">
+                                {r.validation.suggestions[0]}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-500">{r.row.focus}</div>
-                    {!r.valid && r.validation.issues.length > 0 && (
-                      <div className="mt-2 flex items-start gap-2 text-sm text-red-600">
-                        <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
-                        <div>
-                          {r.validation.issues.map((issue, i) => (
-                            <div key={i}>{issue}</div>
-                          ))}
+
+                    <div className="flex-1 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-8">
+                      <div className="mb-4">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                          <Star size={10} className="text-amber-400" /> UK Goals for {r.row.profile}
+                        </h4>
+                        <p className="text-sm text-slate-500 font-medium leading-relaxed bg-blue-50/20 p-3 rounded-xl border border-blue-50">
+                          {sub?.description || "Generic UK Standards apply."}
+                        </p>
+                      </div>
+
+                      <div className="bg-white border-2 border-slate-100 rounded-2xl p-4">
+                        <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">PLAYLIST AUDIT</h5>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-slate-400 font-bold">PRIMARY URL</span>
+                            <a href={r.row.primaryPlaylist} target="_blank" className="text-blue-500 hover:text-blue-700 transition-colors">
+                              <Youtube size={16} />
+                            </a>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-slate-400 font-bold">BACKUPS</span>
+                            <div className="flex gap-2">
+                              {r.row.backupPlaylist1 && <span className="text-[10px] bg-slate-50 px-2 py-0.5 rounded text-slate-500">B1</span>}
+                              {r.row.backupPlaylist2 && <span className="text-[10px] bg-slate-50 px-2 py-0.5 rounded text-slate-500">B2</span>}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    )}
-                    {!r.valid && r.validation.suggestions.length > 0 && (
-                      <div className="mt-1 text-sm text-gray-500">
-                        Suggestion: {r.validation.suggestions[0]}
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </Card>
-            </div>
-          ))}
+              </Shadow>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChildProfile, Lesson, ParsedRow, ParsedTemplateRow, TopicFrequency } from '../types';
 import { hardDeleteSubjectFromFirebase } from '../lib/dataService';

@@ -149,8 +149,26 @@ export const BendayShadow = ({ offset = 3, size = 3, scale = 1, radius }: { offs
 );
 
 // Shadow component with benday dots
-export const Shadow = ({ children, offset = 3, size = 3, radius, style = {}, scale = 1 }: { children: React.ReactNode; offset?: number; size?: number; radius?: string | number; style?: React.CSSProperties; scale?: number }) => (
-  <div style={{ position: "relative", borderRadius: radius, ...style }}>
+export const Shadow = ({
+  children,
+  offset = 3,
+  size = 3,
+  radius,
+  style = {},
+  scale = 1,
+  className = "",
+  ...props
+}: {
+  children: React.ReactNode;
+  offset?: number;
+  size?: number;
+  radius?: string | number;
+  style?: React.CSSProperties;
+  scale?: number;
+  className?: string;
+  [key: string]: any;
+}) => (
+  <div className={className} style={{ position: "relative", borderRadius: radius, ...style }} {...props}>
     <BendayShadow offset={offset} size={size} scale={scale} radius={radius} />
     {children}
   </div>
