@@ -1086,25 +1086,27 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
           <h1 className="font-bold text-lg">UK Curriculum Video Finder</h1>
           <button onClick={() => setWildcardModalOpen(true)} className="text-blue-600 text-sm">All ({savedData.length})</button>
         </div>
-        <div className="p-4 max-w-xl mx-auto">
-          <h2 className="font-semibold mb-3">Select Year Group</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {PROFILE_TEMPLATES.map(template => {
-              const isExtra = template.id === 'Extracurricular';
-              return (
-                <button 
-                  key={template.id} 
-                  onClick={() => setSelectedYear(template.id as ProfileTemplate)} 
-                  className="p-4 bg-white border-2 border-gray-200 rounded hover:border-blue-500 text-left"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{template.id === 'Extracurricular' ? 'Extracurricular' : `Year ${template.id}`}</span>
-                    <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">{template.label}</span>
-                  </div>
-                  <div className="text-sm text-gray-500">{template.avatar}</div>
-                </button>
-              );
-            })}
+        <div className="p-4">
+          <div className="max-w-xl mx-auto">
+            <h2 className="font-semibold mb-3">Select Year Group</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {PROFILE_TEMPLATES.map(template => {
+                const isExtra = template.id === 'Extracurricular';
+                return (
+                  <button 
+                    key={template.id} 
+                    onClick={() => setSelectedYear(template.id as ProfileTemplate)} 
+                    className="p-4 bg-white border-2 border-gray-200 rounded hover:border-blue-500 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{template.id === 'Extracurricular' ? 'Extracurricular' : `Year ${template.id}`}</span>
+                      <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">{template.label}</span>
+                    </div>
+                    <div className="text-sm text-gray-500">{template.ageRange}</div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
