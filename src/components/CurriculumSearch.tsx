@@ -745,7 +745,16 @@ const SubjectSection: React.FC<{
         <p className="text-xs text-blue-600 font-medium mb-3">{subject.focus}</p>
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mb-3">
-          {topicNames.length > 0 ? (
+          {playlists.length > 0 ? (
+            playlists.map((playlist, idx) => (
+              <TopicCard 
+                key={playlist.url || idx} 
+                topicName={playlist.title} 
+                playlist={playlist} 
+                subjectName={subject.subject} 
+              />
+            ))
+          ) : topicNames.length > 0 ? (
             topicNames.map((topic, idx) => {
               const playlist = playlists.find(p => p.index === idx);
               return <TopicCard key={idx} topicName={topic} playlist={playlist} subjectName={subject.subject} />;
@@ -896,6 +905,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
   };
 
   const handleImportSubject = (subject: SubjectData) => {
+    logger.log('[CurriculumSearch] handleImportSubject: imported', subject.subject, 'with', subject.playlists?.length || 0, 'playlists');
     handleSaveSubject(subject);
   };
 
