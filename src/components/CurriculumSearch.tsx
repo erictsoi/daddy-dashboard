@@ -827,23 +827,32 @@ const SubjectSection: React.FC<{
   };
 
   const isExtra = subject.yearGroup === 'Extracurricular';
+  const isOptional = (subject as any).isOptional || false;
 
   return (
     <div
-      className={`bg-white rounded-lg border-2 overflow-hidden transition-all mb-4 ${hasAnyVideos ? 'border-green-400' : 'border-slate-200'
-        } ${isDragging ? 'border-blue-500 ring-4 ring-blue-500/10' : ''}`}
+      className={`bg-white rounded-lg border-2 overflow-hidden mb-4 ${hasAnyVideos ? 'border-green-400' : 'border-gray-200'} ${isDragging ? 'border-blue-500 bg-blue-50' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {isDragging && (
+        <div className="absolute inset-0 bg-blue-500/10 flex items-center justify-center pointer-events-none z-10">
+          <span className="bg-blue-500 text-white px-4 py-2 rounded font-medium">Drop to import</span>
+        </div>
+      )}
       <div className="p-3 bg-gray-50 border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="font-bold text-base">{subject.subject}</h3>
-          <span className={`text-xs px-2 py-0.5 rounded ${isExtra ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
-            {isExtra ? 'Optional' : 'Core'}
-          </span>
+          {isExtra ? (
+            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-medium border border-yellow-200">⭐ Extracurricular</span>
+          ) : isOptional ? (
+            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Optional</span>
+          ) : (
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Core</span>
+          )}
         </div>
-        {isExtra && onRemove && (
+        {isOptional && onRemove && (
           <button onClick={onRemove} className="text-red-500 hover:bg-red-50 px-2 py-1 rounded text-sm" title="Remove subject">
             × Remove
           </button>
@@ -852,50 +861,69 @@ const SubjectSection: React.FC<{
       <div className="p-3">
         <p className="text-xs text-blue-600 font-medium mb-3">{subject.focus}</p>
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mb-3">
-          {playlists.length > 0 ? (
-            playlists.map((playlist, idx) => (
-              <TopicCard
-                key={playlist.url || idx}
-                topicName={playlist.title}
-                playlist={playlist}
-                subjectName={subject.subject}
-              />
-            ))
-          ) : topicNames.length > 0 ? (
-            topicNames.map((topic, idx) => {
-              const playlist = playlists.find(p => p.index === idx);
+        {playlists.length > 0 ? (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mb-3">
+            {Array.from({ length: Math.max(topicNames.length, playlists.length) }).map((_, idx) => {
+              const playlist = playlists.find(p => p.index === idx) || playlists[idx];
+              let topic = topicNames[idx];
+              if (!topic && playlist?.title) {
+                topic = playlist.title.includes(':') ? playlist.title.split(':')[0] : `Topic ${idx + 1}`;
+              }
+              if (!topic) topic = `Topic ${idx + 1}`;
               return <TopicCard key={idx} topicName={topic} playlist={playlist} subjectName={subject.subject} />;
-            })
-          ) : (
-            <div className="col-span-full py-4 text-center border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/30">
-              <div className="text-[10px] font-black text-slate-400 uppercase mb-2">Manual Mode</div>
-              <button onClick={onEdit} className="text-[10px] font-black text-blue-600">+ ADD TOPIC</button>
-            </div>
-          )}
-        </div>
+            })}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500 mb-3">
+            {topicNames.length > 0
+              ? `No playlists yet. Click "Find All" to search for ${topicNames.length} topics.`
+              : 'No playlists yet. Click "Find All" to search for playlists.'}
+          </div>
+        )}
 
         <div className="flex gap-2">
-          <button onClick={onFind} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">Find All</button>
-          <label className="px-3 py-1.5 bg-purple-600 text-white rounded text-sm cursor-pointer hover:bg-purple-700" title="Import JSON file">
-            Import
-            <input type="file" className="hidden" accept=".json" onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              try {
-                const data = JSON.parse(await file.text());
-                if (Array.isArray(data) && data[0]) onImport({ ...subject, ...data[0] });
-              } catch { alert('Invalid file'); }
-            }} />
-          </label>
-          <button onClick={onEdit} className="px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700">Edit</button>
+          <button onClick={onFind} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Find All</button>
           <button
-            onClick={copyForSpreadsheet}
-            className="px-3 py-1.5 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700 ml-auto"
-            title="Copy all playlists for this subject to spreadsheet"
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = '.json';
+              input.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (!file) return;
+                try {
+                  const text = await file.text();
+                  const data = JSON.parse(text);
+                  if (Array.isArray(data) && data[0]) {
+                    const imported = data[0];
+                    const newPlaylists = imported.playlists || [];
+                    const newAllVideos = newPlaylists.flatMap((p: Playlist) => p.videos || []);
+                    onImport({ ...subject, playlists: newPlaylists, allVideos: newAllVideos });
+                    alert('Imported successfully!');
+                  } else {
+                    alert('Invalid file format');
+                  }
+                } catch { alert('Failed to load file'); }
+              };
+              input.click();
+            }}
+            className="px-3 py-1.5 bg-purple-600 text-white rounded text-sm"
+            title="Import JSON file"
           >
-            Copy for Spreadsheet
+            Import
           </button>
+          {playlists.length > 0 && (
+            <>
+              <button onClick={onEdit} className="px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700">Edit</button>
+              <button
+                onClick={copyForSpreadsheet}
+                className="px-3 py-1.5 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700 ml-auto"
+                title="Copy all playlists for this subject to spreadsheet"
+              >
+                Copy for Spreadsheet
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
