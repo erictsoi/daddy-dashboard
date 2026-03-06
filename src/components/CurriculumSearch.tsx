@@ -620,6 +620,81 @@ const SearchPreviewModal: React.FC<{
   );
 };
 
+const GlobalImportCard: React.FC<{ onImport: (data: any) => void }> = ({ onImport }) => {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setIsDragging(true);
+    } else {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files) as File[];
+    for (const file of files) {
+      if (file.name.endsWith('.json')) {
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          onImport(data);
+        } catch { console.error('Failed to parse', file.name); }
+      }
+    }
+  };
+
+  return (
+    <div
+      onDragEnter={handleDrag}
+      onDragOver={handleDrag}
+      onDragLeave={handleDrag}
+      onDrop={handleDrop}
+      className={`h-full min-h-[280px] rounded-lg border-2 border-dashed transition-all flex flex-col items-center justify-center p-8 bg-white/50 animate-in fade-in slide-in-from-bottom-4 duration-500 ${isDragging ? 'border-blue-500 bg-blue-50 shadow-inner' : 'border-slate-200 hover:border-slate-300 hover:bg-white'
+        }`}
+    >
+      <div className={`w-16 h-16 rounded-[2rem] flex items-center justify-center mb-6 transition-all ${isDragging ? 'bg-blue-600 text-white scale-110 shadow-lg' : 'bg-slate-50 text-slate-300'
+        }`}>
+        <Upload size={32} />
+      </div>
+      <div className="text-center">
+        <h3 className="font-bold text-slate-700 text-lg mb-2">Import Subject Cards</h3>
+        <p className="text-xs text-slate-400 font-medium leading-relaxed">
+          Drag and drop your JSON backup files<br />here to quickly upload subject data.
+        </p>
+      </div>
+
+      <input
+        type="file"
+        id="global-import-input"
+        className="hidden"
+        accept=".json"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            try {
+              const data = JSON.parse(await file.text());
+              onImport(data);
+            } catch { alert('Invalid JSON'); }
+          }
+        }}
+      />
+      <label
+        htmlFor="global-import-input"
+        className="mt-8 px-6 py-2 bg-white border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-blue-200 hover:text-blue-600 cursor-pointer shadow-sm transition-all active:scale-95"
+      >
+        Choose JSON File
+      </label>
+    </div>
+  );
+};
+
 const TopicCard: React.FC<{ topicName: string; playlist?: Playlist; subjectName: string }> = ({ topicName, playlist, subjectName }) => {
   const videoCount = playlist?.videos?.length || 0;
   const hasVideos = videoCount > 0;
@@ -696,18 +771,26 @@ const SubjectSection: React.FC<{
     e.preventDefault();
     setIsDragging(false);
 
-    const file = e.dataTransfer.files[0];
-    if (!file || !file.name.endsWith('.json')) return;
+    const files = Array.from(e.dataTransfer.files).filter((f: File) => f.name.endsWith('.json'));
+    if (files.length === 0) return;
 
     try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-      if (Array.isArray(data) && data[0]) {
-        const imported = data[0];
-        const newPlaylists = imported.playlists || [];
-        const newAllVideos = newPlaylists.flatMap((p: Playlist) => p.videos || []);
-        onImport({ ...subject, playlists: newPlaylists, allVideos: newAllVideos });
+      let mergedPlaylists: Playlist[] = [];
+      
+      for (const file of files) {
+        const text: string = await (file as File).text();
+        const data = JSON.parse(text);
+        if (Array.isArray(data) && data[0]) {
+          const imported = data[0];
+          const newPlaylists = imported.playlists || [];
+          mergedPlaylists = [...mergedPlaylists, ...newPlaylists];
+        }
       }
+      
+      const newAllVideos = mergedPlaylists.flatMap((p: Playlist) => p.videos || []);
+      const reindexed = mergedPlaylists.map((p, i) => ({ ...p, index: i, isPrimary: i === 0 }));
+      onImport({ ...subject, playlists: reindexed, allVideos: newAllVideos });
+      logger.log('[CurriculumSearch] handleDrop: imported', files.length, 'files with', mergedPlaylists.length, 'playlists');
     } catch { alert('Failed to load file'); }
   };
 
@@ -747,11 +830,11 @@ const SubjectSection: React.FC<{
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mb-3">
           {playlists.length > 0 ? (
             playlists.map((playlist, idx) => (
-              <TopicCard 
-                key={playlist.url || idx} 
-                topicName={playlist.title} 
-                playlist={playlist} 
-                subjectName={subject.subject} 
+              <TopicCard
+                key={playlist.url || idx}
+                topicName={playlist.title}
+                playlist={playlist}
+                subjectName={subject.subject}
               />
             ))
           ) : topicNames.length > 0 ? (
@@ -892,10 +975,13 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
 
   const handleSaveSubject = (subject: SubjectData) => {
     const merged = [...savedDataRef.current];
+    const isWildcard = subject.id?.includes('-wild-');
+
     const dataIndex = merged.findIndex(s =>
       s.id === subject.id ||
-      (s.yearGroup === subject.yearGroup && s.subject.toLowerCase() === subject.subject.toLowerCase())
+      (!isWildcard && s.yearGroup === subject.yearGroup && s.subject.toLowerCase() === subject.subject.toLowerCase())
     );
+
     if (dataIndex >= 0) {
       merged[dataIndex] = subject;
     } else {
@@ -907,6 +993,37 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
   const handleImportSubject = (subject: SubjectData) => {
     logger.log('[CurriculumSearch] handleImportSubject: imported', subject.subject, 'with', subject.playlists?.length || 0, 'playlists');
     handleSaveSubject(subject);
+  };
+
+  const handleBulkImport = (data: any) => {
+    if (!data) return;
+    const items = Array.isArray(data) ? data : [data];
+    const merged = [...savedDataRef.current];
+
+    let count = 0;
+    items.forEach((item: any) => {
+      if (!item.subject || !item.yearGroup) return;
+
+      let normalizedYear = item.yearGroup;
+      if (normalizedYear.startsWith('Y')) normalizedYear = normalizedYear.substring(1);
+
+      // Deduplicate: Prioritize ID match, then name+year match ONLY for non-wildcards (or allow name match for updates)
+      const isWildcard = item.id?.includes('-wild-');
+      const idx = merged.findIndex(m =>
+        m.id === item.id ||
+        (!isWildcard && m.yearGroup === normalizedYear && m.subject.toLowerCase() === item.subject.toLowerCase())
+      );
+
+      const normalizedItem = { ...item, yearGroup: normalizedYear };
+      if (idx >= 0) {
+        merged[idx] = normalizedItem;
+      } else {
+        merged.push(normalizedItem);
+      }
+      count++;
+    });
+
+    updateLibrary(merged);
   };
 
   if (!selectedYear) {
@@ -1032,28 +1149,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
               if (!file) return;
               try {
                 const data = JSON.parse(await file.text());
-                if (Array.isArray(data)) {
-                  const merged = [...savedDataRef.current];
-                  data.forEach((item: SubjectData) => {
-                    // Normalize YearGroup strings (e.g. 'Y7-9' -> '7-9')
-                    let normalizedYear = item.yearGroup;
-                    if (normalizedYear.startsWith('Y')) normalizedYear = normalizedYear.substring(1);
-
-                    // Only merge if it belongs to current year or we want to allow cross-year import
-                    // We'll deduplicate by ID or Subject Name + YearGroup
-                    const idx = merged.findIndex(m =>
-                      m.id === item.id ||
-                      (m.yearGroup === normalizedYear && m.subject.toLowerCase() === item.subject.toLowerCase())
-                    );
-                    const normalizedItem = { ...item, yearGroup: normalizedYear };
-                    if (idx >= 0) {
-                      merged[idx] = normalizedItem;
-                    } else {
-                      merged.push(normalizedItem);
-                    }
-                  });
-                  updateLibrary(merged);
-                }
+                handleBulkImport(data);
               } catch { alert('Invalid file'); }
             }} />
           </label>
@@ -1111,6 +1207,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
               }}
             />
           ))}
+          <GlobalImportCard onImport={handleBulkImport} />
         </div>
 
         {subjects.length === 0 && (
@@ -1181,7 +1278,8 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
                   <button
                     onClick={() => {
                       if (newWildcardName.trim()) {
-                        const id = `${selectedYear}-wild-${Date.now()}`;
+                        const randomSuffix = Math.random().toString(36).substring(2, 7);
+                        const id = `${selectedYear}-wild-${Date.now()}-${randomSuffix}`;
                         const newSub: SubjectData = {
                           id,
                           yearGroup: selectedYear,
