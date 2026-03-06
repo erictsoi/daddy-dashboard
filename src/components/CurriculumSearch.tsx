@@ -400,72 +400,52 @@ const EditModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-2" onClick={onClose}>
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[95vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2" onClick={onClose}>
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[95vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white">
           <div>
             <h2 className="text-xl font-bold">{subject.subject}</h2>
             <p className="text-sm text-blue-600 font-medium">{subject.focus}</p>
           </div>
           <div className="flex gap-2 items-center">
-            <button onClick={exportSubject} className="text-xs px-2 py-1 bg-blue-500 text-white rounded flex items-center gap-1"><Download size={12} />Export</button>
-            <button onClick={importSubject} className="text-xs px-2 py-1 bg-purple-500 text-white rounded flex items-center gap-1"><Upload size={12} />Import</button>
-            <button onClick={onClose} className="text-2xl text-slate-400 hover:text-slate-600 transition-colors">&times;</button>
+            <button onClick={exportSubject} className="text-xs px-2 py-1 bg-blue-500 text-white rounded">Export</button>
+            <button onClick={importSubject} className="text-xs px-2 py-1 bg-purple-500 text-white rounded">Import</button>
+            <button onClick={onClose} className="text-2xl">&times;</button>
           </div>
         </div>
 
         <div className="p-4">
-          <div className="flex gap-2 mb-4 text-sm font-bold">
-            <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full">{subject.yearGroup}</span>
-            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full">{playlists.length} playlists</span>
-            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full">{allVideos.length} videos</span>
+          <div className="flex gap-2 mb-4 text-sm">
+            <span className="bg-gray-100 px-2 py-1 rounded">{subject.yearGroup}</span>
+            <span className="bg-green-100 text-green-700 px-2 py-1 rounded">{playlists.length} playlists</span>
+            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">{allVideos.length} videos</span>
           </div>
 
-          <div className="mb-6">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Curriculum Blueprint</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {topics.map((t, i) => (
-                <div key={i} className="p-3 border-2 border-slate-50 rounded-xl bg-slate-50/30 flex items-center justify-between group">
-                  <div>
-                    <div className="text-sm font-bold text-slate-700">{t.topic}</div>
-                    <div className="text-[10px] font-medium text-slate-400 leading-tight mt-0.5">{t.focus}</div>
-                  </div>
-                  <button
-                    onClick={() => handleQuickSearch(t.topic)}
-                    className="p-1.5 hover:bg-blue-100 rounded text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Search on YouTube"
-                  >
-                    <Search size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-6 bg-slate-50 border-2 border-slate-100 rounded-3xl p-6">
-            <h4 className="text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest flex items-center gap-2">
-              <Upload size={14} /> Bulk Curation Console
-            </h4>
-            <div className="flex flex-col gap-3">
-              <textarea
+          <div className="mb-4 p-3 bg-gray-50 rounded">
+            <h4 className="font-medium mb-2">Add New Playlist</h4>
+            <div className="flex gap-2">
+              <input
+                type="text"
                 value={newPlaylistUrl}
                 onChange={(e) => setNewPlaylistUrl(e.target.value)}
-                placeholder="Paste Playlists or Video URLs (one per line)..."
-                className="w-full h-32 border-2 border-slate-200 rounded-2xl px-5 py-4 text-sm font-medium focus:border-blue-400 focus:outline-none transition-all shadow-sm resize-none"
+                placeholder="Paste YouTube playlist URL..."
+                className="flex-1 border rounded px-3 py-2 text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (newPlaylistUrl) {
+                      addPlaylist();
+                      setNewPlaylistUrl('');
+                    }
+                  }
+                }}
               />
-              <div className="flex justify-between items-center">
-                <p className="text-[10px] font-black text-slate-400 italic">
-                  * Automatically detects Playlists vs Individual Lessons
-                </p>
-                <button
-                  onClick={() => { if (newPlaylistUrl.trim()) { addPlaylist(); } }}
-                  disabled={!!searching}
-                  className="px-8 py-3 bg-blue-600 text-white rounded-2xl text-sm font-black shadow-xl shadow-blue-100 disabled:opacity-50 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2"
-                >
-                  {searching ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} strokeWidth={3} />}
-                  {searching || 'Process Bulk Import'}
-                </button>
-              </div>
+              <button
+                onClick={() => { if (newPlaylistUrl) { addPlaylist(); setNewPlaylistUrl(''); } }}
+                disabled={searching !== ''}
+                className="px-4 py-2 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
+              >
+                Add
+              </button>
             </div>
           </div>
 
@@ -486,18 +466,18 @@ const EditModal: React.FC<{
           ))}
 
           {playlists.length === 0 && (
-            <div className="text-center py-12 text-slate-400 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100 italic">
-              No playlists associated with this subject yet.
+            <div className="text-center py-8 text-gray-500">
+              No playlists yet. Add one above!
             </div>
           )}
 
           {allVideos.length > 0 && (
             <div className="mt-6">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">All Compiled Videos ({allVideos.length})</h4>
-              <div className="max-h-48 overflow-y-auto space-y-1 border-2 border-slate-100 rounded-2xl p-2 bg-white">
+              <h4 className="font-bold mb-2">All Videos ({allVideos.length})</h4>
+              <div className="max-h-48 overflow-y-auto space-y-1 border rounded p-2">
                 {allVideos.map((v, i) => (
-                  <a key={i} href={v.url} target="_blank" className="flex items-center gap-3 text-xs p-2 hover:bg-slate-50 rounded-xl transition-colors font-bold text-slate-600">
-                    <span className="text-red-500 bg-red-50 p-1 rounded-lg"><Play size={10} fill="currentColor" /></span>
+                  <a key={i} href={v.url} target="_blank" className="flex items-center gap-2 text-sm p-1 hover:bg-gray-50 rounded">
+                    <span className="text-red-500">▶</span>
                     <span className="truncate">{v.title}</span>
                   </a>
                 ))}
@@ -505,11 +485,11 @@ const EditModal: React.FC<{
             </div>
           )}
 
-          <div className="mt-6 flex gap-3 sticky bottom-0 bg-white py-2 border-t pt-4">
-            <button onClick={save} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-black shadow-lg shadow-green-100 hover:bg-green-700 transition-all">
-              Save Subject Data
+          <div className="mt-6 flex gap-2">
+            <button onClick={save} className="flex-1 py-3 bg-green-600 text-white rounded font-medium hover:bg-green-700">
+              Save Changes
             </button>
-            <button onClick={onClose} className="px-6 py-3 border-2 border-slate-100 rounded-xl font-bold text-slate-400 hover:bg-slate-50 transition-all">
+            <button onClick={onClose} className="px-6 py-3 border rounded hover:bg-gray-50">
               Cancel
             </button>
           </div>
