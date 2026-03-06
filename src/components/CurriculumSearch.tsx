@@ -771,26 +771,51 @@ const SubjectSection: React.FC<{
     e.preventDefault();
     setIsDragging(false);
 
-    const files = Array.from(e.dataTransfer.files).filter((f: File) => f.name.endsWith('.json'));
-    if (files.length === 0) return;
+    const allFiles: File[] = Array.from(e.dataTransfer.files);
+    const jsonFiles = allFiles.filter(f => f.name.endsWith('.json'));
+    if (jsonFiles.length === 0) return;
 
     try {
-      let mergedPlaylists: Playlist[] = [];
+      let allNewPlaylists: Playlist[] = [];
       
-      for (const file of files) {
-        const text: string = await (file as File).text();
-        const data = JSON.parse(text);
-        if (Array.isArray(data) && data[0]) {
-          const imported = data[0];
-          const newPlaylists = imported.playlists || [];
-          mergedPlaylists = [...mergedPlaylists, ...newPlaylists];
+      for (const dropFile of jsonFiles) {
+        const text: string = await dropFile.text();
+        const data: any = JSON.parse(text);
+        if (Array.isArray(data)) {
+          for (const item of data) {
+            const filePlaylists = item.playlists || [];
+            for (const p of filePlaylists) {
+              allNewPlaylists.push({
+                title: p.title || dropFile.name.replace('.json', ''),
+                url: p.url || '',
+                videos: p.videos || [],
+                isPrimary: false,
+                index: allNewPlaylists.length
+              });
+            }
+          }
+        } else if (data.playlists) {
+          for (const p of data.playlists) {
+            allNewPlaylists.push({
+              title: p.title || dropFile.name.replace('.json', ''),
+              url: p.url || '',
+              videos: p.videos || [],
+              isPrimary: false,
+              index: allNewPlaylists.length
+            });
+          }
         }
       }
       
-      const newAllVideos = mergedPlaylists.flatMap((p: Playlist) => p.videos || []);
-      const reindexed = mergedPlaylists.map((p, i) => ({ ...p, index: i, isPrimary: i === 0 }));
-      onImport({ ...subject, playlists: reindexed, allVideos: newAllVideos });
-      logger.log('[CurriculumSearch] handleDrop: imported', files.length, 'files with', mergedPlaylists.length, 'playlists');
+      if (allNewPlaylists.length > 0) {
+        allNewPlaylists[0].isPrimary = true;
+        const existingPlaylists = subject.playlists || [];
+        const combined = [...existingPlaylists, ...allNewPlaylists];
+        const reindexed = combined.map((p, i) => ({ ...p, index: i, isPrimary: i === 0 }));
+        const newAllVideos = reindexed.flatMap((p: Playlist) => p.videos || []);
+        onImport({ ...subject, playlists: reindexed, allVideos: newAllVideos });
+        logger.log('[CurriculumSearch] handleDrop: imported', jsonFiles.length, 'files with', allNewPlaylists.length, 'new playlists');
+      }
     } catch { alert('Failed to load file'); }
   };
 
