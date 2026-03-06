@@ -55,8 +55,8 @@ export interface ChildProfile {
   profileData?: ProfileTemplateData;
 }
 
-// Profile Templates (6 UK Year Groups)
-export type ProfileTemplate = 'Y1-2' | 'Y3-4' | 'Y5-6' | 'Y7-9' | 'Y10-11' | 'Y12-13';
+// Profile Templates (6 UK Year Groups + Extracurricular)
+export type ProfileTemplate = 'Y1-2' | 'Y3-4' | 'Y5-6' | 'Y7-9' | 'Y10-11' | 'Y12-13' | 'Extracurricular';
 
 // Stack Types (7 Subject Stacks)
 export type StackType =

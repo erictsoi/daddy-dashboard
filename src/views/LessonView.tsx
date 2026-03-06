@@ -44,7 +44,13 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
     const [searchParams] = useSearchParams();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [loading, setLoading] = useState(true);
+    const [videoFinished, setVideoFinished] = useState(false);
     const { children: contextData } = useAppContext();
+
+    // Reset finished state when lesson changes
+    useEffect(() => {
+        setVideoFinished(false);
+    }, [lessonId]);
 
     // Use prop data if provided, fall back to context
     const data = dataProp && dataProp.length > 0 ? dataProp : contextData;
@@ -122,7 +128,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                     // Get ALL playlists for this subject, not just the matching one
                     const allLessons: { id: string; title: string; videoUrl?: string; completed: boolean; subjectName: string; topicName: string; topicId: string }[] = [];
                     const allTopics: { id: string; name: string; lessonIds: string[] }[] = [];
-                    
+
                     for (const playlist of card.playlists) {
                         const topicId = playlist.url;
                         const topicLessons = playlist.videos.map(v => ({
@@ -137,7 +143,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                         allLessons.push(...topicLessons);
                         allTopics.push({ id: topicId, name: playlist.title, lessonIds: topicLessons.map(l => l.id) });
                     }
-                    
+
                     return { lessons: allLessons, topics: allTopics, subjectName: card.subject };
                 }
             }
@@ -467,6 +473,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                                     fontWeight: 800,
                                     backdropFilter: "blur(6px)"
                                 }}
+                                onClick={() => setVideoFinished(true)}
                             >
                                 Simulate video end ▸
                             </button>
@@ -493,6 +500,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                                                         lessonId: firstLesson.id,
                                                         subjectId: subjectName || subjectIdParam,
                                                         topic: topic.id,
+                                                        url: topic.id // Important: preserve URL for importer data
                                                     }));
                                                 }
                                             }}
@@ -607,6 +615,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                                                 lessonId: nextLesson.id,
                                                 subjectId: subjectIdParam,
                                                 topic: topicIdParam,
+                                                url: playlistUrl
                                             }));
                                         }
                                     }}
@@ -633,37 +642,40 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                     )}
 
                     {/* Complete Button */}
-                    <div style={{ maxWidth: 900, margin: "16px 0 0" }}>
+                    <div style={{ maxWidth: 900, margin: "16px auto 0" }}>
                         <div style={{ width: "fit-content" }}>
-                            <Shadow offset={1} size={1} radius={DS.radius.pill}>
+                            <Shadow offset={videoFinished ? 3 : 1} size={1} radius={DS.radius.pill}>
                                 <button
-                                    disabled
                                     className="b"
+                                    disabled={!videoFinished}
+                                    onClick={() => {
+                                        alert("Great job! Lesson completed.");
+                                        navigate(toKidDash(childId));
+                                    }}
                                     style={{
                                         position: "relative",
                                         padding: "14px 40px",
                                         borderRadius: DS.radius.pill,
-                                        border: "2.5px solid #C4BBAF",
-                                        background: "#EDE8E0",
-                                        color: DS.inkFade,
+                                        border: videoFinished ? `2.5px solid ${themeColor}` : "2.5px solid #C4BBAF",
+                                        background: videoFinished ? themeColor : "#EDE8E0",
+                                        color: videoFinished ? "#fff" : DS.inkFade,
                                         fontSize: 18,
                                         fontWeight: 800,
-                                        cursor: "not-allowed",
-                                        transition: "transform 0.2s"
+                                        cursor: videoFinished ? "pointer" : "not-allowed",
+                                        transition: "transform 0.2s, background 0.2s"
                                     }}
                                 >
-                                    Finish the video first 👀
+                                    {videoFinished ? "Finish Lesson! 🎉" : "Finish the video first 👀"}
                                 </button>
                             </Shadow>
-                            <p className="n t-small" style={{ color: themeColor, marginTop: 6, fontWeight: 700 }}>
-                                Button unlocks when the video ends
-                            </p>
+                            {!videoFinished && (
+                                <p className="n t-small" style={{ color: themeColor, marginTop: 6, fontWeight: 700 }}>
+                                    Button unlocks when the video ends
+                                </p>
+                            )}
                         </div>
                     </div>
-
                 </div>
-
-                {/* Collapsible Sidebar */}
 
                 {/* Sidebar */}
                 <div style={{
@@ -705,6 +717,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                                                             lessonId: firstLesson.id,
                                                             subjectId: subjectName || subjectIdParam,
                                                             topic: topic.id,
+                                                            url: topic.id
                                                         }));
                                                     }
                                                 }}
@@ -747,12 +760,11 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                                                 </div>
                                                 <span style={{ color: themeColor, fontSize: 10 }}>▶</span>
                                             </button>
-                                            
+
                                             {/* Videos in this playlist */}
                                             <div style={{ paddingLeft: 12 }}>
                                                 {topicLessons.map((item, i) => {
                                                     const isActive = item.id === lessonId;
-                                                    const completedCount = topicLessons.filter((l, idx) => idx < i && l.completed).length;
                                                     return (
                                                         <div
                                                             key={item.id}
@@ -762,6 +774,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                                                                     lessonId: item.id,
                                                                     subjectId: subjectName || subjectIdParam,
                                                                     topic: topic.id,
+                                                                    url: topic.id
                                                                 }));
                                                             }}
                                                             style={{
