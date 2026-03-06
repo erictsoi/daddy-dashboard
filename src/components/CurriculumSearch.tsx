@@ -1165,7 +1165,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 justify-items-center">
           {subjects.map((s, idx) => (
             <SubjectSection
               key={s.id || `${s.subject}-${idx}`}
