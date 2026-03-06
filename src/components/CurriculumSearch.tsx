@@ -1081,66 +1081,30 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
 
   if (!selectedYear) {
     return (
-      <div className="min-h-screen bg-[#FAF9F6]">
-        <div className="bg-white border-b-2 border-slate-200 px-8 py-5 flex items-center gap-8 sticky top-0 z-50">
-          <IconButton onClick={onBack} size={42} title="Exit Library">
-            <ArrowLeft size={18} />
-          </IconButton>
-          <div>
-            <h1 className="b t-h1" style={{ fontSize: 28, color: DS.ink }}>Curriculum Video Library</h1>
-            <p className="n t-small" style={{ color: DS.inkSoft, fontWeight: 900 }}>UK NATIONAL STANDARDS COMPLIANT SEARCH</p>
-          </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white border-b px-4 py-3 flex justify-between items-center">
+          <h1 className="font-bold text-lg">UK Curriculum Video Finder</h1>
+          <button onClick={() => setWildcardModalOpen(true)} className="text-blue-600 text-sm">All ({savedData.length})</button>
         </div>
-
-        <div className="p-8 max-w-4xl mx-auto">
-          {!hasApiKey && (
-            <Shadow offset={4} size={3} radius={DS.radius.lg} className="mb-10">
-              <div className="p-6 bg-amber-50 border-2 border-amber-200 rounded-3xl flex gap-5 text-amber-800 shadow-xl shadow-amber-50">
-                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-amber-500 shadow-sm border border-amber-100">
-                  <AlertTriangle size={24} />
-                </div>
-                <div>
-                  <div className="font-black text-sm uppercase tracking-widest mb-1 text-amber-900">Automation Paused</div>
-                  <div className="text-sm font-bold opacity-80 leading-relaxed">Search API key required. Please configure <strong>VITE_YOUTUBE_API_KEY</strong> in your environment settings.</div>
-                </div>
-              </div>
-            </Shadow>
-          )}
-
-          <div className="mb-10">
-            <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Select Child's Year Group</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {PROFILE_TEMPLATES.map(template => {
-                const isExtra = template.id === 'Extracurricular';
-                return (
-                  <Shadow key={template.id} offset={4} size={3} radius={DS.radius.lg}>
-                    <button
-                      onClick={() => setSelectedYear(template.id as ProfileTemplate)}
-                      className={`w-full text-left p-8 bg-white border-[3px] rounded-3xl transition-all group relative overflow-hidden ${isExtra ? 'border-amber-100 hover:border-amber-400' : 'border-slate-100 hover:border-blue-400'
-                        }`}
-                    >
-                      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <Star size={80} strokeWidth={3} />
-                      </div>
-                      <div className="flex items-center justify-between mb-4">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${isExtra ? 'bg-amber-50 group-hover:bg-amber-500' : 'bg-slate-50 group-hover:bg-blue-600'
-                          }`}>
-                          <span className="text-2xl group-hover:scale-110 transition-transform">{template.avatar}</span>
-                        </div>
-                        <div className={`text-[10px] font-black px-3 py-1.5 rounded-full transition-all uppercase tracking-widest ${isExtra ? 'bg-amber-100 text-amber-700 group-hover:bg-amber-600 group-hover:text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-700 group-hover:text-white'
-                          }`}>
-                          {isExtra ? '✨ Enrichment' : 'Primary'}
-                        </div>
-                      </div>
-                      <div className="text-2xl font-black text-slate-800">{template.id === 'Extracurricular' ? 'Extracurricular' : `Year ${template.id}`}</div>
-                      <p className="text-xs text-slate-400 font-bold mt-2 uppercase tracking-tight">
-                        {isExtra ? 'Specialist Topics' : 'UK National Standards'}
-                      </p>
-                    </button>
-                  </Shadow>
-                );
-              })}
-            </div>
+        <div className="p-4 max-w-xl mx-auto">
+          <h2 className="font-semibold mb-3">Select Year Group</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {PROFILE_TEMPLATES.map(template => {
+              const isExtra = template.id === 'Extracurricular';
+              return (
+                <button 
+                  key={template.id} 
+                  onClick={() => setSelectedYear(template.id as ProfileTemplate)} 
+                  className="p-4 bg-white border-2 border-gray-200 rounded hover:border-blue-500 text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">{template.id === 'Extracurricular' ? 'Extracurricular' : `Year ${template.id}`}</span>
+                    <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">{template.label}</span>
+                  </div>
+                  <div className="text-sm text-gray-500">{template.avatar}</div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1169,63 +1133,27 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6]">
-      <div className="bg-white border-b px-4 py-3 flex items-center gap-3 sticky top-0 z-50 shadow-sm">
-        <button
-          onClick={() => setSelectedYear(null)}
-          className="p-1 hover:bg-gray-100 rounded text-slate-600 transition-colors"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <h1 className="font-bold text-slate-800">Year {selectedYear}</h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
+        <button onClick={() => setSelectedYear(null)} className="p-1 hover:bg-gray-100 rounded">Back</button>
+        <h1 className="font-bold">{selectedYear === 'Extracurricular' ? 'Extracurricular' : `Year ${selectedYear}`}</h1>
         <span className="text-gray-400">|</span>
-        <span className="text-sm font-bold text-slate-500">{syncedCount}/{totalCount}</span>
-
-        <div className="flex items-center gap-2 ml-4">
+        <span className="text-sm">{syncedCount}/{totalCount} synced</span>
+        
+        <div className="flex gap-2 ml-auto">
           <button
             onClick={() => handleFindAll(subjects)}
             disabled={!!searching || !hasApiKey}
-            className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-all font-bold disabled:opacity-50"
+            className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
           >
-            {searching ? 'Searching...' : 'Find All Videos'}
+            {searching || 'Find All'}
           </button>
-          <button
-            onClick={exportData}
-            className="px-2 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-all font-bold"
-          >
-            Export
-          </button>
-          <label className="px-2 py-1 bg-purple-500 text-white rounded text-sm cursor-pointer hover:bg-purple-600 transition-all font-bold">
-            Import
-            <input type="file" className="hidden" accept=".json" onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              try {
-                const data = JSON.parse(await file.text());
-                handleBulkImport(data);
-              } catch { alert('Invalid file'); }
-            }} />
-          </label>
-          <button
-            onClick={() => alert('Saved to Dashboard!')}
-            className="px-2 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-all font-bold"
-          >
-            Save to Firebase
-          </button>
-          <button
-            onClick={clearData}
-            className="px-2 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-all font-bold"
-          >
-            Clear
-          </button>
+          <button onClick={exportData} className="px-3 py-1.5 bg-blue-500 text-white rounded text-sm">Export</button>
+          <button onClick={clearData} className="px-3 py-1.5 bg-red-500 text-white rounded text-sm">Clear</button>
         </div>
-
-        <button className="ml-auto text-blue-600 hover:underline font-bold text-sm">
-          All Saved ({savedData.length})
-        </button>
       </div>
 
-      <div className="p-8 max-w-6xl mx-auto">
+      <div className="p-4 max-w-6xl mx-auto">
         {searching && (
           <div className="mb-8 bg-blue-600 text-white rounded-3xl p-6 flex items-center justify-center gap-4 shadow-2xl shadow-blue-200 animate-pulse">
             <Loader2 className="animate-spin" size={24} />
