@@ -542,80 +542,86 @@ const SearchPreviewModal: React.FC<{
   const estimatedAPI = isUsingTopics ? topics.length * 3 : flatQueries.length * 3;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={onClose}>
-      <Shadow offset={4} size={4} radius={DS.radius.lg} className="max-w-lg w-full">
-        <div className="bg-white rounded-lg overflow-hidden border-2 border-white shadow-2xl" onClick={e => e.stopPropagation()}>
-          <div className="p-5 border-b flex items-center justify-between bg-slate-50">
-            <div>
-              <h2 className="text-lg font-black text-slate-800 tracking-tight">{subject.subject}</h2>
-              <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">Search Strategy Confirmation</p>
-            </div>
-            <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">&times;</button>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2" onClick={onClose}>
+      <div className="bg-white rounded-lg max-w-lg w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="p-4 border-b flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold">{subject.subject}</h2>
+            <p className="text-sm text-blue-600">{subject.focus}</p>
           </div>
+          <button onClick={onClose} className="text-2xl">&times;</button>
+        </div>
 
-          <div className="p-6">
-            <div className="mb-5">
-              <h3 className="font-black text-[10px] text-slate-500 uppercase tracking-widest mb-4">
-                {isUsingTopics ? "Topics to search" : "Curated Search Queries"}
-              </h3>
-              <div className="flex flex-wrap gap-2 max-h-[40vh] overflow-y-auto p-1">
-                {(isUsingTopics ? topics : flatQueries).map((term, idx) => (
+        <div className="p-4">
+          {isUsingTopics ? (
+            <div className="mb-4">
+              <h3 className="font-medium mb-2">Topics to search ({topics.length}):</h3>
+              <div className="flex flex-wrap gap-2">
+                {topics.map((topic, idx) => (
                   <button
                     key={idx}
-                    onClick={() => toggleTerm(term)}
-                    className={`px-4 py-2 rounded-xl text-xs font-black border-2 transition-all ${selectedTerms.includes(term)
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100'
-                      : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300'
+                    onClick={() => toggleTerm(topic)}
+                    className={`px-3 py-1 rounded text-sm border ${selectedTerms.includes(topic)
+                      ? 'bg-blue-500 text-white border-blue-500'
+                      : 'bg-gray-100 text-gray-600 border-gray-300'
                       }`}
                   >
-                    {selectedTerms.includes(term) && <Check size={12} className="inline mr-1" />} {term}
+                    {selectedTerms.includes(topic) ? '✓' : '✗'} {topic}
                   </button>
                 ))}
               </div>
             </div>
-
-            <div className="mb-6">
-              <h3 className="font-black text-[10px] text-slate-500 uppercase tracking-widest mb-2 flex justify-between items-center">
-                <span>Manual Topic Builder</span>
-                <span className="text-[8px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded">Optional</span>
-              </h3>
-              <textarea
-                placeholder="Paste individual YouTube URLs (one per line) to skip auto-search..."
-                value={manualTopics}
-                onChange={e => setManualTopics(e.target.value)}
-                className="w-full h-32 border-2 border-slate-50 rounded-2xl p-4 text-xs font-medium focus:border-blue-200 focus:outline-none transition-all bg-slate-50/50"
-              />
-            </div>
-
-            <div className="bg-amber-50 border-2 border-amber-100 rounded-2xl p-4 mb-6 flex gap-4">
-              <div className="text-amber-500 pt-1"><AlertTriangle size={20} /></div>
-              <div className="text-xs text-amber-900 font-bold leading-relaxed">
-                <strong>Curriculum Match:</strong> We recommend searching for these specific terms to ensure video quality.
-                <div className="mt-1.5 opacity-70">Estimated YouTube API Impact: ~{estimatedAPI} units.</div>
+          ) : (
+            <div className="mb-4">
+              <h3 className="font-medium mb-2">Search terms that will be used:</h3>
+              <div className="flex flex-wrap gap-2">
+                {flatQueries.map((query, idx) => (
+                  <span key={idx} className="px-3 py-1 rounded text-sm bg-gray-100 text-gray-700 border">
+                    {query}
+                  </span>
+                ))}
               </div>
             </div>
+          )}
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  const urls = manualTopics.split('\n').map(u => u.trim()).filter(u => u.includes('youtube.com') || u.includes('youtu.be'));
-                  onSearch(selectedTerms, urls.length > 0 ? urls : undefined);
-                }}
-                disabled={selectedTerms.length === 0 && !manualTopics.trim()}
-                className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50"
-              >
-                Launch Search ({selectedTerms.length})
-              </button>
-              <button
-                onClick={onClose}
-                className="px-6 py-4 border-2 border-slate-100 rounded-2xl font-black text-slate-400 hover:bg-slate-50 transition-all"
-              >
-                Abort
-              </button>
+          <div className="mb-4">
+            <h3 className="font-bold mb-3 text-purple-700">Manual Topic Builder</h3>
+            <div className="bg-purple-50 border border-purple-200 rounded p-3 mb-2">
+              <div className="mb-3">
+                <label className="block text-xs font-semibold text-purple-800 mb-1">YouTube URLs (Videos or Playlists)</label>
+                <textarea
+                  placeholder="Paste YouTube video URLs or playlist URLs (separated by newlines, spaces, or commas)"
+                  value={manualTopics}
+                  onChange={e => setManualTopics(e.target.value)}
+                  className="w-full border rounded px-3 py-2 text-sm h-24 resize-y focus:outline-none focus:ring-1 focus:ring-purple-400"
+                />
+              </div>
             </div>
           </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4">
+            <p className="text-sm text-yellow-800">
+              <strong>Estimated API usage:</strong> ~{estimatedAPI} searches
+              <br />
+              <small>{isUsingTopics ? 'Each topic searches for multiple playlists.' : 'Multiple searches to find the best playlist.'}</small>
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const urls = manualTopics.split(/[\s,]+/).filter(u => u.includes('youtube.com') || u.includes('youtu.be'));
+                onSearch(selectedTerms, urls.length > 0 ? urls : undefined);
+              }}
+              disabled={selectedTerms.length === 0 && !manualTopics.trim()}
+              className="flex-1 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:opacity-50"
+            >
+              Auto-Search {isUsingTopics ? `${selectedTerms.length} Topics` : 'Playlists'}
+            </button>
+            <button onClick={onClose} className="px-4 py-2 border rounded">Cancel</button>
+          </div>
         </div>
-      </Shadow>
+      </div>
     </div>
   );
 };
