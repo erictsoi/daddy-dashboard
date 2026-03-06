@@ -33,14 +33,14 @@ export const STACK_TYPES: StackType[] = [
 ];
 
 // Profile Templates (6 UK Year Groups)
-export const PROFILE_TEMPLATES: { id: ProfileTemplate; label: string; ageRange: string; avatar: string }[] = [
-  { id: 'Y1-2', label: 'Y1/2 Child', ageRange: '5-7 years', avatar: '🧒' },
-  { id: 'Y3-4', label: 'Y3/4 Child', ageRange: '7-9 years', avatar: '👦' },
-  { id: 'Y5-6', label: 'Y5/6 Child', ageRange: '9-11 years', avatar: '👧' },
-  { id: 'Y7-9', label: 'Y7/8/9 Child', ageRange: '11-14 years', avatar: '🧑' },
-  { id: 'Y10-11', label: 'Y10/11 Child', ageRange: '14-16 years', avatar: '👱' },
-  { id: 'Y12-13', label: 'Y12/13 Child', ageRange: '16-18 years', avatar: '🎓' },
-  { id: 'Extracurricular', label: 'Extracurricular', ageRange: 'All Ages', avatar: '⭐' }
+export const PROFILE_TEMPLATES: { id: ProfileTemplate; label: string; ageRange: string; avatar: string; keyStage: string }[] = [
+  { id: 'Y1-2', label: 'Y1/2 Child', ageRange: '5-7 years', avatar: '🧒', keyStage: 'KS1' },
+  { id: 'Y3-4', label: 'Y3/4 Child', ageRange: '7-9 years', avatar: '👦', keyStage: 'KS2' },
+  { id: 'Y5-6', label: 'Y5/6 Child', ageRange: '9-11 years', avatar: '👧', keyStage: 'KS2' },
+  { id: 'Y7-9', label: 'Y7/8/9 Child', ageRange: '11-14 years', avatar: '🧑', keyStage: 'KS3' },
+  { id: 'Y10-11', label: 'Y10/11 Child', ageRange: '14-16 years', avatar: '👱', keyStage: 'KS4 (GCSE)' },
+  { id: 'Y12-13', label: 'Y12/13 Child', ageRange: '16-18 years', avatar: '🎓', keyStage: 'KS5 (A-Level)' },
+  { id: 'Extracurricular', label: 'Extracurricular', ageRange: 'All Ages', avatar: '⭐', keyStage: 'All Ages' }
 ];
 
 // Create empty stacks for a profile

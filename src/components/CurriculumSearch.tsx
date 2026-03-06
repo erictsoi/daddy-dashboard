@@ -1084,29 +1084,20 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white border-b px-4 py-3 flex justify-between items-center">
           <h1 className="font-bold text-lg">UK Curriculum Video Finder</h1>
-          <button onClick={() => setWildcardModalOpen(true)} className="text-blue-600 text-sm">All ({savedData.length})</button>
+          <button onClick={() => setWildcardModalOpen(true)} className="text-blue-600">All ({savedData.length})</button>
         </div>
-        <div className="p-4">
-          <div className="max-w-xl mx-auto">
-            <h2 className="font-semibold mb-3">Select Year Group</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {PROFILE_TEMPLATES.map(template => {
-                const isExtra = template.id === 'Extracurricular';
-                return (
-                  <button 
-                    key={template.id} 
-                    onClick={() => setSelectedYear(template.id as ProfileTemplate)} 
-                    className="p-4 bg-white border-2 border-gray-200 rounded hover:border-blue-500 text-left"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{template.id === 'Extracurricular' ? 'Extracurricular' : `Year ${template.id}`}</span>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">{template.label}</span>
-                    </div>
-                    <div className="text-sm text-gray-500">{template.ageRange}</div>
-                  </button>
-                );
-              })}
-            </div>
+        <div className="p-4 max-w-xl mx-auto">
+          <h2 className="font-semibold mb-3">Select Year Group</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {PROFILE_TEMPLATES.map(t => (
+              <button key={t.id} onClick={() => setSelectedYear(t.id as ProfileTemplate)} className="p-4 bg-white border-2 border-gray-200 rounded hover:border-blue-500 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{t.id === 'Extracurricular' ? 'Extracurricular' : `Year ${t.id}`}</span>
+                  <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">{t.keyStage}</span>
+                </div>
+                <div className="text-sm text-gray-500">{t.ageRange}</div>
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -1140,35 +1131,51 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
         <button onClick={() => setSelectedYear(null)} className="p-1 hover:bg-gray-100 rounded">Back</button>
         <h1 className="font-bold">{selectedYear === 'Extracurricular' ? 'Extracurricular' : `Year ${selectedYear}`}</h1>
         <span className="text-gray-400">|</span>
-        <span className="text-sm">{syncedCount}/{totalCount} synced</span>
-        
-        <div className="flex gap-2 ml-auto">
-          <button
-            onClick={() => handleFindAll(subjects)}
-            disabled={!!searching || !hasApiKey}
-            className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
-          >
-            {searching || 'Find All'}
-          </button>
-          <button onClick={exportData} className="px-3 py-1.5 bg-blue-500 text-white rounded text-sm">Export</button>
-          <button onClick={clearData} className="px-3 py-1.5 bg-red-500 text-white rounded text-sm">Clear</button>
-        </div>
+        <span>{syncedCount}/{totalCount}</span>
+        <button
+          onClick={() => handleFindAll(subjects)}
+          disabled={!!searching || !hasApiKey}
+          className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+        >
+          Find All Videos
+        </button>
+        <button onClick={exportData} className="px-2 py-1 bg-blue-500 text-white rounded text-sm">Export</button>
+        <button onClick={() => {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = '.json';
+          input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+            try {
+              const text = await file.text();
+              const data = JSON.parse(text);
+              if (Array.isArray(data)) {
+                handleBulkImport(data);
+                alert(`Imported ${data.length} subjects!`);
+              } else {
+                alert('Invalid backup file');
+              }
+            } catch { alert('Failed to load file'); }
+          };
+          input.click();
+        }} className="px-2 py-1 bg-purple-500 text-white rounded text-sm">Import</button>
+        <button onClick={() => alert('Saved to Dashboard!')} className="px-2 py-1 bg-green-500 text-white rounded text-sm">Save to Firebase</button>
+        <button onClick={clearData} className="px-2 py-1 bg-red-500 text-white rounded text-sm">Clear</button>
+        <button onClick={() => setWildcardModalOpen(true)} className="ml-auto text-blue-600">All Saved ({savedData.length})</button>
       </div>
 
       <div className="p-4 max-w-6xl mx-auto">
-        {searching && (
-          <div className="mb-8 bg-blue-600 text-white rounded-3xl p-6 flex items-center justify-center gap-4 shadow-2xl shadow-blue-200 animate-pulse">
-            <Loader2 className="animate-spin" size={24} />
-            <span className="font-black text-lg uppercase tracking-[0.2em]">{searching}</span>
-          </div>
-        )}
-
+        {searching && <div className="mb-3 p-2 bg-blue-50 text-blue-700 rounded text-center text-sm">{searching}</div>}
+        
         <div className="mb-3">
           <button
             onClick={() => setWildcardModalOpen(true)}
-            className="px-3 py-1 border border-dashed border-gray-400 text-gray-600 rounded text-sm hover:bg-gray-50 transition-colors"
+            className={selectedYear === 'Extracurricular'
+              ? "px-3 py-1 border-2 border-dashed border-yellow-400 text-yellow-700 bg-yellow-50 rounded text-sm hover:bg-yellow-100 font-medium"
+              : "px-3 py-1 border border-dashed border-gray-400 text-gray-600 rounded text-sm hover:bg-gray-50"}
           >
-            + Add Subject
+            {selectedYear === 'Extracurricular' ? '✨ Add Wildcard Subject' : '+ Add Subject'}
           </button>
         </div>
 
