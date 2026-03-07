@@ -173,7 +173,6 @@ const PlaylistCard: React.FC<{
 }> = ({ playlist, onDelete, onAddVideo, onDeleteVideo, onMoveUp, onMoveDown, onSetPrimary, onUpdateTitle, isFirst, isLast }) => {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(playlist.title);
-  const [newVideoUrl, setNewVideoUrl] = useState('');
 
   const saveTitle = () => {
     if (titleValue.trim() && titleValue !== playlist.title) {
@@ -185,72 +184,58 @@ const PlaylistCard: React.FC<{
   };
 
   return (
-    <Shadow offset={1} size={1} radius={DS.radius.lg} className="mb-4">
-      <div className={`p-4 bg-white border-2 rounded-2xl transition-all ${playlist.isPrimary ? 'border-green-200 shadow-green-50' : 'border-slate-100'}`}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${playlist.isPrimary ? 'bg-green-600 text-white' : 'bg-blue-500 text-white'
-              }`}>
-              {playlist.isPrimary ? '★ PRIMARY PLAYLIST' : `★ BACKUP BUNDLE ${playlist.index + 1}`}
-            </div>
-            {editingTitle ? (
-              <input
-                type="text"
-                value={titleValue}
-                onChange={(e) => setTitleValue(e.target.value)}
-                onBlur={saveTitle}
-                onKeyDown={(e) => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') { setTitleValue(playlist.title); setEditingTitle(false); } }}
-                className="text-sm font-black border-2 border-blue-400 rounded-xl px-3 py-1 w-64 focus:outline-none"
-                autoFocus
-              />
-            ) : (
-              <h4 className="text-sm font-black text-slate-800 truncate max-w-xs cursor-pointer hover:text-blue-600 flex items-center gap-2 group" onClick={() => setEditingTitle(true)}>
-                {playlist.title}
-                <IconButton size={24}>✎</IconButton>
-              </h4>
-            )}
-          </div>
-          <div className="flex gap-1 bg-slate-50 p-1 rounded-xl">
-            {!playlist.isPrimary && (
-              <button onClick={onSetPrimary} className="w-8 h-8 flex items-center justify-center text-green-600 hover:bg-green-100 rounded-lg text-lg" title="Set as Primary">★</button>
-            )}
-            <button onClick={onMoveUp} disabled={isFirst} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:bg-white hover:text-blue-600 rounded-lg disabled:opacity-30 transition-all font-bold">↑</button>
-            <button onClick={onMoveDown} disabled={isLast} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:bg-white hover:text-blue-600 rounded-lg disabled:opacity-30 transition-all font-bold">↓</button>
-            <div className="w-[1px] bg-slate-200 mx-1" />
-            <button onClick={onDelete} className="w-8 h-8 flex items-center justify-center text-red-400 hover:bg-red-50 hover:text-red-600 rounded-lg text-sm font-bold">×</button>
-          </div>
+    <div className="p-3 bg-white border rounded mb-2">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className={`text-xs px-2 py-1 rounded ${playlist.isPrimary ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'}`}>
+            {playlist.isPrimary ? '★ PRIMARY' : `★ BACKUP ${playlist.index + 1}`}
+          </span>
+          {editingTitle ? (
+            <input
+              type="text"
+              value={titleValue}
+              onChange={(e) => setTitleValue(e.target.value)}
+              onBlur={saveTitle}
+              onKeyDown={(e) => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') { setTitleValue(playlist.title); setEditingTitle(false); } }}
+              className="text-sm font-medium border rounded px-2 py-0.5 w-48"
+              autoFocus
+            />
+          ) : (
+            <span className="text-sm font-medium truncate max-w-xs cursor-pointer hover:text-blue-600" onClick={() => setEditingTitle(true)} title="Click to edit title">{playlist.title}</span>
+          )}
         </div>
-        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-          <Youtube size={12} /> {playlist.videos?.length || 0} TRACKS IN THIS BUNDLE
-        </div>
-        <div className="max-h-48 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
-          {playlist.videos?.map((v, i) => (
-            <div key={i} className="flex items-center gap-3 text-xs bg-slate-50/50 hover:bg-slate-50 p-2 rounded-xl border border-transparent hover:border-slate-200 transition-all group">
-              <div className="w-6 h-6 bg-white border rounded-lg flex items-center justify-center text-[10px] font-black text-slate-400 group-hover:text-blue-500 transition-colors">
-                {i + 1}
-              </div>
-              <a href={v.url} target="_blank" className="truncate flex-1 font-bold text-slate-600 hover:text-blue-600">{v.title || 'Untitled Lesson'}</a>
-              <button onClick={() => onDeleteVideo(i)} className="text-slate-300 hover:text-red-500 px-2 font-black text-lg transition-colors">×</button>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 flex gap-2">
-          <input
-            type="text"
-            placeholder="Paste individual video URL to expand bundle..."
-            className="flex-1 text-xs border-2 border-slate-100 rounded-xl px-4 py-2 bg-slate-50 focus:border-blue-400 focus:bg-white transition-all outline-none"
-            value={newVideoUrl}
-            onChange={(e) => setNewVideoUrl(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && newVideoUrl) {
-                onAddVideo(newVideoUrl);
-                setNewVideoUrl('');
-              }
-            }}
-          />
+        <div className="flex gap-1">
+          {!playlist.isPrimary && (
+            <button onClick={onSetPrimary} className="text-green-600 hover:bg-green-50 px-2 py-1 rounded text-xs" title="Set as Primary">★</button>
+          )}
+          <button onClick={onMoveUp} disabled={isFirst} className="text-gray-500 hover:bg-gray-50 px-2 py-1 rounded text-xs disabled:opacity-30">↑</button>
+          <button onClick={onMoveDown} disabled={isLast} className="text-gray-500 hover:bg-gray-50 px-2 py-1 rounded text-xs disabled:opacity-30">↓</button>
+          <button onClick={onDelete} className="text-red-500 hover:bg-red-50 px-2 py-1 rounded text-xs">Delete</button>
         </div>
       </div>
-    </Shadow>
+      <div className="text-xs text-gray-500 mb-2">{playlist.videos?.length || 0} videos</div>
+      <div className="max-h-32 overflow-y-auto space-y-1">
+        {playlist.videos?.map((v, i) => (
+          <div key={i} className="flex items-center gap-2 text-xs bg-gray-50 p-1 rounded">
+            <a href={v.url} target="_blank" className="truncate flex-1 hover:text-blue-600">{v.title}</a>
+            <button onClick={() => onDeleteVideo(i)} className="text-red-400 hover:text-red-600">×</button>
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <input
+          type="text"
+          placeholder="Add video URL..."
+          className="flex-1 text-xs border rounded px-2 py-1"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && (e.target as HTMLInputElement).value) {
+              onAddVideo((e.target as HTMLInputElement).value);
+              (e.target as HTMLInputElement).value = '';
+            }
+          }}
+        />
+      </div>
+    </div>
   );
 };
 
@@ -262,6 +247,7 @@ const EditModal: React.FC<{
   const [playlists, setPlaylists] = useState<Playlist[]>(subject.playlists || []);
   const [newPlaylistUrl, setNewPlaylistUrl] = useState('');
   const [searching, setSearching] = useState('');
+  const [customPlaylistUrls, setCustomPlaylistUrls] = useState('');
 
   const addPlaylist = async () => {
     const urls = newPlaylistUrl.split('\n').map(u => u.trim()).filter(u => u.length > 0);
@@ -309,6 +295,55 @@ const EditModal: React.FC<{
     setNewPlaylistUrl('');
   };
 
+  const buildCustomPlaylist = async () => {
+    const urls = customPlaylistUrls.split(/[\s,]+/).map(u => u.trim()).filter(u => u.length > 0);
+    if (urls.length === 0) return;
+
+    logger.log('[CurriculumSearch] buildCustomPlaylist: importing', urls.length, 'URLs');
+    setSearching('Building custom playlist...');
+    const currentPlaylists = [...playlists];
+    let allExtractedVideos: YouTubeVideo[] = [];
+    let videoIdsToFetch: string[] = [];
+
+    for (const url of urls) {
+      let listMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+      let vidMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/) || url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+
+      if (listMatch) {
+        const videos = await fetchPlaylistVideos(url);
+        allExtractedVideos.push(...videos);
+      } else if (vidMatch) {
+        videoIdsToFetch.push(vidMatch[1]);
+      }
+    }
+
+    if (videoIdsToFetch.length > 0) {
+      // For single videos, we'd need to implement fetchVideoDetails
+      allExtractedVideos.push(...videoIdsToFetch.map(id => ({ 
+        id, 
+        title: 'Custom Video', 
+        url: `https://www.youtube.com/watch?v=${id}` 
+      })));
+    }
+
+    if (allExtractedVideos.length > 0) {
+      const deduplicatedVideos = Array.from(new Map(allExtractedVideos.map(v => [v.id, v])).values());
+      const title = `Custom Playlist ${currentPlaylists.length + 1}`;
+      currentPlaylists.push({
+        title,
+        url: 'custom',
+        videos: deduplicatedVideos,
+        isPrimary: currentPlaylists.length === 0,
+        index: currentPlaylists.length
+      });
+      logger.log('[CurriculumSearch] buildCustomPlaylist: created custom playlist with', deduplicatedVideos.length, 'videos');
+    }
+
+    setPlaylists(currentPlaylists);
+    setSearching('');
+    setCustomPlaylistUrls('');
+  };
+
   const handleQuickSearch = (topic: string) => {
     const query = `${topic} ${subject.subject} ${subject.yearGroup} tutorial playlist`;
     window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=EgIQAw%253D%253D`, '_blank');
@@ -327,7 +362,6 @@ const EditModal: React.FC<{
     const newPl = [...playlists];
     const temp = newPl[idx];
     newPl[idx] = newPl[idx + direction];
-    newPl[idx + direction] = temp;
     const reordered = newPl.map((p, i) => ({ ...p, isPrimary: i === 0, index: i }));
     setPlaylists(reordered);
   };
@@ -347,7 +381,7 @@ const EditModal: React.FC<{
     setPlaylists(newPl);
   };
 
-  const addVideoToPlaylist = (plIdx: number, videoUrl: string) => {
+  const addVideoToPlaylist = async (plIdx: number, videoUrl: string) => {
     const match = videoUrl.match(/v=([a-zA-Z0-9_-]{11})/);
     if (!match) { alert('Invalid video URL'); return; }
     const newPl = [...playlists];
@@ -374,7 +408,7 @@ const EditModal: React.FC<{
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${subject.subject}_${subject.yearGroup}.json`;
+    a.download = `${subject.subject}_${subject.yearGroup}_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
   };
 
@@ -389,7 +423,8 @@ const EditModal: React.FC<{
         const text = await file.text();
         const data = JSON.parse(text);
         if (Array.isArray(data) && data[0]) {
-          setPlaylists(data[0].playlists || []);
+          const imported = data[0];
+          setPlaylists(imported.playlists || []);
           alert('Imported successfully!');
         } else {
           alert('Invalid file');
@@ -449,6 +484,26 @@ const EditModal: React.FC<{
             </div>
           </div>
 
+          <div className="mb-4 p-3 bg-gray-50 rounded">
+            <h4 className="font-medium mb-2">Build Custom Playlist</h4>
+            <div className="flex flex-col gap-2">
+              <textarea
+                value={customPlaylistUrls}
+                onChange={(e) => setCustomPlaylistUrls(e.target.value)}
+                placeholder="Paste a mix of YouTube video URLs and/or playlist URLs (separated by newlines, spaces, or commas)"
+                className="w-full border rounded px-3 py-2 text-sm h-24 resize-y"
+              />
+              <button
+                onClick={() => buildCustomPlaylist()}
+                disabled={searching !== '' || customPlaylistUrls.trim() === ''}
+                className="self-end px-4 py-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+              >
+                Build Custom Playlist
+              </button>
+              {searching === 'Building custom playlist...' && <span className="text-xs text-purple-600 mt-1">Extracting videos...</span>}
+            </div>
+          </div>
+
           {playlists.map((pl, idx) => (
             <PlaylistCard
               key={idx}
@@ -478,7 +533,7 @@ const EditModal: React.FC<{
                 {allVideos.map((v, i) => (
                   <a key={i} href={v.url} target="_blank" className="flex items-center gap-2 text-sm p-1 hover:bg-gray-50 rounded">
                     <span className="text-red-500">▶</span>
-                    <span className="truncate">{v.title}</span>
+                    <span className="truncate flex-1">{v.title}</span>
                   </a>
                 ))}
               </div>
@@ -505,7 +560,6 @@ const SearchPreviewModal: React.FC<{
   onSearch: (selected: string[], manualUrls?: string[]) => void;
   onClose: () => void;
 }> = ({ subject, topics, onSearch, onClose }) => {
-  const [manualTopics, setManualTopics] = useState('');
   const searchQueries = SEARCH_QUERIES[subject.yearGroup]?.[subject.subject] || [[`${subject.subject} ${subject.yearGroup} tutorial playlist`]];
   const flatQueries = searchQueries.flat();
   const [selectedTerms, setSelectedTerms] = useState(topics.length > 0 ? topics : [flatQueries[0]]);
@@ -564,21 +618,6 @@ const SearchPreviewModal: React.FC<{
             </div>
           )}
 
-          <div className="mb-4">
-            <h3 className="font-bold mb-3 text-purple-700">Manual Topic Builder</h3>
-            <div className="bg-purple-50 border border-purple-200 rounded p-3 mb-2">
-              <div className="mb-3">
-                <label className="block text-xs font-semibold text-purple-800 mb-1">YouTube URLs (Videos or Playlists)</label>
-                <textarea
-                  placeholder="Paste YouTube video URLs or playlist URLs (separated by newlines, spaces, or commas)"
-                  value={manualTopics}
-                  onChange={e => setManualTopics(e.target.value)}
-                  className="w-full border rounded px-3 py-2 text-sm h-24 resize-y focus:outline-none focus:ring-1 focus:ring-purple-400"
-                />
-              </div>
-            </div>
-          </div>
-
           <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4">
             <p className="text-sm text-yellow-800">
               <strong>Estimated API usage:</strong> ~{estimatedAPI} searches
@@ -589,16 +628,15 @@ const SearchPreviewModal: React.FC<{
 
           <div className="flex gap-2">
             <button
-              onClick={() => {
-                const urls = manualTopics.split(/[\s,]+/).filter(u => u.includes('youtube.com') || u.includes('youtu.be'));
-                onSearch(selectedTerms, urls.length > 0 ? urls : undefined);
-              }}
-              disabled={selectedTerms.length === 0 && !manualTopics.trim()}
+              onClick={() => onSearch(selectedTerms)}
+              disabled={selectedTerms.length === 0}
               className="flex-1 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:opacity-50"
             >
               Auto-Search {isUsingTopics ? `${selectedTerms.length} Topics` : 'Playlists'}
             </button>
-            <button onClick={onClose} className="px-4 py-2 border rounded">Cancel</button>
+            <button onClick={onClose} className="px-4 py-2 border rounded hover:bg-gray-50">
+              Cancel
+            </button>
           </div>
         </div>
       </div>
@@ -642,16 +680,18 @@ const GlobalImportCard: React.FC<{ onImport: (data: any) => void }> = ({ onImpor
       onDragOver={handleDrag}
       onDragLeave={handleDrag}
       onDrop={handleDrop}
-      className={`h-full min-h-[280px] rounded-lg border-2 border-dashed transition-all flex flex-col items-center justify-center p-8 bg-white/50 animate-in fade-in slide-in-from-bottom-4 duration-500 ${isDragging ? 'border-blue-500 bg-blue-50 shadow-inner' : 'border-slate-200 hover:border-slate-300 hover:bg-white'
-        }`}
+      className={`h-full min-h-[280px] rounded-lg border-2 border-dashed p-8 flex flex-col items-center justify-center transition-all ${
+        isDragging ? 'bg-blue-50 border-blue-500' : 'bg-white/50 border-gray-300'
+      }`}
     >
-      <div className={`w-16 h-16 rounded-[2rem] flex items-center justify-center mb-6 transition-all ${isDragging ? 'bg-blue-600 text-white scale-110 shadow-lg' : 'bg-slate-50 text-slate-300'
-        }`}>
+      <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 transition-all ${
+        isDragging ? 'bg-blue-500 text-white scale-110 shadow-lg' : 'bg-gray-100 text-gray-400'
+      }`}>
         <Upload size={32} />
       </div>
       <div className="text-center">
-        <h3 className="font-bold text-slate-700 text-lg mb-2">Import Subject Cards</h3>
-        <p className="text-xs text-slate-400 font-medium leading-relaxed">
+        <h3 className="font-bold text-base text-gray-700 mb-2">Import Subject Cards</h3>
+        <p className="text-xs text-gray-500 font-medium leading-relaxed">
           Drag and drop your JSON backup files<br />here to quickly upload subject data.
         </p>
       </div>
@@ -673,7 +713,7 @@ const GlobalImportCard: React.FC<{ onImport: (data: any) => void }> = ({ onImpor
       />
       <label
         htmlFor="global-import-input"
-        className="mt-8 px-6 py-2 bg-white border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-blue-200 hover:text-blue-600 cursor-pointer shadow-sm transition-all active:scale-95"
+        className="mt-8 px-6 py-2 bg-white border-2 border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-400 cursor-pointer shadow-sm hover:shadow-md transition-all"
       >
         Choose JSON File
       </label>
@@ -692,30 +732,29 @@ const TopicCard: React.FC<{ topicName: string; playlist?: Playlist; subjectName:
   };
 
   return (
-    <div className={`p-2 rounded border flex flex-col items-center justify-center min-w-[100px] transition-all h-full ${hasVideos
-      ? 'bg-green-50 border-green-300'
-      : 'bg-gray-50 border-gray-200'
-      }`}>
+    <div className={`p-2 rounded border flex flex-col items-center justify-center min-w-[100px] ${hasVideos ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'}`}>
       <div className="text-xs font-medium text-center truncate w-full text-gray-500" title={topicName}>{topicName}</div>
-      <div className={`text-xs mt-1 font-bold ${hasVideos ? 'text-green-600' : 'text-gray-400'}`}>
+      <div className={`text-xs mt-1 ${hasVideos ? 'text-green-600 font-bold' : 'text-gray-400'}`}>
         {hasVideos ? `${videoCount} videos` : 'No videos'}
       </div>
-      {hasVideos && (
+      {hasVideos && playlist && (
         <div className="w-full mt-2 flex flex-col gap-1">
           <input
             type="text"
             readOnly
+            value={playlist.title || ''}
             className="w-full text-xs font-semibold p-1 border border-green-200 rounded bg-white text-gray-900 focus:outline-none focus:border-green-400"
+            onClick={(e) => e.target.select()}
             title="Playlist Name"
-            value={playlist.title}
           />
           <div className="flex gap-1">
             <input
               type="text"
               readOnly
+              value={playlist.url || ''}
               className="w-full text-[10px] p-1 border border-green-200 rounded bg-white text-blue-600 focus:outline-none focus:border-green-400"
+              onClick={(e) => e.target.select()}
               title="Playlist URL"
-              value={playlist.url}
             />
             <button
               onClick={handleCopy}
@@ -796,24 +835,15 @@ const SubjectSection: React.FC<{
       if (allNewPlaylists.length > 0) {
         allNewPlaylists[0].isPrimary = true;
         const existingPlaylists = subject.playlists || [];
-        const combined = [...existingPlaylists, ...allNewPlaylists];
-        const reindexed = combined.map((p, i) => ({ ...p, index: i, isPrimary: i === 0 }));
-        const newAllVideos = reindexed.flatMap((p: Playlist) => p.videos || []);
-        onImport({ ...subject, playlists: reindexed, allVideos: newAllVideos });
-        logger.log('[CurriculumSearch] handleDrop: imported', jsonFiles.length, 'files with', allNewPlaylists.length, 'new playlists');
+        const updatedPlaylists = [...existingPlaylists, ...allNewPlaylists];
+        const allVideos = updatedPlaylists.flatMap(p => p.videos || []);
+        onImport({ ...subject, playlists: updatedPlaylists, allVideos });
       }
-    } catch { alert('Failed to load file'); }
+    } catch (error) {
+      console.error('Failed to import JSON files:', error);
+      alert('Failed to import JSON files');
+    }
   };
-
-  const copyForSpreadsheet = () => {
-    const lines = playlists.map(p => `${subject.subject}\t${p.title}\t${p.url}`);
-    navigator.clipboard.writeText(lines.join('\n'));
-    logger.log('[CurriculumSearch] copyForSpreadsheet: copied', playlists.length, 'playlists for', subject.subject);
-    alert('Copied all playlists to clipboard!');
-  };
-
-  const isExtra = subject.yearGroup === 'Extracurricular';
-  const isOptional = (subject as any).isOptional || false;
 
   return (
     <div
@@ -830,20 +860,19 @@ const SubjectSection: React.FC<{
       <div className="p-3 bg-gray-50 border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="font-bold text-base">{subject.subject}</h3>
-          {isExtra ? (
+          {subject.yearGroup === 'Extracurricular' ? (
             <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-medium border border-yellow-200">⭐ Extracurricular</span>
-          ) : isOptional ? (
-            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Optional</span>
           ) : (
             <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Core</span>
           )}
         </div>
-        {isOptional && onRemove && (
+        {onRemove && (
           <button onClick={onRemove} className="text-red-500 hover:bg-red-50 px-2 py-1 rounded text-sm" title="Remove subject">
             × Remove
           </button>
         )}
       </div>
+
       <div className="p-3">
         <p className="text-xs text-blue-600 font-medium mb-3">{subject.focus}</p>
 
@@ -852,10 +881,9 @@ const SubjectSection: React.FC<{
             {Array.from({ length: Math.max(topicNames.length, playlists.length) }).map((_, idx) => {
               const playlist = playlists.find(p => p.index === idx) || playlists[idx];
               let topic = topicNames[idx];
-              if (!topic && playlist?.title) {
-                topic = playlist.title.includes(':') ? playlist.title.split(':')[0] : `Topic ${idx + 1}`;
+              if (!topic) {
+                topic = playlist?.title ? (playlist.title.includes(':') ? playlist.title.split(':')[0] : `Topic ${idx + 1}`) : `Topic ${idx + 1}`;
               }
-              if (!topic) topic = `Topic ${idx + 1}`;
               return <TopicCard key={idx} topicName={topic} playlist={playlist} subjectName={subject.subject} />;
             })}
           </div>
@@ -868,7 +896,9 @@ const SubjectSection: React.FC<{
         )}
 
         <div className="flex gap-2">
-          <button onClick={onFind} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Find All</button>
+          <button onClick={onFind} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">
+            Find All
+          </button>
           <button
             onClick={() => {
               const input = document.createElement('input');
@@ -883,7 +913,7 @@ const SubjectSection: React.FC<{
                   if (Array.isArray(data) && data[0]) {
                     const imported = data[0];
                     const newPlaylists = imported.playlists || [];
-                    const newAllVideos = newPlaylists.flatMap((p: Playlist) => p.videos || []);
+                    const newAllVideos = newPlaylists.flatMap(p => p.videos || []);
                     onImport({ ...subject, playlists: newPlaylists, allVideos: newAllVideos });
                     alert('Imported successfully!');
                   } else {
@@ -900,10 +930,22 @@ const SubjectSection: React.FC<{
           </button>
           {playlists.length > 0 && (
             <>
-              <button onClick={onEdit} className="px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700">Edit</button>
+              <button onClick={onEdit} className="px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700">
+                Edit
+              </button>
               <button
-                onClick={copyForSpreadsheet}
-                className="px-3 py-1.5 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700 ml-auto"
+                onClick={() => {
+                  const lines = ['Topic\tPlaylist Title\tPlaylist URL'];
+                  topicNames.forEach((topic, idx) => {
+                    const playlist = playlists.find(p => p.index === idx);
+                    if (playlist) {
+                      lines.push(`${topic}\t${playlist.title}\t${playlist.url}`);
+                    }
+                  });
+                  navigator.clipboard.writeText(lines.join('\n'));
+                  alert('Copied to clipboard! You can now paste into a spreadsheet.');
+                }}
+                className="px-3 py-1.5 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700"
                 title="Copy all playlists for this subject to spreadsheet"
               >
                 Copy for Spreadsheet
@@ -916,97 +958,124 @@ const SubjectSection: React.FC<{
   );
 };
 
-
 export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
   const [selectedYear, setSelectedYear] = useState<ProfileTemplate | null>(null);
   const [savedData, setSavedData] = useState<SubjectData[]>([]);
+  const [subjects, setSubjects] = useState<SubjectData[]>([]);
+  const [showSaved, setShowSaved] = useState(false);
+  const [searching, setSearching] = useState('');
   const [editingSubject, setEditingSubject] = useState<SubjectData | null>(null);
   const [previewSubject, setPreviewSubject] = useState<SubjectData | null>(null);
-  const [searching, setSearching] = useState('');
-  const [wildcardModalOpen, setWildcardModalOpen] = useState(false);
-  const [newWildcardName, setNewWildcardName] = useState('');
-  const savedDataRef = useRef<SubjectData[]>([]);
-
-  const updateLibrary = (newData: SubjectData[]) => {
-    saveData(newData);
-    savedDataRef.current = newData;
-    setSavedData([...newData]);
-  };
+  const savedDataRef = useRef(savedData);
 
   useEffect(() => {
     const data = loadSavedData();
-    updateLibrary(data);
+    setSavedData(data);
+    savedDataRef.current = data;
   }, []);
 
-  const subjects = React.useMemo(() => {
-    if (!selectedYear) return [];
-    return getSubjectsForYear(selectedYear, savedData);
+  useEffect(() => {
+    if (selectedYear) {
+      const curr = getCurriculumForYear(selectedYear as ProfileTemplate);
+      if (curr) {
+        const savedForYear = savedData.filter(d => d.yearGroup === selectedYear);
+        setSubjects(prev => {
+          const coreMap = new Map();
+          curr.subjects.forEach(s => coreMap.set(`${s.subject}|${s.focus}`, { ...s, yearGroup: selectedYear, isOptional: s.isOptional || false }));
+
+          // Preserve any custom subjects already added for this specific year group
+          const existingMap = new Map(coreMap);
+          prev.forEach(s => {
+            if (s.yearGroup === selectedYear && !existingMap.has(`${s.subject}|${s.focus}`)) {
+              existingMap.set(`${s.subject}|${s.focus}`, s);
+            }
+          });
+
+          // Load custom subjects that exist in savedData but not in core curriculum
+          savedForYear.forEach(s => {
+            if (!existingMap.has(`${s.subject}|${s.focus}`)) {
+              existingMap.set(`${s.subject}|${s.focus}`, { ...s, yearGroup: selectedYear, isOptional: true });
+            }
+          });
+
+          // Apply saved data to determine 'playlists', 'allVideos', and 'saved' status
+          return Array.from(existingMap.values()).map(s => {
+            const existing = savedForYear.find(f => f.subject === s.subject && f.focus === s.focus);
+            const combinedPlaylists = existing?.playlists || [];
+            return {
+              ...s,
+              playlists: combinedPlaylists,
+              allVideos: combinedPlaylists.flatMap(p => p.videos || []),
+              saved: combinedPlaylists.length > 0
+            };
+          });
+        });
+      }
+    }
   }, [selectedYear, savedData]);
 
-  const syncedCount = subjects.filter(s => (s.playlists?.length || 0) > 0).length;
-  const totalCount = subjects.length;
+  const updateLibrary = (newData: SubjectData[]) => {
+    setSavedData(newData);
+    savedDataRef.current = newData;
+    saveData(newData);
+  };
 
+  const handleFindAll = async (subjects: SubjectData[], selected?: string[]) => {
+    for (const subject of subjects) {
+      const allTopics = getTopicsForSubject(subject.yearGroup as ProfileTemplate, subject.subject);
+      const topicsToSearch = selected || allTopics.map(t => t.topic);
+      const queries = SEARCH_QUERIES[subject.yearGroup]?.[subject.subject] || [[`${subject.subject} ${subject.yearGroup} tutorial playlist`]];
+      const numPlaylists = topicsToSearch ? topicsToSearch.length : 3;
 
-  const handleFindAll = async (subjectsToSearch: SubjectData[], customQueries?: string[]) => {
-    if (!hasApiKey) {
-      alert('YouTube API key required. Please set VITE_YOUTUBE_API_KEY in your .env file.');
-      return;
-    }
+      setSearching(`Searching ${subject.subject}...`);
+      const newPls = [];
+      const usedIds = new Set();
 
-    logger.log('[CurriculumSearch] handleFindAll: starting search for', subjectsToSearch.length, 'subjects');
-    setSearching('Performing Audit Search...');
+      for (let i = 0; i < topicsToSearch.length; i++) {
+        const topic = topicsToSearch[i];
+        setSearching(`Searching ${subject.subject}: ${topic}...`);
+        const terms = queries[i] ? [...queries[i], `${subject.subject} ${topic} ${subject.yearGroup}`] : [`${subject.subject} ${topic} ${subject.yearGroup}`];
+        let found = null;
 
-    for (const subject of subjectsToSearch) {
-      logger.log('[CurriculumSearch] handleFindAll: searching', subject.subject);
-      const topics = getTopicsForSubject(subject.yearGroup as ProfileTemplate, subject.subject);
-      const searchQueries = SEARCH_QUERIES[subject.yearGroup]?.[subject.subject] || [];
-      const flatQueries = searchQueries.flat();
-
-      const newPlaylists: Playlist[] = [];
-      const itemsToSearch = customQueries || (topics.length > 0 ? topics.map(t => `${t.topic} ${t.focus}`) : flatQueries);
-
-      for (let i = 0; i < Math.min(itemsToSearch.length, 5); i++) {
-        const queryTerm = itemsToSearch[i];
-        try {
-          const searchQuery = `${queryTerm} ${subject.subject} ${subject.yearGroup} educational playlist`;
-          const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=${encodeURIComponent(searchQuery)}&type=playlist&key=${apiKey}`
-          );
-          const data = await response.json();
-
-          if (data.items && data.items.length > 0) {
-            const item = data.items[0];
-            if (item.id?.playlistId) {
-              const playlistUrl = `https://www.youtube.com/playlist?list=${item.id.playlistId}`;
-              const videos = await fetchPlaylistVideos(playlistUrl);
-              newPlaylists.push({
-                title: item.snippet.title,
-                url: playlistUrl,
-                videos,
-                isPrimary: newPlaylists.length === 0,
-                index: newPlaylists.length
-              });
-              logger.log('[CurriculumSearch] handleFindAll: found playlist', item.snippet.title, 'with', videos.length, 'videos');
+        for (const term of terms) {
+          const results = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=5&q=${encodeURIComponent(term)}&key=${apiKey}`);
+          const data = await results.json();
+          if (data.items && !data.error) {
+            for (const item of data.items) {
+              const match = item.id?.videoId;
+              const id = match ? match : null;
+              if (id && !usedIds.has(id)) {
+                found = item;
+                usedIds.add(id);
+                break;
+              }
             }
           }
-        } catch (err) {
-          logger.error('[CurriculumSearch] handleFindAll: search error for', queryTerm, err);
+          if (found) break;
+        }
+
+        if (found) {
+          setSearching(`Fetching ${topic}...`);
+          const videos = await fetchPlaylistVideos(found.id?.videoId || '');
+          if (videos.length > 0) {
+            newPls.push({
+              title: `${topic}: ${found.snippet.title}`,
+              url: found.id?.videoId || '',
+              videos,
+              isPrimary: newPls.length === 0,
+              index: newPls.length
+            });
+            logger.log('[CurriculumSearch] handleFindAll: found playlist', found.snippet.title, 'with', videos.length, 'videos');
+          }
+          if (newPls.length > 0) await new Promise(r => setTimeout(r, 200));
         }
       }
 
-      const updatedSubject = {
-        ...subject,
-        playlists: newPlaylists,
-        allVideos: newPlaylists.flatMap(p => p.videos || [])
-      };
+      if (newPls.length === 0) { alert('No playlists found'); setSearching(''); return; }
 
-      const dataIndex = savedDataRef.current.findIndex(s => s.id === subject.id);
-      if (dataIndex >= 0) {
-        savedDataRef.current[dataIndex] = updatedSubject;
-      } else {
-        savedDataRef.current.push(updatedSubject);
-      }
-      updateLibrary([...savedDataRef.current]);
+      const entry = { id: `${selectedYear}_${subject.subject}_${Date.now()}`, yearGroup: selectedYear, subject: subject.subject, focus: subject.focus, playlists: newPls, allVideos: newPls.flatMap(p => p.videos), createdAt: new Date().toISOString() };
+      const idx = savedDataRef.current.findIndex(d => d.yearGroup === selectedYear && d.subject === subject.subject && d.focus === subject.focus);
+      updateLibrary(idx >= 0 ? savedDataRef.current.map((d, i) => i === idx ? entry : d) : [...savedDataRef.current, entry]);
     }
 
     setSearching('');
@@ -1029,48 +1098,122 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
     updateLibrary(merged);
   };
 
-  const handleImportSubject = (subject: SubjectData) => {
-    logger.log('[CurriculumSearch] handleImportSubject: imported', subject.subject, 'with', subject.playlists?.length || 0, 'playlists');
-    handleSaveSubject(subject);
+  const handleBulkImport = (data: any) => {
+    const importedYearGroups = [...new Set(data.map(d => d.yearGroup))];
+    let addedCount = 0;
+    const newData = [...savedDataRef.current];
+    for (const importedItem of data) {
+      const existingIdx = newData.findIndex(d =>
+        d.yearGroup === importedItem.yearGroup &&
+        d.subject === importedItem.subject &&
+        d.focus === importedItem.focus
+      );
+      if (existingIdx >= 0) {
+        newData[existingIdx] = importedItem;
+      } else {
+        newData.push(importedItem);
+      }
+      addedCount++;
+    }
+    updateLibrary(newData);
+    alert(`Imported ${addedCount} subjects!`);
   };
 
-  const handleBulkImport = (data: any) => {
-    if (!data) return;
-    const items = Array.isArray(data) ? data : [data];
+  const handleImportSubject = (updated: SubjectData) => {
     const merged = [...savedDataRef.current];
+    const isWildcard = updated.id?.includes('-wild-');
 
-    let count = 0;
-    items.forEach((item: any) => {
-      if (!item.subject || !item.yearGroup) return;
+    const dataIndex = merged.findIndex(s =>
+      s.id === updated.id ||
+      (!isWildcard && s.yearGroup === updated.yearGroup && s.subject.toLowerCase() === updated.subject.toLowerCase())
+    );
 
-      let normalizedYear = item.yearGroup;
-      if (normalizedYear.startsWith('Y')) normalizedYear = normalizedYear.substring(1);
-
-      // Deduplicate: Prioritize ID match, then name+year match ONLY for non-wildcards (or allow name match for updates)
-      const isWildcard = item.id?.includes('-wild-');
-      const idx = merged.findIndex(m =>
-        m.id === item.id ||
-        (!isWildcard && m.yearGroup === normalizedYear && m.subject.toLowerCase() === item.subject.toLowerCase())
-      );
-
-      const normalizedItem = { ...item, yearGroup: normalizedYear };
-      if (idx >= 0) {
-        merged[idx] = normalizedItem;
-      } else {
-        merged.push(normalizedItem);
-      }
-      count++;
-    });
-
+    if (dataIndex >= 0) {
+      merged[dataIndex] = updated;
+    } else {
+      merged.push(updated);
+    }
     updateLibrary(merged);
   };
+
+  const exportData = () => {
+    const dataStr = JSON.stringify(savedDataRef.current.filter(s => s.yearGroup === selectedYear), null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup_${selectedYear}_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    logger.log('[CurriculumSearch] exportData: exported curriculum for', selectedYear);
+  };
+
+  const clearData = () => {
+    if (!confirm(`Clear all data for ${selectedYear}?`)) return;
+    const filtered = savedDataRef.current.filter(s => s.yearGroup !== selectedYear);
+    updateLibrary(filtered);
+    logger.log('[CurriculumSearch] clearData: cleared curriculum for', selectedYear);
+  };
+
+  const syncedCount = savedDataRef.current.filter(s => s.yearGroup === selectedYear).length;
+  const totalCount = getSubjectsForYear(selectedYear, savedDataRef.current).length;
+
+  if (showSaved) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
+          <button onClick={() => setShowSaved(false)} className="p-1 hover:bg-gray-100 rounded">Back</button>
+          <h1 className="font-bold">All Saved ({savedData.length})</h1>
+        </div>
+        <div className="p-4 max-w-6xl mx-auto">
+          <div className="flex gap-2 mb-4">
+            <button onClick={exportData} className="px-4 py-2 bg-blue-600 text-white rounded">Export</button>
+            <button onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = '.json';
+              input.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (!file) return;
+                try {
+                  const text = await file.text();
+                  const data = JSON.parse(text);
+                  if (Array.isArray(data)) {
+                    handleBulkImport(data);
+                  } else {
+                    alert('Invalid backup file');
+                  }
+                } catch { alert('Failed to load file'); }
+              };
+              input.click();
+            }} className="px-4 py-2 bg-purple-600 text-white rounded">Import</button>
+            <button onClick={clearData} className="px-4 py-2 bg-red-600 text-white rounded">Clear</button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {savedData.map((item, i) => (
+              <div key={i} onClick={() => setEditingSubject(item)} className="bg-white p-3 rounded border cursor-pointer hover:shadow">
+                <div className="flex gap-1 mb-1">
+                  <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">{item.yearGroup}</span>
+                  <span className="text-xs bg-green-100 text-green-700 px-1 rounded">{item.playlists?.length || 0} pl</span>
+                  <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">{item.allVideos?.length || 0} videos</span>
+                </div>
+                <div className="font-bold text-sm">{item.subject}</div>
+                <div className="text-xs text-gray-500">{item.focus}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!selectedYear) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="bg-white border-b px-4 py-3 flex justify-between items-center">
+        <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
+          <button onClick={() => setSelectedYear(null)} className="p-1 hover:bg-gray-100 rounded">
+            <ArrowLeft size={16} />
+          </button>
           <h1 className="font-bold text-lg">UK Curriculum Video Finder</h1>
-          <button onClick={() => setWildcardModalOpen(true)} className="text-blue-600">All ({savedData.length})</button>
         </div>
         <div className="p-4 max-w-xl mx-auto">
           <h2 className="font-semibold mb-3">Select Year Group</h2>
@@ -1078,7 +1221,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
             {PROFILE_TEMPLATES.map(t => (
               <button key={t.id} onClick={() => setSelectedYear(t.id as ProfileTemplate)} className="p-4 bg-white border-2 border-gray-200 rounded hover:border-blue-500 text-left">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold">{t.id === 'Extracurricular' ? 'Extracurricular' : `Year ${t.id}`}</span>
+                  <span className="font-semibold">{t.label}</span>
                   <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">{t.keyStage}</span>
                 </div>
                 <div className="text-sm text-gray-500">{t.ageRange}</div>
@@ -1090,27 +1233,6 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
     );
   }
 
-
-
-  const exportData = () => {
-    const dataStr = JSON.stringify(savedData.filter(s => s.yearGroup === selectedYear), null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `curriculum-${selectedYear}.json`;
-    a.click();
-    logger.log('[CurriculumSearch] exportData: exported curriculum for', selectedYear);
-  };
-
-  const clearData = () => {
-    if (confirm(`Clear all synced data for Year ${selectedYear}?`)) {
-      const filtered = savedDataRef.current.filter(s => s.yearGroup !== selectedYear);
-      updateLibrary(filtered);
-      logger.log('[CurriculumSearch] clearData: cleared curriculum for', selectedYear);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
@@ -1119,7 +1241,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
         <span className="text-gray-400">|</span>
         <span>{syncedCount}/{totalCount}</span>
         <button
-          onClick={() => handleFindAll(subjects)}
+          onClick={() => handleFindAll(getSubjectsForYear(selectedYear, savedDataRef.current))}
           disabled={!!searching || !hasApiKey}
           className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 disabled:opacity-50"
         >
@@ -1146,9 +1268,12 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
           };
           input.click();
         }} className="px-2 py-1 bg-purple-500 text-white rounded text-sm">Import</button>
-        <button onClick={() => alert('Saved to Dashboard!')} className="px-2 py-1 bg-green-500 text-white rounded text-sm">Save to Firebase</button>
-        <button onClick={clearData} className="px-2 py-1 bg-red-500 text-white rounded text-sm">Clear</button>
-        <button onClick={() => setWildcardModalOpen(true)} className="ml-auto text-blue-600">All Saved ({savedData.length})</button>
+        <button onClick={() => {
+          if (!confirm(`Clear all data for ${selectedYear}?`)) return;
+          const filtered = savedDataRef.current.filter(s => s.yearGroup !== selectedYear);
+          updateLibrary(filtered);
+        }} className="px-2 py-1 bg-red-500 text-white rounded text-sm">Clear</button>
+        <button onClick={() => setShowSaved(true)} className="ml-auto text-blue-600">All Saved ({savedData.length})</button>
       </div>
 
       <div className="p-4 max-w-6xl mx-auto">
@@ -1156,7 +1281,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
         
         <div className="mb-3">
           <button
-            onClick={() => setWildcardModalOpen(true)}
+            onClick={() => setPreviewSubject(null)}
             className={selectedYear === 'Extracurricular'
               ? "px-3 py-1 border-2 border-dashed border-yellow-400 text-yellow-700 bg-yellow-50 rounded text-sm hover:bg-yellow-100 font-medium"
               : "px-3 py-1 border border-dashed border-gray-400 text-gray-600 rounded text-sm hover:bg-gray-50"}
@@ -1164,9 +1289,9 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
             {selectedYear === 'Extracurricular' ? '✨ Add Wildcard Subject' : '+ Add Subject'}
           </button>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 justify-items-center">
-          {subjects.map((s, idx) => (
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {getSubjectsForYear(selectedYear, savedDataRef.current).map((s, idx) => (
             <SubjectSection
               key={s.id || `${s.subject}-${idx}`}
               subject={s}
@@ -1176,9 +1301,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
               onRemove={() => {
                 if (confirm(`Remove ${s.subject}?`)) {
                   const filtered = savedDataRef.current.filter(item => item.id !== s.id);
-                  saveData(filtered);
-                  savedDataRef.current = filtered;
-                  setSavedData([...filtered]);
+                  updateLibrary(filtered);
                 }
               }}
             />
@@ -1186,7 +1309,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
           <GlobalImportCard onImport={handleBulkImport} />
         </div>
 
-        {subjects.length === 0 && (
+        {getSubjectsForYear(selectedYear, savedDataRef.current).length === 0 && (
           <div className="text-center py-32">
             <div className="text-6xl mb-4 opacity-20">📚</div>
             <h3 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Compiling Curriculum Map...</h3>
@@ -1228,62 +1351,6 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
           }}
           onClose={() => setPreviewSubject(null)}
         />
-      )}
-
-      {wildcardModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setWildcardModalOpen(false)}>
-          <Shadow offset={4} size={4} radius={DS.radius.lg} className="max-w-md w-full">
-            <div className="bg-white rounded-3xl overflow-hidden border-2 border-white shadow-2xl" onClick={e => e.stopPropagation()}>
-              <div className="p-6 border-b bg-slate-50">
-                <h2 className="text-xl font-black text-slate-800">Add Wildcard Subject</h2>
-                <p className="text-xs text-amber-600 font-bold uppercase tracking-widest mt-1">Manual Topic Builder</p>
-              </div>
-              <div className="p-8">
-                <div className="mb-6">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Subject Name</label>
-                  <input
-                    type="text"
-                    autoFocus
-                    value={newWildcardName}
-                    onChange={e => setNewWildcardName(e.target.value)}
-                    placeholder="e.g. Basketball, Python, Chess..."
-                    className="w-full border-2 border-slate-100 rounded-2xl px-5 py-4 text-lg font-bold focus:border-amber-400 focus:outline-none transition-all shadow-sm"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      if (newWildcardName.trim()) {
-                        const randomSuffix = Math.random().toString(36).substring(2, 7);
-                        const id = `${selectedYear}-wild-${Date.now()}-${randomSuffix}`;
-                        const newSub: SubjectData = {
-                          id,
-                          yearGroup: selectedYear,
-                          subject: newWildcardName.trim(),
-                          focus: `Custom enrichment topic: ${newWildcardName.trim()}`,
-                          playlists: [],
-                          allVideos: []
-                        };
-                        handleSaveSubject(newSub);
-                        setNewWildcardName('');
-                        setWildcardModalOpen(false);
-                      }
-                    }}
-                    className="flex-1 py-4 bg-amber-500 text-white rounded-2xl font-black shadow-xl shadow-amber-100 hover:bg-amber-600 transition-all"
-                  >
-                    ✨ Create Subject
-                  </button>
-                  <button
-                    onClick={() => setWildcardModalOpen(false)}
-                    className="px-6 py-4 border-2 border-slate-100 rounded-2xl font-black text-slate-400 hover:bg-slate-50 transition-all"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </Shadow>
-        </div>
       )}
     </div>
   );
