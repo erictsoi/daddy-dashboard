@@ -45,12 +45,16 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [loading, setLoading] = useState(true);
     const [videoFinished, setVideoFinished] = useState(false);
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
+    const [isTimerRunning, setIsTimerRunning] = useState(false);
+    const [dailyTimeSpent, setDailyTimeSpent] = useState(0);
+    const [expandedPlaylists, setExpandedPlaylists] = useState<Set<number>>(new Set());
+    const [videoUnavailable, setVideoUnavailable] = useState(false);
+    const [autoAdvanceTimer, setAutoAdvanceTimer] = useState<NodeJS.Timeout | null>(null);
     const { children: contextData } = useAppContext();
-
-    // Reset finished state when lesson changes
-    useEffect(() => {
-        setVideoFinished(false);
-    }, [lessonId]);
+    
+    const DAILY_LIMIT = 50 * 60; // 50 minutes in seconds
+    const remainingTime = DAILY_LIMIT - dailyTimeSpent - elapsedSeconds;
 
     // Use prop data if provided, fall back to context
     const data = dataProp && dataProp.length > 0 ? dataProp : contextData;
@@ -59,6 +63,95 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
     const subjectIdParam = subjectId || searchParams.get('subject') || '';
     const topicIdParam = topicId || searchParams.get('topic') || '';
     const playlistUrl = searchParams.get('url') || '';
+
+    // Reset finished state when lesson changes
+    useEffect(() => {
+        setVideoFinished(false);
+        // Reset timer when lesson changes
+        setElapsedSeconds(0);
+        setIsTimerRunning(false);
+    }, [lessonId]);
+
+    // Load daily time spent for this subject
+    useEffect(() => {
+        const today = new Date().toDateString();
+        const subjectKey = `${subjectIdParam}-${today}`;
+        const savedTime = localStorage.getItem(subjectKey);
+        setDailyTimeSpent(savedTime ? parseInt(savedTime) : 0);
+    }, [subjectIdParam]);
+
+    // Auto-start timer when video loads
+    useEffect(() => {
+        if (!loading && remainingTime > 0) {
+            // Auto-start timer after a short delay to simulate video start
+            const autoStartTimer = setTimeout(() => {
+                setIsTimerRunning(true);
+            }, 2000); // Start after 2 seconds (video autoplay delay)
+            
+            return () => clearTimeout(autoStartTimer);
+        }
+        return () => {}; // Empty cleanup for the else case
+    }, [loading, remainingTime]);
+
+    // Timer effect
+    useEffect(() => {
+        let interval: NodeJS.Timeout | null = null;
+        
+        if (isTimerRunning && remainingTime > 0) {
+            interval = setInterval(() => {
+                setElapsedSeconds(prev => prev + 1);
+            }, 1000);
+        }
+        
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [isTimerRunning, remainingTime]);
+
+    // Save daily time when component unmounts or timer stops
+    useEffect(() => {
+        const today = new Date().toDateString();
+        const subjectKey = `${subjectIdParam}-${today}`;
+        const totalSpent = dailyTimeSpent + elapsedSeconds;
+        localStorage.setItem(subjectKey, totalSpent.toString());
+    }, [elapsedSeconds, dailyTimeSpent, subjectIdParam]);
+
+    // Format time display
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const toggleTimer = () => {
+        if (remainingTime > 0) {
+            setIsTimerRunning(!isTimerRunning);
+        }
+    };
+
+    const addTenMinutes = () => {
+        if (remainingTime >= 600) {
+            setElapsedSeconds(prev => prev + 600);
+        }
+    };
+
+    // Accordion toggle function with independent behavior
+    const togglePlaylistExpansion = (topicIdx: number, forceCloseOthers = true) => {
+        setExpandedPlaylists(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(topicIdx)) {
+                // If clicking an already expanded playlist, just collapse it
+                newSet.delete(topicIdx);
+            } else {
+                if (forceCloseOthers) {
+                    // Clear all other playlists and only expand this one (accordion behavior)
+                    newSet.clear();
+                }
+                newSet.add(topicIdx);
+            }
+            return newSet;
+        });
+    };
 
     // First check real children, then fall back to demo profiles
     let child = data.find(c => c.id === childId);
@@ -113,7 +206,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
 
     // Load from JSON SubjectCards if URL provided - get ALL playlists for the subject
     const jsonSubjectData = useMemo(() => {
-        if (!playlistUrl) return { lessons: [], topics: [] };
+        if (!playlistUrl) return { lessons: [], topics: [], subjectName: '' };
 
         const decodedUrl = decodeURIComponent(playlistUrl);
 
@@ -148,14 +241,14 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                 }
             }
         }
-        return { lessons: [], topics: [] };
+        return { lessons: [], topics: [], subjectName: '' };
     }, [playlistUrl]);
 
     // Collect all lessons for the subject grouped by topic
     const subjectData = useMemo(() => {
         if (jsonSubjectData.lessons.length > 0) return jsonSubjectData;
 
-        if (!child || !subjectIdParam) return { lessons: [], topics: [] };
+        if (!child || !subjectIdParam) return { lessons: [], topics: [], subjectName: '' };
         const lessons: { id: string; title: string; videoUrl?: string; completed: boolean; subjectName: string; topicName: string; topicId: string }[] = [];
         const topics: { id: string; name: string; lessonIds: string[] }[] = [];
 
@@ -165,9 +258,9 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                     for (const topic of subject.topics || []) {
                         const topicLessonIds = topic.lessons?.map(l => l.id) || [];
                         topics.push({ id: topic.id, name: topic.name, lessonIds: topicLessonIds });
-                        for (const lesson of topic.lessons || []) {
+                        for (const topicLesson of topic.lessons || []) {
                             lessons.push({
-                                ...lesson,
+                                ...topicLesson,
                                 subjectName: subject.name,
                                 topicName: topic.name,
                                 topicId: topic.id
@@ -187,6 +280,23 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
     const currentLessonIndex = allSubjectLessons.findIndex(l => l.id === lessonId);
     const currentTopicInfo = allTopics.find(t => t.lessonIds.includes(lessonId));
     const currentTopicIndex = allTopics.findIndex(t => t.id === currentTopicInfo?.id);
+    
+    // Get only the lessons for the current topic (for breadcrumb navigation)
+    const currentTopicLessons = currentTopicInfo 
+        ? allSubjectLessons.filter(l => l.topicId === currentTopicInfo.id)
+        : [];
+    const currentTopicLessonIndex = currentTopicLessons.findIndex(l => l.id === lessonId);
+
+    // Auto-expand current playlist and handle navigation changes
+    useEffect(() => {
+        if (allTopics.length > 0 && currentTopicInfo) {
+            const currentTopicIndex = allTopics.findIndex(t => t.id === currentTopicInfo.id);
+            if (currentTopicIndex >= 0) {
+                // Auto-expand the current topic and collapse others
+                setExpandedPlaylists(new Set([currentTopicIndex]));
+            }
+        }
+    }, [currentTopicInfo, allTopics]);
 
     // Check if all lessons in current topic are completed
     const isCurrentTopicComplete = useMemo(() => {
@@ -195,38 +305,110 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
         return topicLessons.length > 0 && topicLessons.every(l => l.completed);
     }, [allSubjectLessons, currentTopicInfo]);
 
-    // Auto-advance to next topic when current topic is complete
-    useMemo(() => {
-        if (isCurrentTopicComplete && currentTopicIndex < allTopics.length - 1) {
-            const nextTopic = allTopics[currentTopicIndex + 1];
-            const nextTopicFirstLesson = allSubjectLessons.find(l => l.topicId === nextTopic.id);
-            if (nextTopicFirstLesson) {
-                navigate(toLessonView({
-                    childId,
-                    lessonId: nextTopicFirstLesson.id,
-                    subjectId: subjectIdParam,
-                    topic: nextTopic.id,
-                }));
+    // Auto-advance to next video when current video is unavailable
+    const handleSkipToNext = () => {
+        if (currentLessonIndex < allSubjectLessons.length - 1) {
+            const nextLesson = allSubjectLessons[currentLessonIndex + 1];
+            navigate(toLessonView({
+                childId,
+                lessonId: nextLesson.id,
+                subjectId: subjectIdParam,
+                topic: topicIdParam,
+                url: playlistUrl
+            }));
+        } else {
+            navigate(toKidDash(childId));
+        }
+    };
+
+    // Auto-expand current playlist and handle navigation changes
+    useEffect(() => {
+        if (allTopics.length > 0 && currentTopicInfo) {
+            const currentTopicIndex = allTopics.findIndex(t => t.id === currentTopicInfo.id);
+            if (currentTopicIndex >= 0) {
+                setExpandedPlaylists(prev => {
+                    const newSet = new Set(prev);
+                    newSet.clear();
+                    newSet.add(currentTopicIndex);
+                    return newSet;
+                });
             }
         }
-    }, [isCurrentTopicComplete]);
+    }, [currentTopicInfo, allTopics]);
 
-    if (loading) {
-        return (
-            <div style={{
-                minHeight: "100vh",
-                background: DS.cream,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-            }}>
-                <GlobalStyles />
-                <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 24, marginBottom: 8 }}>Loading lesson...</div>
-                </div>
-            </div>
-        );
+    // Find current lesson (needed for videoId)
+    let lesson: { id: string; title: string; videoUrl?: string; completed: boolean } | undefined;
+    let subjectName = '';
+    let topicName = '';
+
+    // Use the real lessons from the subject if available
+    if (allSubjectLessons.length > 0) {
+        const currentLesson = allSubjectLessons[currentLessonIndex];
+        if (currentLesson) {
+            lesson = currentLesson;
+            subjectName = currentLesson.subjectName;
+            topicName = currentLesson.topicName;
+        }
+    } else {
+        // Fallback to searching through all data
+        for (const yearGroup of child?.yearGroups || []) {
+            for (const subject of yearGroup.subjects || []) {
+                for (const topic of subject.topics || []) {
+                    const found = topic.lessons?.find(l => l.id === lessonId);
+                    if (found) {
+                        lesson = found;
+                        subjectName = subject.name;
+                        topicName = topic.name;
+                        break;
+                    }
+                }
+                if (lesson) break;
+            }
+            if (lesson) break;
+        }
     }
+
+    const videoId = lesson?.videoUrl?.match(/(?:youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/)?.[1];
+
+    // Check if video is available and handle auto-advance
+    useEffect(() => {
+        if (!videoId) {
+            setVideoUnavailable(true);
+            // Auto-advance to next video after 3 seconds
+            const timer = setTimeout(() => {
+                if (currentLessonIndex < allSubjectLessons.length - 1) {
+                    const nextLesson = allSubjectLessons[currentLessonIndex + 1];
+                    navigate(toLessonView({
+                        childId,
+                        lessonId: nextLesson.id,
+                        subjectId: subjectIdParam,
+                        topic: topicIdParam,
+                        url: playlistUrl
+                    }));
+                } else {
+                    // Last video, go back to dashboard
+                    navigate(toKidDash(childId));
+                }
+            }, 3000);
+            
+            setAutoAdvanceTimer(timer);
+        } else {
+            setVideoUnavailable(false);
+            if (autoAdvanceTimer) {
+                clearTimeout(autoAdvanceTimer);
+                setAutoAdvanceTimer(null);
+            }
+        }
+        
+        return () => {
+            if (autoAdvanceTimer) clearTimeout(autoAdvanceTimer);
+        };
+    }, [videoId, currentLessonIndex, subjectData.lessons.length > 0 ? subjectData.lessons[0]?.id : '', childId, subjectIdParam, topicIdParam, playlistUrl, navigate]);
+
+    const handleRetryVideo = () => {
+        // Force reload the current video
+        window.location.reload();
+    };
 
     if (!child) {
         return (
@@ -244,37 +426,6 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
     }
 
     const themeColor = child.themeColor === 'purple' ? '#9B6DD6' : child.themeColor === 'blue' ? '#2B8ED4' : '#4CAF50';
-
-    let lesson: { id: string; title: string; videoUrl?: string; completed: boolean } | undefined;
-    let subjectName = '';
-    let topicName = '';
-
-    // Use the real lessons from the subject if available
-    if (allSubjectLessons.length > 0) {
-        const currentLesson = allSubjectLessons[currentLessonIndex];
-        if (currentLesson) {
-            lesson = currentLesson;
-            subjectName = currentLesson.subjectName;
-            topicName = currentLesson.topicName;
-        }
-    } else {
-        // Fallback to searching through all data
-        for (const yearGroup of child.yearGroups || []) {
-            for (const subject of yearGroup.subjects || []) {
-                for (const topic of subject.topics || []) {
-                    const found = topic.lessons?.find(l => l.id === lessonId);
-                    if (found) {
-                        lesson = found;
-                        subjectName = subject.name;
-                        topicName = topic.name;
-                        break;
-                    }
-                }
-                if (lesson) break;
-            }
-            if (lesson) break;
-        }
-    }
 
     if (!lesson) {
         return (
@@ -298,8 +449,6 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
             </div>
         );
     }
-
-    const videoId = lesson.videoUrl?.match(/(?:youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/)?.[1];
 
     return (
         <div style={{
@@ -366,18 +515,53 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                         display: "flex",
                         alignItems: "center",
                         gap: 8,
-                        background: themeColor,
+                        background: remainingTime <= 0 ? "#dc2626" : themeColor,
                         border: DS.border,
                         borderRadius: DS.radius.md,
                         padding: "6px 12px"
                     }}>
                         <div>
-                            <div className="b" style={{ fontSize: 18, fontWeight: 800, color: "#fff", lineHeight: 1 }}>18:15</div>
-                            <div className="n t-label" style={{ color: "rgba(255,255,255,0.65)", fontSize: 8 }}>elapsed</div>
+                            <div className="b" style={{ fontSize: 18, fontWeight: 800, color: "#fff", lineHeight: 1 }}>
+                                {formatTime(elapsedSeconds)}
+                            </div>
+                            <div className="n t-label" style={{ color: "rgba(255,255,255,0.65)", fontSize: 8 }}>
+                                {remainingTime <= 0 ? "limit reached" : "elapsed"}
+                            </div>
                         </div>
                         <div style={{ display: "flex", gap: 4 }}>
-                            <button style={{ width: 24, height: 24, borderRadius: 6, border: "2px solid rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer", fontSize: 10 }}>⏸</button>
-                            <button style={{ width: 24, height: 24, borderRadius: 6, border: "2px solid rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer", fontSize: 7, fontWeight: 900 }}>+10</button>
+                            <button 
+                                onClick={toggleTimer}
+                                disabled={remainingTime <= 0}
+                                style={{ 
+                                    width: 24, 
+                                    height: 24, 
+                                    borderRadius: 6, 
+                                    border: "2px solid rgba(255,255,255,0.5)", 
+                                    background: remainingTime <= 0 ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.2)", 
+                                    color: remainingTime <= 0 ? "rgba(255,255,255,0.5)" : "#fff", 
+                                    cursor: remainingTime <= 0 ? "not-allowed" : "pointer", 
+                                    fontSize: 10 
+                                }}
+                            >
+                                {isTimerRunning ? "⏸" : "▶"}
+                            </button>
+                            <button 
+                                onClick={addTenMinutes}
+                                disabled={remainingTime < 600}
+                                style={{ 
+                                    width: 24, 
+                                    height: 24, 
+                                    borderRadius: 6, 
+                                    border: "2px solid rgba(255,255,255,0.5)", 
+                                    background: remainingTime < 600 ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.2)", 
+                                    color: remainingTime < 600 ? "rgba(255,255,255,0.5)" : "#fff", 
+                                    cursor: remainingTime < 600 ? "not-allowed" : "pointer", 
+                                    fontSize: 7, 
+                                    fontWeight: 900 
+                                }}
+                            >
+                                +10
+                            </button>
                         </div>
                     </div>
                 </Shadow>
@@ -447,7 +631,39 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                                         This video may have been removed or made private
                                     </div>
                                     <div className="n t-small" style={{ color: "rgba(255,255,255,0.4)", marginTop: 12 }}>
-                                        Select a different video from the sidebar
+                                        Auto-advancing to next video in 3 seconds...
+                                    </div>
+                                    <div style={{ marginTop: 16, display: "flex", gap: 8, justifyContent: "center" }}>
+                                        <button
+                                            onClick={handleSkipToNext}
+                                            style={{
+                                                padding: "8px 16px",
+                                                background: themeColor,
+                                                border: "none",
+                                                borderRadius: 6,
+                                                color: "#fff",
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                                cursor: "pointer"
+                                            }}
+                                        >
+                                            Skip to Next →
+                                        </button>
+                                        <button
+                                            onClick={handleRetryVideo}
+                                            style={{
+                                                padding: "8px 16px",
+                                                background: "rgba(255,255,255,0.2)",
+                                                border: "1px solid rgba(255,255,255,0.3)",
+                                                borderRadius: 6,
+                                                color: "#fff",
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                                cursor: "pointer"
+                                            }}
+                                        >
+                                            Retry
+                                        </button>
                                     </div>
                                 </div>
                             )}
@@ -456,27 +672,6 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                             <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 5, background: "rgba(255,255,255,0.15)" }}>
                                 <div style={{ width: "42%", height: "100%", background: themeColor }}></div>
                             </div>
-
-                            {/* Simulate video end button */}
-                            <button
-                                style={{
-                                    position: "absolute",
-                                    bottom: 14,
-                                    right: 14,
-                                    background: "rgba(255,255,255,0.15)",
-                                    border: "2px solid rgba(255,255,255,0.35)",
-                                    color: "#fff",
-                                    padding: "6px 16px",
-                                    borderRadius: 100,
-                                    fontSize: 11,
-                                    cursor: "pointer",
-                                    fontWeight: 800,
-                                    backdropFilter: "blur(6px)"
-                                }}
-                                onClick={() => setVideoFinished(true)}
-                            >
-                                Simulate video end ▸
-                            </button>
                         </div>
                     </div>
 
@@ -544,137 +739,342 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                         </div>
                     )}
 
-                    {/* Next/Previous Navigation */}
-                    {allSubjectLessons.length > 1 && (
+                    {/* Smart Breadcrumb Navigation - always show when there are multiple videos in current topic */}
+                    {currentTopicLessons.length > 1 && (
                         <div style={{ maxWidth: 900, margin: "16px auto", display: "flex", justifyContent: "space-between", gap: 12 }}>
-                            <Shadow offset={1} size={1} radius={DS.radius.md}>
-                                <button
-                                    onClick={() => {
-                                        if (currentLessonIndex > 0) {
-                                            const prevLesson = allSubjectLessons[currentLessonIndex - 1];
-                                            navigate(toLessonView({
-                                                childId,
-                                                lessonId: prevLesson.id,
-                                                subjectId: subjectIdParam,
-                                                topic: topicIdParam,
-                                            }));
+                            {currentTopicLessons.length <= 10 ? (
+                                // For 10 or fewer videos: show Prev/Next buttons + dots
+                                <>
+                                    <Shadow offset={1} size={1} radius={DS.radius.md}>
+                                        <button
+                                            onClick={() => {
+                                                if (currentTopicLessonIndex > 0) {
+                                                    const prevLesson = currentTopicLessons[currentTopicLessonIndex - 1];
+                                                    navigate(toLessonView({
+                                                        childId,
+                                                        lessonId: prevLesson.id,
+                                                        subjectId: subjectIdParam,
+                                                        topic: topicIdParam,
+                                                    }));
+                                                }
+                                            }}
+                                            disabled={currentTopicLessonIndex <= 0}
+                                            style={{
+                                                position: "relative",
+                                                padding: "10px 20px",
+                                                borderRadius: DS.radius.md,
+                                                border: "2.5px solid #C4BBAF",
+                                                background: currentTopicLessonIndex <= 0 ? "#EDE8E0" : DS.card,
+                                                color: currentTopicLessonIndex <= 0 ? DS.inkFade : DS.ink,
+                                                fontSize: 14,
+                                                fontWeight: 800,
+                                                cursor: currentTopicLessonIndex <= 0 ? "not-allowed" : "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 8
+                                            }}
+                                        >
+                                            ← Previous
+                                        </button>
+                                    </Shadow>
+
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                        {currentTopicLessons.map((_, idx) => (
+                                            <div
+                                                key={idx}
+                                                onClick={() => {
+                                                    const l = currentTopicLessons[idx];
+                                                    navigate(toLessonView({
+                                                        childId,
+                                                        lessonId: l.id,
+                                                        subjectId: subjectIdParam,
+                                                        topic: topicIdParam,
+                                                    }));
+                                                }}
+                                                style={{
+                                                    width: idx === currentTopicLessonIndex ? 24 : 12,
+                                                    height: 12,
+                                                    borderRadius: 6,
+                                                    background: idx === currentTopicLessonIndex ? themeColor : idx < currentTopicLessonIndex ? `${themeColor}60` : "#EDE8E0",
+                                                    cursor: "pointer",
+                                                    transition: "all 0.2s"
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    <Shadow offset={1} size={1} radius={DS.radius.md}>
+                                        <button
+                                            onClick={() => {
+                                                if (currentTopicLessonIndex < currentTopicLessons.length - 1) {
+                                                    const nextLesson = currentTopicLessons[currentTopicLessonIndex + 1];
+                                                    navigate(toLessonView({
+                                                        childId,
+                                                        lessonId: nextLesson.id,
+                                                        subjectId: subjectIdParam,
+                                                        topic: topicIdParam,
+                                                        url: playlistUrl
+                                                    }));
+                                                }
+                                            }}
+                                            disabled={currentTopicLessonIndex >= currentTopicLessons.length - 1}
+                                            style={{
+                                                position: "relative",
+                                                padding: "10px 20px",
+                                                borderRadius: DS.radius.md,
+                                                border: "2.5px solid #C4BBAF",
+                                                background: currentTopicLessonIndex >= currentTopicLessons.length - 1 ? "#EDE8E0" : DS.card,
+                                                color: currentTopicLessonIndex >= currentTopicLessons.length - 1 ? DS.inkFade : DS.ink,
+                                                fontSize: 14,
+                                                fontWeight: 800,
+                                                cursor: currentTopicLessonIndex >= currentTopicLessons.length - 1 ? "not-allowed" : "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 8
+                                            }}
+                                        >
+                                            Next →
+                                        </button>
+                                    </Shadow>
+                                </>
+                            ) : (
+                                // For 11+ videos: show only pagination controls (no main Prev/Next buttons)
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%" }}>
+                                    <Shadow offset={1} size={1} radius={DS.radius.md}>
+                                        <button
+                                            onClick={() => {
+                                                const currentPage = Math.floor(currentTopicLessonIndex / 10);
+                                                
+                                                if (currentPage > 0) {
+                                                    const targetIndex = (currentPage - 1) * 10;
+                                                    const l = currentTopicLessons[targetIndex];
+                                                    if (l) {
+                                                        navigate(toLessonView({
+                                                            childId,
+                                                            lessonId: l.id,
+                                                            subjectId: subjectIdParam,
+                                                            topic: topicIdParam,
+                                                        }));
+                                                    } else {
+                                                        console.error('No lesson found for Prev at index:', targetIndex);
+                                                    }
+                                                }
+                                            }}
+                                            disabled={currentTopicLessonIndex < 10}
+                                            style={{
+                                                position: "relative",
+                                                padding: "8px 16px",
+                                                borderRadius: DS.radius.md,
+                                                border: "2.5px solid #C4BBAF",
+                                                background: currentTopicLessonIndex < 10 ? "#EDE8E0" : DS.card,
+                                                color: currentTopicLessonIndex < 10 ? DS.inkFade : DS.ink,
+                                                fontSize: 13,
+                                                fontWeight: 800,
+                                                cursor: currentTopicLessonIndex < 10 ? "not-allowed" : "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 6
+                                            }}
+                                        >
+                                            ← Prev
+                                        </button>
+                                    </Shadow>
+                                    
+                                    {/* Smart sliding window pagination */}
+                                    {(() => {
+                                        const totalPages = Math.ceil(currentTopicLessons.length / 10);
+                                        const currentPage = Math.floor(currentTopicLessonIndex / 10);
+                                        
+                                        // Adjust max visible buttons based on sidebar state
+                                        const maxVisible = sidebarOpen ? 5 : 7;
+                                        
+                                        // For very large playlists, use sliding window
+                                        if (totalPages > maxVisible + 2) {
+                                            let startPage = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+                                            let endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
+                                            
+                                            // Adjust to always show maxVisible pages
+                                            if (endPage - startPage < maxVisible - 1) {
+                                                startPage = Math.max(0, endPage - maxVisible + 1);
+                                            }
+                                            
+                                            const pages = [];
+                                            
+                                            // Always show first page
+                                            if (startPage > 0) {
+                                                pages.push(0);
+                                                if (startPage > 1) {
+                                                    pages.push("ellipsis-start");
+                                                }
+                                            }
+                                            
+                                            // Show sliding window
+                                            for (let i = startPage; i <= endPage; i++) {
+                                                pages.push(i);
+                                            }
+                                            
+                                            // Always show last page
+                                            if (endPage < totalPages - 1) {
+                                                if (endPage < totalPages - 2) {
+                                                    pages.push("ellipsis-end");
+                                                }
+                                                pages.push(totalPages - 1);
+                                            }
+                                            
+                                            return pages.map((page, idx) => {
+                                                if (page === "ellipsis-start" || page === "ellipsis-end") {
+                                                    return (
+                                                        <div key={idx} style={{
+                                                            padding: "8px 8px",
+                                                            color: DS.inkFade,
+                                                            fontSize: 14,
+                                                            fontWeight: 800,
+                                                            display: "flex",
+                                                            alignItems: "center"
+                                                        }}>
+                                                            ...
+                                                        </div>
+                                                    );
+                                                }
+                                                
+                                                const startIdx = page * 10;
+                                                const endIdx = Math.min(startIdx + 9, currentTopicLessons.length - 1);
+                                                const isCurrentPage = currentTopicLessonIndex >= startIdx && currentTopicLessonIndex <= endIdx;
+                                                
+                                                return (
+                                                    <Shadow key={page} offset={1} size={1} radius={DS.radius.md}>
+                                                        <button
+                                                            onClick={() => {
+                                                                const targetLesson = currentTopicLessons[startIdx];
+                                                                if (targetLesson) {
+                                                                    navigate(toLessonView({
+                                                                        childId,
+                                                                        lessonId: targetLesson.id,
+                                                                        subjectId: subjectIdParam,
+                                                                        topic: topicIdParam,
+                                                                        url: playlistUrl
+                                                                    }));
+                                                                } else {
+                                                                    console.error('No lesson found at index:', startIdx, 'array length:', currentTopicLessons.length);
+                                                                }
+                                                            }}
+                                                            style={{
+                                                                position: "relative",
+                                                                padding: sidebarOpen ? "6px 12px" : "8px 16px",
+                                                                borderRadius: DS.radius.md,
+                                                                border: isCurrentPage ? `2.5px solid ${themeColor}` : "2.5px solid #C4BBAF",
+                                                                background: isCurrentPage ? `${themeColor}15` : DS.card,
+                                                                color: isCurrentPage ? themeColor : DS.ink,
+                                                                fontSize: sidebarOpen ? 12 : 13,
+                                                                fontWeight: 800,
+                                                                cursor: "pointer",
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                gap: 2
+                                                            }}
+                                                        >
+                                                            {currentTopicLessons.length > 20 
+                                                                ? `${startIdx + 1}-${endIdx + 1}`
+                                                                : `${startIdx + 1}-${endIdx + 1}`
+                                                            }
+                                                        </button>
+                                                    </Shadow>
+                                                );
+                                            });
+                                        } else {
+                                            // For smaller playlists, show all pages with responsive sizing
+                                            return Array.from({ length: totalPages }, (_, pageIdx) => {
+                                                const startIdx = pageIdx * 10;
+                                                const endIdx = Math.min(startIdx + 9, currentTopicLessons.length - 1);
+                                                const isCurrentPage = currentTopicLessonIndex >= startIdx && currentTopicLessonIndex <= endIdx;
+                                                
+                                                return (
+                                                    <Shadow key={pageIdx} offset={1} size={1} radius={DS.radius.md}>
+                                                        <button
+                                                            onClick={() => {
+                                                                const targetLesson = currentTopicLessons[startIdx];
+                                                                if (targetLesson) {
+                                                                    navigate(toLessonView({
+                                                                        childId,
+                                                                        lessonId: targetLesson.id,
+                                                                        subjectId: subjectIdParam,
+                                                                        topic: topicIdParam,
+                                                                        url: playlistUrl
+                                                                    }));
+                                                                } else {
+                                                                    console.error('No lesson found at index (small):', startIdx, 'array length:', currentTopicLessons.length);
+                                                                }
+                                                            }}
+                                                            style={{
+                                                                position: "relative",
+                                                                padding: sidebarOpen ? "6px 12px" : "8px 16px",
+                                                                borderRadius: DS.radius.md,
+                                                                border: isCurrentPage ? `2.5px solid ${themeColor}` : "2.5px solid #C4BBAF",
+                                                                background: isCurrentPage ? `${themeColor}15` : DS.card,
+                                                                color: isCurrentPage ? themeColor : DS.ink,
+                                                                fontSize: sidebarOpen ? 12 : 13,
+                                                                fontWeight: 800,
+                                                                cursor: "pointer",
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                gap: 2
+                                                            }}
+                                                        >
+                                                            {currentTopicLessons.length > 20 
+                                                                ? `${startIdx + 1}-${endIdx + 1}`
+                                                                : `${startIdx + 1}-${endIdx + 1}`
+                                                            }
+                                                        </button>
+                                                    </Shadow>
+                                                );
+                                            });
                                         }
-                                    }}
-                                    disabled={currentLessonIndex <= 0}
-                                    style={{
-                                        position: "relative",
-                                        padding: "10px 20px",
-                                        borderRadius: DS.radius.md,
-                                        border: "2.5px solid #C4BBAF",
-                                        background: currentLessonIndex <= 0 ? "#EDE8E0" : DS.card,
-                                        color: currentLessonIndex <= 0 ? DS.inkFade : DS.ink,
-                                        fontSize: 14,
-                                        fontWeight: 800,
-                                        cursor: currentLessonIndex <= 0 ? "not-allowed" : "pointer",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 8
-                                    }}
-                                >
-                                    ← Previous
-                                </button>
-                            </Shadow>
-
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                {allSubjectLessons.map((_, idx) => (
-                                    <div
-                                        key={idx}
-                                        onClick={() => {
-                                            const l = allSubjectLessons[idx];
-                                            navigate(toLessonView({
-                                                childId,
-                                                lessonId: l.id,
-                                                subjectId: subjectIdParam,
-                                                topic: topicIdParam,
-                                            }));
-                                        }}
-                                        style={{
-                                            width: idx === currentLessonIndex ? 20 : 8,
-                                            height: 8,
-                                            borderRadius: 4,
-                                            background: idx === currentLessonIndex ? themeColor : idx < currentLessonIndex ? `${themeColor}60` : "#EDE8E0",
-                                            cursor: "pointer",
-                                            transition: "all 0.2s"
-                                        }}
-                                    />
-                                ))}
-                            </div>
-
-                            <Shadow offset={1} size={1} radius={DS.radius.md}>
-                                <button
-                                    onClick={() => {
-                                        if (currentLessonIndex < allSubjectLessons.length - 1) {
-                                            const nextLesson = allSubjectLessons[currentLessonIndex + 1];
-                                            navigate(toLessonView({
-                                                childId,
-                                                lessonId: nextLesson.id,
-                                                subjectId: subjectIdParam,
-                                                topic: topicIdParam,
-                                                url: playlistUrl
-                                            }));
-                                        }
-                                    }}
-                                    disabled={currentLessonIndex >= allSubjectLessons.length - 1}
-                                    style={{
-                                        position: "relative",
-                                        padding: "10px 20px",
-                                        borderRadius: DS.radius.md,
-                                        border: "2.5px solid #C4BBAF",
-                                        background: currentLessonIndex >= allSubjectLessons.length - 1 ? "#EDE8E0" : DS.card,
-                                        color: currentLessonIndex >= allSubjectLessons.length - 1 ? DS.inkFade : DS.ink,
-                                        fontSize: 14,
-                                        fontWeight: 800,
-                                        cursor: currentLessonIndex >= allSubjectLessons.length - 1 ? "not-allowed" : "pointer",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 8
-                                    }}
-                                >
-                                    Next →
-                                </button>
-                            </Shadow>
-                        </div>
-                    )}
-
-                    {/* Complete Button */}
-                    <div style={{ maxWidth: 900, margin: "16px auto 0" }}>
-                        <div style={{ width: "fit-content" }}>
-                            <Shadow offset={videoFinished ? 3 : 1} size={1} radius={DS.radius.pill}>
-                                <button
-                                    className="b"
-                                    disabled={!videoFinished}
-                                    onClick={() => {
-                                        alert("Great job! Lesson completed.");
-                                        navigate(toKidDash(childId));
-                                    }}
-                                    style={{
-                                        position: "relative",
-                                        padding: "14px 40px",
-                                        borderRadius: DS.radius.pill,
-                                        border: videoFinished ? `2.5px solid ${themeColor}` : "2.5px solid #C4BBAF",
-                                        background: videoFinished ? themeColor : "#EDE8E0",
-                                        color: videoFinished ? "#fff" : DS.inkFade,
-                                        fontSize: 18,
-                                        fontWeight: 800,
-                                        cursor: videoFinished ? "pointer" : "not-allowed",
-                                        transition: "transform 0.2s, background 0.2s"
-                                    }}
-                                >
-                                    {videoFinished ? "Finish Lesson! 🎉" : "Finish the video first 👀"}
-                                </button>
-                            </Shadow>
-                            {!videoFinished && (
-                                <p className="n t-small" style={{ color: themeColor, marginTop: 6, fontWeight: 700 }}>
-                                    Button unlocks when the video ends
-                                </p>
+                                    })()}
+                                    
+                                    <Shadow offset={1} size={1} radius={DS.radius.md}>
+                                        <button
+                                            onClick={() => {
+                                                const currentPage = Math.floor(currentTopicLessonIndex / 10);
+                                                const maxPage = Math.floor((currentTopicLessons.length - 1) / 10);
+                                                
+                                                if (currentPage < maxPage) {
+                                                    const targetIndex = (currentPage + 1) * 10;
+                                                    const l = currentTopicLessons[Math.min(targetIndex, currentTopicLessons.length - 1)];
+                                                    if (l) {
+                                                        navigate(toLessonView({
+                                                            childId,
+                                                            lessonId: l.id,
+                                                            subjectId: subjectIdParam,
+                                                            topic: topicIdParam,
+                                                        }));
+                                                    } else {
+                                                        console.error('No lesson found for Next at index:', targetIndex);
+                                                    }
+                                                }
+                                            }}
+                                            disabled={currentTopicLessonIndex >= Math.floor((currentTopicLessons.length - 1) / 10) * 10}
+                                            style={{
+                                                position: "relative",
+                                                padding: "8px 16px",
+                                                borderRadius: DS.radius.md,
+                                                border: "2.5px solid #C4BBAF",
+                                                background: currentTopicLessonIndex >= Math.floor((currentTopicLessons.length - 1) / 10) * 10 ? "#EDE8E0" : DS.card,
+                                                color: currentTopicLessonIndex >= Math.floor((currentTopicLessons.length - 1) / 10) * 10 ? DS.inkFade : DS.ink,
+                                                fontSize: 13,
+                                                fontWeight: 800,
+                                                cursor: currentTopicLessonIndex >= Math.floor((currentTopicLessons.length - 1) / 10) * 10 ? "not-allowed" : "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 6
+                                            }}
+                                        >
+                                            Next →
+                                        </button>
+                                    </Shadow>
+                                </div>
                             )}
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Sidebar */}
@@ -709,38 +1109,23 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                                         <div key={topic.id} style={{ marginBottom: 16 }}>
                                             {/* Playlist header */}
                                             <button
-                                                onClick={() => {
-                                                    const firstLesson = topicLessons[0];
-                                                    if (firstLesson) {
-                                                        navigate(toLessonView({
-                                                            childId,
-                                                            lessonId: firstLesson.id,
-                                                            subjectId: subjectName || subjectIdParam,
-                                                            topic: topic.id,
-                                                            url: topic.id
-                                                        }));
-                                                    }
-                                                }}
+                                                onClick={() => togglePlaylistExpansion(topicIdx)}
                                                 style={{
                                                     display: "flex",
                                                     alignItems: "center",
                                                     gap: 8,
-                                                    padding: "8px 10px",
-                                                    marginBottom: 6,
-                                                    borderRadius: DS.radius.sm,
-                                                    background: isCurrentTopic ? `${themeColor}15` : "#F8F5F0",
-                                                    border: isCurrentTopic ? `1.5px solid ${themeColor}` : "1.5px solid transparent",
+                                                    padding: "8px 12px",
+                                                    backgroundColor: "white",
+                                                    border: DS.border,
+                                                    borderRadius: DS.radius.md,
                                                     cursor: "pointer",
-                                                    width: "100%",
-                                                    textAlign: "left"
+                                                    transition: "all 0.15s ease",
+                                                    width: "100%"
                                                 }}
+                                                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; }}
+                                                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}
                                             >
                                                 <div style={{
-                                                    width: 22,
-                                                    height: 22,
-                                                    borderRadius: 5,
-                                                    background: isCurrentTopic ? themeColor : "#C4BBAF",
-                                                    color: "#fff",
                                                     display: "flex",
                                                     alignItems: "center",
                                                     justifyContent: "center",
@@ -758,11 +1143,14 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                                                         {topicLessons.length} videos
                                                     </div>
                                                 </div>
-                                                <span style={{ color: themeColor, fontSize: 10 }}>▶</span>
+                                                <span style={{ color: themeColor, fontSize: 14, transition: "transform 0.2s ease" }}>
+                                                    {expandedPlaylists.has(topicIdx) ? '▲' : '▼'}
+                                                </span>
                                             </button>
 
                                             {/* Videos in this playlist */}
-                                            <div style={{ paddingLeft: 12 }}>
+                                            {expandedPlaylists.has(topicIdx) && (
+                                                <div style={{ paddingLeft: 12 }}>
                                                 {topicLessons.map((item, i) => {
                                                     const isActive = item.id === lessonId;
                                                     return (
@@ -825,7 +1213,8 @@ export const LessonView: React.FC<LessonViewProps> = ({ childId, lessonId, data:
                                                         </div>
                                                     );
                                                 })}
-                                            </div>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

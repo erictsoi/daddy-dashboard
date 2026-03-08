@@ -1,13 +1,23 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
 
-/* Daddy Dashboard Custom Styles */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* Applet Base Styles */
+*, *::before, *::after { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+  border-width: 0;
+  border-style: solid;
+  border-color: #e5e7eb;
+}
 
 html, body {
-  font-family: 'Nunito Sans', sans-serif;
-  background: #FAF6F0;
+  min-height: 100vh;
+  background-color: rgb(249 250 251 / 1);
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   color: #1A1A2E;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
 }
 
 .b { font-family: 'Baloo 2', cursive; }

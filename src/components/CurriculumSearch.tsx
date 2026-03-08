@@ -721,9 +721,16 @@ const GlobalImportCard: React.FC<{ onImport: (data: any) => void }> = ({ onImpor
   );
 };
 
-const TopicCard: React.FC<{ topicName: string; playlist?: Playlist; subjectName: string }> = ({ topicName, playlist, subjectName }) => {
+const TopicCard: React.FC<{ 
+  topicName: string; 
+  playlist?: Playlist; 
+  subjectName: string;
+}> = ({ topicName, playlist, subjectName }) => {
   const videoCount = playlist?.videos?.length || 0;
   const hasVideos = videoCount > 0;
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const VIDEOS_PER_PAGE = 10;
 
   const handleCopy = () => {
     if (!playlist) return;
@@ -731,9 +738,33 @@ const TopicCard: React.FC<{ topicName: string; playlist?: Playlist; subjectName:
     navigator.clipboard.writeText(text);
   };
 
+  // Filter videos based on search term
+  const filteredVideos = playlist?.videos?.filter(video => 
+    video.title.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredVideos.length / VIDEOS_PER_PAGE);
+  const startIndex = (currentPage - 1) * VIDEOS_PER_PAGE;
+  const endIndex = startIndex + VIDEOS_PER_PAGE;
+  const currentVideos = filteredVideos.slice(startIndex, endIndex);
+
+  const handlePrevPage = () => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(totalPages, prev + 1));
+  };
+
   return (
     <div className={`p-2 rounded border flex flex-col items-center justify-center min-w-[100px] ${hasVideos ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'}`}>
-      <div className="text-xs font-medium text-center truncate w-full text-gray-500" title={topicName}>{topicName}</div>
+      <div 
+        className="text-xs font-medium text-center truncate w-full text-gray-500" 
+        title={topicName}
+      >
+        {topicName}
+      </div>
       <div className={`text-xs mt-1 ${hasVideos ? 'text-green-600 font-bold' : 'text-gray-400'}`}>
         {hasVideos ? `${videoCount} videos` : 'No videos'}
       </div>
@@ -763,6 +794,84 @@ const TopicCard: React.FC<{ topicName: string; playlist?: Playlist; subjectName:
             >
               Copy
             </button>
+          </div>
+          
+          {/* Video List */}
+          <div className="mt-2 border-t border-green-200 pt-2">
+            <div className="text-xs font-semibold text-green-700 mb-2">
+              Videos ({playlist.videos.length}):
+              {filteredVideos.length !== playlist.videos.length && (
+                <span className="text-blue-600 ml-1">({filteredVideos.length} filtered)</span>
+              )}
+            </div>
+            
+            {/* Search Box */}
+            {playlist.videos.length > 5 && (
+              <div className="mb-2">
+                <input
+                  type="text"
+                  placeholder="Search videos..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full text-xs border border-green-200 rounded px-2 py-1 bg-white focus:outline-none focus:border-green-400"
+                />
+              </div>
+            )}
+            
+            {/* Video Pagination Info */}
+            {totalPages > 1 && (
+              <div className="text-xs text-gray-500 mb-1 text-center">
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredVideos.length)} of {filteredVideos.length}
+              </div>
+            )}
+            
+            {/* Video List */}
+            <div className="max-h-40 overflow-y-auto space-y-1">
+              {currentVideos.length > 0 ? (
+                currentVideos.map((video, idx) => (
+                  <div key={idx} className="text-xs bg-white p-1 rounded border border-green-100">
+                    <a 
+                      href={video.url} 
+                      target="_blank" 
+                      className="text-blue-600 hover:text-blue-800 truncate block hover:bg-green-50 p-0.5 rounded"
+                      title={video.title}
+                    >
+                      {video.title}
+                    </a>
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-gray-500 text-center py-2">
+                  {searchTerm ? 'No videos found matching search' : 'No videos available'}
+                </div>
+              )}
+            </div>
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-green-100">
+                <button
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                  className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:scale-105"
+                >
+                  ← Prev
+                </button>
+                <span className="text-xs text-green-700 font-medium">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:scale-105"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -884,7 +993,14 @@ const SubjectSection: React.FC<{
               if (!topic) {
                 topic = playlist?.title ? (playlist.title.includes(':') ? playlist.title.split(':')[0] : `Topic ${idx + 1}`) : `Topic ${idx + 1}`;
               }
-              return <TopicCard key={idx} topicName={topic} playlist={playlist} subjectName={subject.subject} />;
+              return (
+                <TopicCard 
+                  key={idx} 
+                  topicName={topic} 
+                  playlist={playlist} 
+                  subjectName={subject.subject}
+                />
+              );
             })}
           </div>
         ) : (
@@ -967,6 +1083,55 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
   const [editingSubject, setEditingSubject] = useState<SubjectData | null>(null);
   const [previewSubject, setPreviewSubject] = useState<SubjectData | null>(null);
   const savedDataRef = useRef(savedData);
+
+  // Accordion navigation state
+  const [currentView, setCurrentView] = useState<'main' | 'year' | 'saved'>('main');
+
+  // Cleanup accordion states when navigating away
+  const clearAccordionStates = () => {
+    // Clear all accordion states from localStorage
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('accordion-')) {
+        localStorage.removeItem(key);
+      }
+    });
+  };
+
+  // Accordion navigation functions
+  const navigateToMain = () => {
+    clearAccordionStates();
+    setCurrentView('main');
+    setSelectedYear(null);
+    setShowSaved(false);
+  };
+
+  const navigateToYear = () => {
+    setCurrentView('year');
+    setShowSaved(false);
+  };
+
+  const navigateToSaved = () => {
+    setCurrentView('saved');
+  };
+
+  // Clear accordion states when going back to main view
+  useEffect(() => {
+    if (currentView === 'main') {
+      clearAccordionStates();
+    }
+  }, [currentView]);
+
+  // Update view state when selections change
+  useEffect(() => {
+    if (showSaved) {
+      setCurrentView('saved');
+    } else if (selectedYear) {
+      setCurrentView('year');
+    } else {
+      setCurrentView('main');
+    }
+  }, [selectedYear, showSaved]);
 
   useEffect(() => {
     const data = loadSavedData();
@@ -1161,7 +1326,9 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
-          <button onClick={() => setShowSaved(false)} className="p-1 hover:bg-gray-100 rounded">Back</button>
+          <button onClick={navigateToYear} className="p-1 hover:bg-gray-100 rounded">
+            <ArrowLeft size={16} />
+          </button>
           <h1 className="font-bold">All Saved ({savedData.length})</h1>
         </div>
         <div className="p-4 max-w-6xl mx-auto">
@@ -1210,7 +1377,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
-          <button onClick={() => setSelectedYear(null)} className="p-1 hover:bg-gray-100 rounded">
+          <button onClick={onBack} className="p-1 hover:bg-gray-100 rounded">
             <ArrowLeft size={16} />
           </button>
           <h1 className="font-bold text-lg">UK Curriculum Video Finder</h1>
@@ -1236,7 +1403,9 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
-        <button onClick={() => setSelectedYear(null)} className="p-1 hover:bg-gray-100 rounded">Back</button>
+        <button onClick={() => setSelectedYear(null)} className="p-1 hover:bg-gray-100 rounded">
+          <ArrowLeft size={16} />
+        </button>
         <h1 className="font-bold">{selectedYear === 'Extracurricular' ? 'Extracurricular' : `Year ${selectedYear}`}</h1>
         <span className="text-gray-400">|</span>
         <span>{syncedCount}/{totalCount}</span>
@@ -1273,7 +1442,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
           const filtered = savedDataRef.current.filter(s => s.yearGroup !== selectedYear);
           updateLibrary(filtered);
         }} className="px-2 py-1 bg-red-500 text-white rounded text-sm">Clear</button>
-        <button onClick={() => setShowSaved(true)} className="ml-auto text-blue-600">All Saved ({savedData.length})</button>
+        <button onClick={navigateToSaved} className="ml-auto text-blue-600">All Saved ({savedData.length})</button>
       </div>
 
       <div className="p-4 max-w-6xl mx-auto">
