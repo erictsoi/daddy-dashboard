@@ -981,7 +981,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
         const savedForYear = savedData.filter(d => d.yearGroup === selectedYear);
         setSubjects(prev => {
           const coreMap = new Map();
-          curr.subjects.forEach(s => coreMap.set(`${s.subject}|${s.focus}`, { ...s, yearGroup: selectedYear, isOptional: s.isOptional || false }));
+          curr.subjects.forEach(s => coreMap.set(`${s.subject}|${s.focus}`, { ...s, yearGroup: selectedYear, isOptional: false }));
 
           // Preserve any custom subjects already added for this specific year group
           const existingMap = new Map(coreMap);
@@ -1243,7 +1243,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
         <button
           onClick={() => handleFindAll(getSubjectsForYear(selectedYear, savedDataRef.current))}
           disabled={!!searching || !hasApiKey}
-          className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+          className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
         >
           Find All Videos
         </button>
@@ -1281,7 +1281,28 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
         
         <div className="mb-3">
           <button
-            onClick={() => setPreviewSubject(null)}
+            onClick={() => {
+              const isExtra = selectedYear === 'Extracurricular';
+              const name = prompt(isExtra
+                ? 'Enter wildcard subject name (e.g. Public Speaking, Clarinet, Basketball)'
+                : 'Enter subject name (or choose from: Drama, PSHE, Religion, Economics, Media, Dance, Latin, Chinese, German)');
+              if (!name) return;
+              const focus = prompt(isExtra
+                ? 'Enter focus topics (e.g. "Debating, Presentation Skills")'
+                : 'Enter focus topics (e.g. "Performance, Acting")', '');
+              if (subjects.some(s => s.subject.toLowerCase() === name.toLowerCase())) {
+                alert('Subject already exists'); return;
+              }
+              const newSub: SubjectData = {
+                id: `${selectedYear}-wild-${Date.now()}`,
+                subject: name,
+                focus: focus || 'Custom subject',
+                yearGroup: selectedYear,
+                playlists: [],
+                allVideos: []
+              };
+              setSubjects([...subjects, newSub]);
+            }}
             className={selectedYear === 'Extracurricular'
               ? "px-3 py-1 border-2 border-dashed border-yellow-400 text-yellow-700 bg-yellow-50 rounded text-sm hover:bg-yellow-100 font-medium"
               : "px-3 py-1 border border-dashed border-gray-400 text-gray-600 rounded text-sm hover:bg-gray-50"}
@@ -1290,7 +1311,7 @@ export const CurriculumSearch: React.FC<Props> = ({ onBack }) => {
           </button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 justify-items-center">
           {getSubjectsForYear(selectedYear, savedDataRef.current).map((s, idx) => (
             <SubjectSection
               key={s.id || `${s.subject}-${idx}`}
