@@ -22,6 +22,80 @@ import { SubjectFields } from '../components/SubjectFields';
 
 interface AdminDashProps { }
 
+// Auto-generated schedule function
+const generateAutoSchedule = (child: any, subjects: any[]) => {
+  const childId = child.id;
+  const freqModes = JSON.parse(localStorage.getItem('child_freq_modes') || '{}');
+  const childFreqWeights = JSON.parse(localStorage.getItem('child_freq_weights') || '{}');
+  
+  const childMode = childFreqWeights[childId] || 'balanced';
+  const subjectFreqs = freqModes[childId] || {};
+  
+  // Get completed lessons today to determine current status
+  const completedToday = countCompletedToday(child);
+  const totalSubjects = subjects.length;
+  
+  // Calculate weighted subjects based on frequency modes
+  const weightedSubjects = subjects.map(subject => {
+    const freq = subjectFreqs[subject.subject] || 'balanced';
+    let weight = 1;
+    
+    // Apply child-level weighting
+    if (childMode === 'stem') {
+      const isStem = ['Maths', 'Science', 'Physics', 'Technology', 'Computer Science'].includes(subject.subject);
+      weight = isStem ? 3 : 1;
+    } else if (childMode === 'arts') {
+      const isCore = ['Maths', 'English', 'Science'].includes(subject.subject);
+      const isArts = subject.category === 'arts' || subject.category === 'Creative';
+      weight = isCore ? 2 : (isArts ? 3 : 1);
+    } else {
+      // balanced
+      weight = freq === 'high' ? 3 : freq === 'low' ? 1 : 2;
+    }
+    
+    return { ...subject, weight, frequency: freq };
+  });
+  
+  // Sort by weight (highest first) then by progress
+  weightedSubjects.sort((a, b) => {
+    if (a.weight !== b.weight) return b.weight - a.weight;
+    return a.progress - b.progress; // Less progress first
+  });
+  
+  // Create schedule items (max 5 subjects for display)
+  const scheduleItems = weightedSubjects.slice(0, 5).map((subject, index) => {
+    // Determine status based on progress and current position
+    const progressRatio = subject.progress / subject.total;
+    let status: 'done' | 'active' | 'upcoming';
+    
+    if (progressRatio >= 1) {
+      status = 'done';
+    } else if (progressRatio > 0) {
+      status = 'active';
+    } else {
+      status = 'upcoming';
+    }
+    
+    // Find first incomplete subject as active if none are active
+    if (index === 0 && status === 'upcoming' && completedToday === 0) {
+      status = 'active';
+    }
+    
+    return {
+      subject: subject.subject,
+      topic: subject.topic,
+      icon: subject.icon,
+      status,
+      progress: subject.progress,
+      total: subject.total,
+      weight: subject.weight,
+      frequency: subject.frequency
+    };
+  });
+  
+  return scheduleItems;
+};
+
 // Removed local GlobalStyles - now in index.css
 
 // Derive kids from data prop
@@ -146,13 +220,8 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
         subjects = Object.values(groupedSubjects);
       }
 
-      // Mock schedule for now based on subjects
-      const schedule = subjects.slice(0, 5).map((s, i) => ({
-        subject: s.subject,
-        topic: s.topic,
-        icon: s.icon,
-        status: i === 0 ? 'done' : i === 2 ? 'active' : 'upcoming'
-      }));
+      // Generate auto-schedule based on subject weighting and progress
+      const schedule = generateAutoSchedule(child, subjects);
 
       return {
         profile: {
@@ -437,8 +506,55 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
             </div>
 
             {/* KIDS SCHEDULES */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
-              {kids.map(({ profile: pr, schedule, done, total, streak }, ki) => (
+            {kids.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 20px", background: DS.card, border: DS.border, borderRadius: DS.radius.lg }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>👶</div>
+                <h3 className="b t-h2" style={{ color: DS.ink, marginBottom: 8 }}>No Children Added Yet</h3>
+                <p className="n t-body" style={{ color: DS.inkSoft, marginBottom: 24 }}>
+                  Add children to your dashboard to see their personalized schedules and learning progress.
+                </p>
+                <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => onNavigate({ type: 'PROFILES' })}
+                    style={{
+                      background: "#F5A623",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: DS.radius.sm,
+                      padding: "12px 24px",
+                      fontSize: 16,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      transition: "all .2s"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "#E5940F"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "#F5A623"}
+                  >
+                    Add Children
+                  </button>
+                  <button
+                    onClick={() => onNavigate({ type: 'LIBRARY' })}
+                    style={{
+                      background: DS.card,
+                      color: DS.ink,
+                      border: DS.border,
+                      borderRadius: DS.radius.sm,
+                      padding: "12px 24px",
+                      fontSize: 16,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      transition: "all .2s"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "#F8F8F8"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = DS.card}
+                  >
+                    Browse Curriculum
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
+                {kids.map(({ profile: pr, schedule, done, total, streak }, ki) => (
                 <div key={pr.id}>
                   <Shadow offset={3} size={2.5} radius={DS.radius.lg} style={{ animation: `fadeUp .32s ${ki * .08}s ease-out both` }}>
                     <div style={{ position: "relative", background: DS.card, border: DS.border, borderRadius: DS.radius.lg, padding: 26 }}>
@@ -473,11 +589,32 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
                                 <Dot status={item.status} color={pr.color} />
                               </div>
                               <div style={{ flex: 1 }}>
-                                <div className="n t-small" style={{ fontWeight: 700, color: item.status === "done" ? DS.inkFade : DS.ink, textDecoration: item.status === "done" ? "line-through" : "none" }}>{item.subject}</div>
-                                <div className="n t-label" style={{ color: DS.inkFade }}>{item.topic}</div>
+                                <div className="n t-small" style={{ fontWeight: 700, color: item.status === "done" ? DS.inkFade : DS.ink, textDecoration: item.status === "done" ? "line-through" : "none" }}>
+                                  {item.subject}
+                                  {/* Show frequency indicator */}
+                                  {item.frequency !== 'balanced' && (
+                                    <span style={{ marginLeft: 6, fontSize: 10, color: item.frequency === 'high' ? '#4CAF50' : '#FF9800' }}>
+                                      {item.frequency === 'high' ? '⭐' : '○'}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="n t-label" style={{ color: DS.inkFade }}>
+                                  {item.topic}
+                                  {/* Show progress */}
+                                  {item.total > 0 && (
+                                    <span style={{ marginLeft: 4, color: DS.inkSoft }}>
+                                      ({item.progress}/{item.total})
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               {item.status === "active" && <span className="n t-label" style={{ color: pr.color, background: `${pr.color}18`, padding: "2px 8px", borderRadius: DS.radius.pill }}>NOW</span>}
-                              {item.status === "stretch" && <span className="n t-label" style={{ color: DS.inkFade }}>bonus</span>}
+                              {item.status === "done" && <span className="n t-label" style={{ color: DS.inkFade }}>✓ Done</span>}
+                              {item.status === "upcoming" && (
+                                <span className="n t-label" style={{ color: DS.inkFade, fontSize: 10 }}>
+                                  {item.weight === 3 ? 'Priority' : item.weight === 1 ? 'Optional' : 'Regular'}
+                                </span>
+                              )}
                             </div>
                         )}
                       </div>
@@ -489,6 +626,33 @@ export const AdminDash: React.FC<AdminDashProps> = () => {
                   </Shadow>
                 </div>
               ))}
+            </div>
+            )}
+
+            {/* Schedule Legend */}
+            <div style={{ marginTop: 20, padding: 16, background: `${DS.cream}40`, border: `1px solid ${DS.border}`, borderRadius: DS.radius.md }}>
+              <div className="n t-small" style={{ color: DS.inkSoft, marginBottom: 8, fontWeight: 700 }}>SCHEDULE INDICATORS</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 10, color: '#4CAF50' }}>⭐</span>
+                  <span className="n t-label" style={{ color: DS.inkFade }}>High frequency subject</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 10, color: '#FF9800' }}>○</span>
+                  <span className="n t-label" style={{ color: DS.inkFade }}>Low frequency subject</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span className="n t-label" style={{ color: DS.inkFade }}>Priority</span>
+                  <span className="n t-label" style={{ color: DS.inkFade }}>High weight subject</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span className="n t-label" style={{ color: DS.inkFade }}>Optional</span>
+                  <span className="n t-label" style={{ color: DS.inkFade }}>Low weight subject</span>
+                </div>
+              </div>
+              <div className="n t-label" style={{ color: DS.inkFade, marginTop: 8, fontSize: 10 }}>
+                Schedule automatically prioritizes subjects based on your child's learning focus (balanced/stem/arts) and individual subject frequencies.
+              </div>
             </div>
           </div>
         )}

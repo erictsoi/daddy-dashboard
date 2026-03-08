@@ -7,7 +7,71 @@ import { useAppContext } from '../context/AppContext';
 import { getSubjectCardsForYear, loadSubjectCardsForYear } from '../lib/subjectCards';
 import { SubjectCard } from '../components/SubjectCard';
 import { DEMO_PROFILES } from '../data/demoProfiles';
+import { countCompletedToday } from '../utils/dashboardStats';
 
+const generateAutoSchedule = (child: any, subjects: any[]) => {
+  const childId = child.id;
+  const freqModes = JSON.parse(localStorage.getItem('child_freq_modes') || '{}');
+  const childFreqWeights = JSON.parse(localStorage.getItem('child_freq_weights') || '{}');
+  
+  const childMode = childFreqWeights[childId] || 'balanced';
+  const subjectFreqs = freqModes[childId] || {};
+  
+  const completedToday = countCompletedToday(child);
+  
+  const weightedSubjects = subjects.map(subject => {
+    const freq = subjectFreqs[subject.subject] || 'balanced';
+    let weight = 1;
+    
+    if (childMode === 'stem') {
+      const isStem = ['Maths', 'Science', 'Physics', 'Technology', 'Computer Science'].includes(subject.subject);
+      weight = isStem ? 3 : 1;
+    } else if (childMode === 'arts') {
+      const isCore = ['Maths', 'English', 'Science'].includes(subject.subject);
+      const isArts = subject.category === 'arts' || subject.category === 'Creative';
+      weight = isCore ? 2 : (isArts ? 3 : 1);
+    } else {
+      weight = freq === 'high' ? 3 : freq === 'low' ? 1 : 2;
+    }
+    
+    return { ...subject, weight, frequency: freq };
+  });
+  
+  weightedSubjects.sort((a, b) => {
+    if (a.weight !== b.weight) return b.weight - a.weight;
+    return a.progress - b.progress;
+  });
+  
+  const scheduleItems = weightedSubjects.slice(0, 5).map((subject, index) => {
+    const progressRatio = subject.progress / subject.total;
+    let status: 'done' | 'active' | 'upcoming';
+    
+    if (progressRatio >= 1) {
+      status = 'done';
+    } else if (progressRatio > 0) {
+      status = 'active';
+    } else {
+      status = 'upcoming';
+    }
+    
+    if (index === 0 && status === 'upcoming' && completedToday === 0) {
+      status = 'active';
+    }
+    
+    return {
+      subject: subject.subject,
+      topic: subject.topic,
+      icon: subject.icon,
+      status,
+      progress: subject.progress,
+      total: subject.total,
+      weight: subject.weight,
+      frequency: subject.frequency
+    };
+  });
+  
+  return scheduleItems;
+};
 
 export const KidDash: React.FC = () => {
     const navigate = useNavigate();
@@ -15,12 +79,10 @@ export const KidDash: React.FC = () => {
     const childId = searchParams.get('child');
     const { children } = useAppContext();
     
-    // First check real children, then fall back to demo profiles
-    let child = children.find(c => c.id === childId);
-    if (!child) {
+    let selectedChild = children.find(c => c.id === childId);
+    if (!selectedChild && childId) {
         const demoProfile = DEMO_PROFILES.find(p => p.id === childId);
         if (demoProfile) {
-            // Convert demo profile to ChildProfile format
             const colorMap: Record<string, string> = {
                 '#9B6DD6': 'purple',
                 '#2B8ED4': 'blue',
@@ -29,7 +91,7 @@ export const KidDash: React.FC = () => {
                 '#FF6B6B': 'rose'
             };
             const themeColorName = Object.entries(colorMap).find(([hex]) => hex === demoProfile.color)?.[1] || 'purple';
-            child = {
+            selectedChild = {
                 id: demoProfile.id,
                 name: demoProfile.name,
                 year: demoProfile.year,
@@ -49,7 +111,7 @@ export const KidDash: React.FC = () => {
         }
     }
 
-    if (!childId || !child) {
+    if (!childId || !selectedChild) {
         return <Navigate to="/" replace />;
     }
 
@@ -61,7 +123,7 @@ export const KidDash: React.FC = () => {
         'Y10-11': 'Y7-9',
         'Y12-13': 'Y7-9'
     };
-    const rawYear = child.yearGroups?.[0]?.name || 'Y5-6';
+    const rawYear = selectedChild.yearGroups?.[0]?.name || 'Y5-6';
     const yearMatch = rawYear.match(/Year\s*(\d+)/i);
     let normalizedYear = 'Y5-6';
     if (yearMatch) {
@@ -81,36 +143,34 @@ export const KidDash: React.FC = () => {
         });
     }, [jsonYearKey]);
 
-    const themeColor = child.themeColor === 'purple' ? '#9B6DD6'
-        : child.themeColor === 'blue' ? '#2B8ED4'
-            : child.themeColor === 'green' ? '#4CAF8A'
-                : child.themeColor === 'amber' ? '#F5A623'
-                    : child.themeColor === 'rose' ? '#FF6B6B'
+    const themeColor = selectedChild.themeColor === 'purple' ? '#9B6DD6'
+        : selectedChild.themeColor === 'blue' ? '#2B8ED4'
+            : selectedChild.themeColor === 'green' ? '#4CAF8A'
+                : selectedChild.themeColor === 'amber' ? '#F5A623'
+                    : selectedChild.themeColor === 'rose' ? '#FF6B6B'
                         : '#9B6DD6';
-    const tintColor = child.themeColor === 'purple' ? '#F3EEFF'
-        : child.themeColor === 'blue' ? '#EAF4FC'
-            : child.themeColor === 'green' ? '#EDFAF4'
-                : child.themeColor === 'amber' ? '#FFF8EC'
-                    : child.themeColor === 'rose' ? '#FFF0F0'
+    const tintColor = selectedChild.themeColor === 'purple' ? '#F3EEFF'
+        : selectedChild.themeColor === 'blue' ? '#EAF4FC'
+            : selectedChild.themeColor === 'green' ? '#EDFAF4'
+                : selectedChild.themeColor === 'amber' ? '#FFF8EC'
+                    : selectedChild.themeColor === 'rose' ? '#FFF0F0'
                         : '#F3EEFF';
 
     const profile = {
-        name: child.name,
-        year: child.yearGroups?.[0]?.name || "Student",
+        name: selectedChild.name,
+        year: selectedChild.yearGroups?.[0]?.name || "Student",
         color: themeColor,
         tint: tintColor,
-        emoji: child.avatar
+        emoji: selectedChild.avatar
     };
 
     const jsonSubjectCards = useMemo(() => getSubjectCardsForYear(jsonYearKey), [jsonYearKey, loading]);
 
-    const subjects: { name: string; icon: string; progress: number; total: number; topic: string; color: string; subjectId?: string; topicId?: string; lessons: { id: string; title: string; videoUrl?: string; completed: boolean }[]; topicCards: { title: string; videoCount: number; url: string; firstVideoId?: string }[] }[] = [];
+    const subjects: any[] = [];
 
     if (jsonSubjectCards.length > 0) {
         for (const card of jsonSubjectCards) {
             const totalVideos = card.playlists.reduce((sum, p) => sum + p.videos.length, 0);
-
-            // Deterministic progress: treat the first playlist as "completed"
             const firstPlaylist = card.playlists[0];
             const completedCount = firstPlaylist ? firstPlaylist.videos.length : 0;
 
@@ -119,12 +179,11 @@ export const KidDash: React.FC = () => {
                     id: v.id,
                     title: v.title,
                     videoUrl: v.url,
-                    completed: pIdx === 0 // first playlist considered done
+                    completed: pIdx === 0
                 }))
             );
 
             const firstTopicUrl = firstPlaylist?.url;
-            const firstVideoId = firstPlaylist?.videos[0]?.id;
 
             subjects.push({
                 name: card.subject,
@@ -144,13 +203,13 @@ export const KidDash: React.FC = () => {
                 }))
             });
         }
-    } else if (child.yearGroups) {
-        for (const yg of child.yearGroups) {
+    } else if (selectedChild.yearGroups) {
+        for (const yg of selectedChild.yearGroups) {
             for (const sub of yg.subjects || []) {
                 let lessonCount = 0;
                 let completedCount = 0;
                 let subjectId = sub.id;
-                let allLessons: { id: string; title: string; videoUrl?: string; completed: boolean }[] = [];
+                let allLessons: any[] = [];
                 let firstTopicId = '';
 
                 for (const topic of sub.topics || []) {
@@ -184,22 +243,15 @@ export const KidDash: React.FC = () => {
         }
     }
 
-    type ScheduleStatus = 'done' | 'active' | 'pending' | 'lunch';
-    const schedule: { subject: string; topic: string; icon: string; status: ScheduleStatus; subjectId: string; topicId: string }[] = [];
-
-    const coreSubjects = subjects.slice(0, 4);
-    for (let i = 0; i < coreSubjects.length; i++) {
-        const s = coreSubjects[i];
-        schedule.push({
-            subject: s.name,
-            topic: s.topic,
-            icon: s.icon,
-            status: i < 2 ? "done" as ScheduleStatus : i === 2 ? "active" as ScheduleStatus : "pending" as ScheduleStatus,
-            subjectId: s.subjectId || '',
-            topicId: s.topicId || ''
-        });
-    }
-    schedule.splice(2, 0, { subject: "LUNCH", topic: "", icon: "🍽️", status: "lunch" as ScheduleStatus, subjectId: "", topicId: "" });
+    const autoSchedule = generateAutoSchedule(selectedChild, subjects);
+    const schedule = [
+        ...autoSchedule.map(item => ({
+            ...item,
+            subjectId: "",
+            topicId: ""
+        })),
+        { subject: "LUNCH", topic: "", icon: "🍽️", status: "lunch", subjectId: "", topicId: "" }
+    ];
 
     const statusCfg: Record<string, { bg: string; border: string; label: string }> = {
         done: { bg: "#E8F8F0", border: "#4CAF8A", label: "✓ Done" },
@@ -241,7 +293,6 @@ export const KidDash: React.FC = () => {
             <Texture />
             <Deco color={profile.color} />
 
-            {/* TOP BAR */}
             <div style={{ position: "relative", zIndex: 10, background: `${DS.card}F2`, backdropFilter: "blur(14px)", borderBottom: DS.border, padding: "12px 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <Shadow offset={2} size={2} radius={10}>
@@ -266,147 +317,243 @@ export const KidDash: React.FC = () => {
                 </div>
             </div>
 
-            <div style={{ position: "relative", zIndex: 5, padding: "26px 30px" }}>
-                {/* GREETING */}
-                <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 28 }}>
-                    <Shadow offset={4} size={2.5} radius={20}>
-                        <div style={{ position: "relative", width: 70, height: 70, background: profile.color, border: DS.border, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, flexShrink: 0 }}>{profile.emoji}</div>
-                    </Shadow>
-                    <div style={{ flex: 1 }}>
-                        <h1 className="b" style={{ fontSize: 38, fontWeight: 800, color: DS.ink, lineHeight: 1 }}>
-                            Hey <span style={{ color: profile.color }}>{profile.name}</span>! 👋
-                        </h1>
-                        <p className="n t-body" style={{ color: DS.inkSoft, marginTop: 4 }}>Ready for today's adventure? Let's go! 🚀</p>
+            {childId ? (
+                <div style={{ position: "relative", zIndex: 5, padding: "26px 30px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 28 }}>
+                        <Shadow offset={4} size={2.5} radius={20}>
+                            <div style={{ position: "relative", width: 70, height: 70, background: profile.color, border: DS.border, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, flexShrink: 0 }}>{profile.emoji}</div>
+                        </Shadow>
+                        <div style={{ flex: 1 }}>
+                            <h1 className="b" style={{ fontSize: 38, fontWeight: 800, color: DS.ink, lineHeight: 1 }}>
+                                Hey <span style={{ color: profile.color }}>{profile.name}</span>! 👋
+                            </h1>
+                            <p className="n t-body" style={{ color: DS.inkSoft, marginTop: 4 }}>Ready for today's adventure? Let's go! 🚀</p>
+                        </div>
+                        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+                            <Chip icon="✅" val={`${todayDone}/${totalToday}`} label="TODAY" color={profile.color} />
+                            <Chip icon="🔥" val={`${streak} days`} label="STREAK" color={profile.color} />
+                            <Chip icon="⭐" val={`+${xp}`} label="XP" color={profile.color} />
+                        </div>
                     </div>
-                    <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-                        <Chip icon="✅" val={`${todayDone}/${totalToday}`} label="TODAY" color={profile.color} />
-                        <Chip icon="🔥" val={`${streak} days`} label="STREAK" color={profile.color} />
-                        <Chip icon="⭐" val={`+${xp}`} label="XP" color={profile.color} />
-                    </div>
-                </div>
 
-                {/* TODAY'S PLAN */}
-                <SectionHead label="TODAY'S PLAN" color={profile.color} />
-                <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6, paddingTop: 8, marginBottom: 28 }}>
-                    {schedule.map((item, i) => {
-                        const cfg = statusCfg[item.status] || statusCfg.pending;
-                        const isLunch = item.status === "lunch";
-                        const isActive = item.status === "active";
-                        return (
-                            <div key={i} className={isActive ? "float" : ""}>
-                                <Shadow offset={2} size={2} radius={DS.radius.lg} style={{ flexShrink: 0, overflow: "visible", marginTop: 4 }}>
-                                    <div
-                                        style={{
-                                            position: "relative",
-                                            background: cfg.bg,
-                                            border: `3px solid ${cfg.border}`,
-                                            borderRadius: DS.radius.lg,
-                                            padding: isLunch ? "16px 18px" : "16px 18px",
-                                            minWidth: 148,
-                                            height: 148,
-                                            textAlign: "center",
-                                            cursor: !isLunch ? "pointer" : "default",
-                                            transition: "all .2s"
-                                        }}
-                                    >
-                                        {isLunch ? (
-                                            <>
-                                                <div style={{ fontSize: 28, marginBottom: 4 }}>🍽️</div>
-                                                <div className="b t-h3" style={{ color: DS.ink }}>LUNCH</div>
-                                                <div className="n t-label" style={{ color: "#B87A10", marginTop: 2 }}>12 – 1PM</div>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div style={{ fontSize: 26, marginBottom: 6 }}>{item.icon}</div>
-                                                <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
-                                                <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 10, fontWeight: 600 }}>{item.topic}</div>
-                                                <Shadow offset={1} size={1.5} radius={DS.radius.pill} style={{ display: "inline-block" }}>
-                                                    <div style={{ position: "relative", background: cfg.border, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 10px" }}>
-                                                        <span className="n t-label" style={{ color: "#fff" }}>{cfg.label}</span>
-                                                    </div>
-                                                </Shadow>
-                                            </>
-                                        )}
-                                    </div>
-                                </Shadow>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* SUBJECTS */}
-                <SectionHead label="MY SUBJECTS" color={profile.color} />
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 16 }}>
-                    {(() => {
-                        const coreSubjects = ['English', 'Maths', 'Science', 'History', 'Geography'];
-                        const sortedSubjects = [...subjects].sort((a, b) => {
-                            const aIsCore = coreSubjects.includes(a.name);
-                            const bIsCore = coreSubjects.includes(b.name);
-                            if (aIsCore && !bIsCore) return -1;
-                            if (!aIsCore && bIsCore) return 1;
-                            return 0;
-                        });
-                        return sortedSubjects.map((s, i) => {
-                            const isCoreSubject = coreSubjects.includes(s.name);
-                            const subjectCardsData = {
-                                color: s.color,
-                                icon: s.icon,
-                                topic: s.topic,
-                                category: isCoreSubject ? 'core' : 'optional',
-                                progress: s.progress,
-                                total: s.total,
-                                cards: s.topicCards?.slice(0, 7).map((tc, idx) => ({
-                                    focus: tc.title,
-                                    approved: idx === 0
-                                })) || []
-                            };
-
+                    <SectionHead label="TODAY'S PLAN" color={profile.color} />
+                    <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6, paddingTop: 8, marginBottom: 28 }}>
+                        {schedule.map((item, i) => {
+                            const cfg = statusCfg[item.status] || statusCfg.pending;
+                            const isLunch = item.status === "lunch";
+                            const isActive = item.status === "active";
                             return (
-                                <div key={i}>
-                                    <SubjectCard
-                                        subject={s.name}
-                                        subjectData={subjectCardsData}
-                                        frequency="balanced"
-                                        isCore={isCoreSubject}
-                                        isEditable={false}
-                                        onAddTopic={undefined}
-                                        onFrequencyChange={undefined}
-                                        onRemove={undefined}
-                                        onClick={() => {
-                                            const firstCard = s.topicCards?.[0];
-                                            if (firstCard) {
-                                                navigate(
-                                                    toLessonView({
-                                                        childId,
-                                                        lessonId: firstCard.firstVideoId || '',
-                                                        subjectId: s.subjectId,
-                                                        topic: firstCard.title,
-                                                        url: firstCard.url,
-                                                    })
-                                                );
-                                            }
-                                        }}
-                                        onCardClick={(card) => {
-                                            const clickedCard = s.topicCards?.find(tc => tc.title === card.focus);
-                                            if (clickedCard) {
-                                                navigate(
-                                                    toLessonView({
-                                                        childId,
-                                                        lessonId: clickedCard.firstVideoId || '',
-                                                        subjectId: s.subjectId,
-                                                        topic: clickedCard.title,
-                                                        url: clickedCard.url,
-                                                    })
-                                                );
-                                            }
-                                        }}
-                                    />
+                                <div key={i} className={isActive ? "float" : ""}>
+                                    <Shadow offset={2} size={2} radius={DS.radius.lg} style={{ flexShrink: 0, overflow: "visible", marginTop: 4 }}>
+                                        <div
+                                            style={{
+                                                position: "relative",
+                                                background: cfg.bg,
+                                                border: `3px solid ${cfg.border}`,
+                                                borderRadius: DS.radius.lg,
+                                                padding: "16px 18px",
+                                                minWidth: 148,
+                                                height: 148,
+                                                textAlign: "center",
+                                                cursor: !isLunch ? "pointer" : "default",
+                                                transition: "all .2s"
+                                            }}
+                                        >
+                                            {isLunch ? (
+                                                <>
+                                                    <div style={{ fontSize: 28, marginBottom: 4 }}>🍽️</div>
+                                                    <div className="b t-h3" style={{ color: DS.ink }}>LUNCH</div>
+                                                    <div className="n t-label" style={{ color: "#B87A10", marginTop: 2 }}>12 – 1PM</div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div style={{ fontSize: 26, marginBottom: 6 }}>{item.icon}</div>
+                                                    <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
+                                                    <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 10, fontWeight: 600 }}>{item.topic}</div>
+                                                    {item.frequency !== 'balanced' && (
+                                                        <span style={{ marginLeft: 6, fontSize: 10, color: item.frequency === 'high' ? '#4CAF50' : '#FF9800' }}>
+                                                            {item.frequency === 'high' ? '⭐' : '○'}
+                                                        </span>
+                                                    )}
+                                                    {item.total !== undefined && item.total > 0 && (
+                                                        <span style={{ marginLeft: 4, color: DS.inkSoft }}>
+                                                            ({item.progress}/{item.total})
+                                                        </span>
+                                                    )}
+                                                    <Shadow offset={1} size={1.5} radius={DS.radius.pill} style={{ display: "inline-block" }}>
+                                                        <div style={{ position: "relative", background: cfg.border, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 10px" }}>
+                                                            <span className="n t-label" style={{ color: "#fff" }}>{cfg.label}</span>
+                                                        </div>
+                                                    </Shadow>
+                                                    {item.status === "active" && <span className="n t-label" style={{ color: profile.color, background: `${profile.color}18`, padding: "2px 8px", borderRadius: DS.radius.pill }}>NOW</span>}
+                                                    {item.status === "done" && <span className="n t-label" style={{ color: DS.inkFade }}>✓ Done</span>}
+                                                    {item.status === "upcoming" && (
+                                                        <span className="n t-label" style={{ color: DS.inkFade, fontSize: 10 }}>
+                                                            {item.weight === 3 ? 'Priority' : item.weight === 1 ? 'Optional' : 'Regular'}
+                                                        </span>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    </Shadow>
                                 </div>
                             );
-                        });
-                    })()}
+                        })}
+                    </div>
+
+                    <SectionHead label="MY SUBJECTS" color={profile.color} />
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 16 }}>
+                        {(() => {
+                            const coreSubjects = ['English', 'Maths', 'Science', 'History', 'Geography'];
+                            const sortedSubjects = [...subjects].sort((a, b) => {
+                                const aIsCore = coreSubjects.includes(a.name);
+                                const bIsCore = coreSubjects.includes(b.name);
+                                if (aIsCore && !bIsCore) return -1;
+                                if (!aIsCore && bIsCore) return 1;
+                                return 0;
+                            });
+                            return sortedSubjects.map((s, i) => {
+                                const isCoreSubject = coreSubjects.includes(s.name);
+                                const subjectCardsData = {
+                                    color: s.color,
+                                    icon: s.icon,
+                                    topic: s.topic,
+                                    category: isCoreSubject ? 'core' : 'optional',
+                                    progress: s.progress,
+                                    total: s.total,
+                                    cards: s.topicCards?.slice(0, 7).map((tc: any, idx: number) => ({
+                                        focus: tc.title,
+                                        approved: idx === 0
+                                    })) || []
+                                };
+
+                                return (
+                                    <div key={i}>
+                                        <SubjectCard
+                                            subject={s.name}
+                                            subjectData={subjectCardsData}
+                                            frequency="balanced"
+                                            isCore={isCoreSubject}
+                                            isEditable={false}
+                                            onAddTopic={undefined}
+                                            onFrequencyChange={undefined}
+                                            onRemove={undefined}
+                                            onClick={() => {
+                                                const firstCard = s.topicCards?.[0];
+                                                if (firstCard) {
+                                                    navigate(
+                                                        toLessonView({
+                                                            childId,
+                                                            lessonId: firstCard.firstVideoId || '',
+                                                            subjectId: s.subjectId,
+                                                            topic: firstCard.title,
+                                                            url: firstCard.url,
+                                                        })
+                                                    );
+                                                }
+                                            }}
+                                            onCardClick={(card) => {
+                                                const clickedCard = s.topicCards?.find((tc: any) => tc.title === card.focus);
+                                                if (clickedCard) {
+                                                    navigate(
+                                                        toLessonView({
+                                                            childId,
+                                                            lessonId: clickedCard.firstVideoId || '',
+                                                            subjectId: s.subjectId,
+                                                            topic: clickedCard.title,
+                                                            url: clickedCard.url,
+                                                        })
+                                                    );
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                );
+                            });
+                        })()}
+                    </div>
                 </div>
-            </div>
+            ) : (
+                <div style={{ padding: "20px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
+                        {children.map((child) => {
+                            const childSchedule = generateAutoSchedule(child, child.yearGroups?.flatMap((yg: any) => yg.subjects || []) || []);
+                            
+                            return (
+                                <div key={child.id} style={{ background: `${DS.card}F2`, border: DS.border, borderRadius: DS.radius.lg, padding: 20 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                                        <Shadow offset={2} size={2} radius={10}>
+                                            <div style={{ position: "relative", width: 38, height: 38, background: child.themeColor === 'purple' ? '#9B6DD6' : child.themeColor === 'blue' ? '#2B8ED4' : child.themeColor === 'green' ? '#4CAF8A' : child.themeColor === 'amber' ? '#F5A623' : child.themeColor === 'rose' ? '#FF6B6B' : '#9B6DD6', border: DS.border, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🎓</div>
+                                        </Shadow>
+                                        <div style={{ flex: 1 }}>
+                                            <h2 className="b" style={{ fontSize: 20, fontWeight: 800, color: DS.ink, lineHeight: 1 }}>
+                                                {child.name}'s Schedule
+                                            </h2>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ marginTop: 16 }}>
+                                        {childSchedule.length > 0 ? (
+                                            childSchedule.map((item: any, i: number) => {
+                                                const cfg = statusCfg[item.status] || statusCfg.pending;
+                                                const isLunch = item.status === "lunch";
+                                                
+                                                return (
+                                                    <div key={i} style={{ marginBottom: 12 }}>
+                                                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: DS.radius.sm, background: isLunch ? "#FFF8EC" : `${child.themeColor === 'purple' ? '#9B6DD6' : child.themeColor === 'blue' ? '#2B8ED4' : child.themeColor === 'green' ? '#4CAF8A' : child.themeColor === 'amber' ? '#F5A623' : child.themeColor === 'rose' ? '#FF6B6B' : '#9B6DD6'}15`, border: DS.border }}>
+                                                            <div style={{ fontSize: 16, textAlign: "center", minWidth: 120 }}>
+                                                                {isLunch ? (
+                                                                    <>
+                                                                        <div style={{ fontSize: 20, marginBottom: 4 }}>🍽️</div>
+                                                                        <div className="b t-h3" style={{ color: DS.ink }}>LUNCH</div>
+                                                                        <div className="n t-label" style={{ color: "#B87A10", marginTop: 2 }}>12 – 1PM</div>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <div style={{ fontSize: 20, marginBottom: 6 }}>{item.icon}</div>
+                                                                        <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
+                                                                        <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 10, fontWeight: 600 }}>{item.topic}</div>
+                                                                        {item.frequency !== 'balanced' && (
+                                                                            <span style={{ marginLeft: 6, fontSize: 10, color: item.frequency === 'high' ? '#4CAF50' : '#FF9800' }}>
+                                                                                {item.frequency === 'high' ? '⭐' : '○'}
+                                                                            </span>
+                                                                        )}
+                                                                        {item.total !== undefined && item.total > 0 && (
+                                                                            <span style={{ marginLeft: 4, color: DS.inkSoft }}>
+                                                                                ({item.progress}/{item.total})
+                                                                            </span>
+                                                                        )}
+                                                                        <Shadow offset={1} size={1.5} radius={DS.radius.pill} style={{ display: "inline-block" }}>
+                                                                            <div style={{ position: "relative", background: cfg.border, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 10px" }}>
+                                                                                <span className="n t-label" style={{ color: "#fff" }}>{cfg.label}</span>
+                                                                            </div>
+                                                                        </Shadow>
+                                                                        {item.status === "active" && <span className="n t-label" style={{ color: child.themeColor === 'purple' ? '#9B6DD6' : child.themeColor === 'blue' ? '#2B8ED4' : child.themeColor === 'green' ? '#4CAF8A' : child.themeColor === 'amber' ? '#F5A623' : child.themeColor === 'rose' ? '#FF6B6B' : '#9B6DD6', background: `${child.themeColor === 'purple' ? '#9B6DD6' : child.themeColor === 'blue' ? '#2B8ED4' : child.themeColor === 'green' ? '#4CAF8A' : child.themeColor === 'amber' ? '#F5A623' : child.themeColor === 'rose' ? '#FF6B6B' : '#9B6DD6'}18`, padding: "2px 8px", borderRadius: DS.radius.pill }}>NOW</span>}
+                                                                        {item.status === "done" && <span className="n t-label" style={{ color: DS.inkFade }}>✓ Done</span>}
+                                                                        {item.status === "upcoming" && (
+                                                                            <span className="n t-label" style={{ color: DS.inkFade, fontSize: 10 }}>
+                                                                                {item.weight === 3 ? 'Priority' : item.weight === 1 ? 'Optional' : 'Regular'}
+                                                                            </span>
+                                                                        )}
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div style={{ textAlign: "center", padding: "20px", color: DS.inkSoft }}>
+                                                No subjects scheduled for {child.name}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
