@@ -7,7 +7,7 @@ const GlobalStyles = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { font-family: 'Nunito Sans', sans-serif; background: #FAF6F0; color: #1A1A2E; }
+    html, body { font-family: 'Nunito Sans', sans-serif; background: var(--dd-bg, #FDF8F2); color: var(--dd-ink, #1A1028); }
     .b  { font-family: 'Baloo 2', cursive; }
     .n  { font-family: 'Nunito', sans-serif; }
     .t-h1    { font-size: 32px; font-weight: 800; line-height: 1.15; }

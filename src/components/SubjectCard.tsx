@@ -1,6 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DS } from '../components/design-system';
-import { TopicFrequency, Subject } from '../types';
+import { TopicFrequency } from '../types';
+
+const SUBJECT_COLORS: Record<string, { c: string; cs: string; cl: string }> = {
+  'English': { c: '#E84848', cs: 'rgba(232,72,72,0.12)', cl: '#fff0f0' },
+  'Maths': { c: '#F5A623', cs: 'rgba(245,166,35,0.12)', cl: '#fffbf0' },
+  'Science': { c: '#00A8DD', cs: 'rgba(0,168,221,0.12)', cl: '#f0faff' },
+  'History': { c: '#C2680A', cs: 'rgba(194,104,10,0.12)', cl: '#fff8f0' },
+  'Geography': { c: '#2ECC71', cs: 'rgba(46,204,113,0.12)', cl: '#f0fff8' },
+  'Design & Technology': { c: '#1A9BB5', cs: 'rgba(26,155,181,0.12)', cl: '#f0fafd' },
+  'Art & Design': { c: '#9B4FD4', cs: 'rgba(155,79,212,0.12)', cl: '#faf0ff' },
+  'Music': { c: '#8855EE', cs: 'rgba(136,85,238,0.12)', cl: '#f5f0ff' },
+  'PE': { c: '#44AA22', cs: 'rgba(68,170,34,0.12)', cl: '#f0fff0' },
+  'Computing': { c: '#3355DD', cs: 'rgba(51,85,221,0.12)', cl: '#f0f3ff' },
+  'French': { c: '#FF8822', cs: 'rgba(255,136,34,0.12)', cl: '#fff5f0' },
+  'Spanish': { c: '#FF7711', cs: 'rgba(255,119,17,0.12)', cl: '#fff4ee' },
+  'German': { c: '#CC5500', cs: 'rgba(204,85,0,0.12)', cl: '#fff2ee' },
+};
 
 interface SubjectCardProps {
   subject: string;
@@ -14,6 +30,7 @@ interface SubjectCardProps {
     cards?: Array<{
       focus: string;
       approved: boolean;
+      videoCount?: number;
     }>;
   };
   frequency: TopicFrequency;
@@ -26,131 +43,7 @@ interface SubjectCardProps {
   onCardClick?: (card: { focus: string; approved: boolean }) => void;
 }
 
-const StarRating: React.FC<{ frequency: TopicFrequency; onChange?: (freq: TopicFrequency) => void; editable?: boolean }> = ({ 
-  frequency, 
-  onChange,
-  editable = true 
-}) => {
-  const levels: TopicFrequency[] = ['low', 'balanced', 'high'];
-  const currentIndex = levels.indexOf(frequency);
-
-  const cycleUp = () => {
-    if (!onChange) return;
-    const next = levels[(currentIndex + 1) % levels.length];
-    onChange(next);
-  };
-
-  return (
-    <div 
-      onClick={editable ? cycleUp : undefined}
-      style={{ 
-        cursor: editable ? 'pointer' : 'default',
-        display: 'flex', 
-        gap: 2 
-      }}
-      title={editable ? 'Click to change frequency' : undefined}
-    >
-      {[0, 1, 2].map((i) => {
-        const isActive = i <= currentIndex;
-        return (
-          <span
-            key={i}
-            style={{
-              fontSize: 14,
-              color: isActive ? '#F5A623' : 'rgba(26, 26, 46, 0.12)',
-              transition: 'color 0.15s'
-            }}
-          >
-            ★
-          </span>
-        );
-      })}
-    </div>
-  );
-};
-
-const TopicStack: React.FC<{ 
-  cards?: Array<{ focus: string; approved: boolean }>; 
-  color: string;
-  onAdd?: () => void;
-  onCardClick?: (card: { focus: string; approved: boolean }) => void;
-}> = ({ cards = [], color, onAdd, onCardClick }) => {
-  const displayCards = cards.slice(0, 3);
-  const hasMore = cards.length > 3;
-
-  const messyPositions = [
-    { left: 5, top: 0, rotate: -3 },
-    { left: 22, top: 6, rotate: 4 },
-    { left: 0, top: 16, rotate: 5 },
-  ];
-
-  return (
-    <div style={{ position: 'relative', height: 80, marginLeft: 8 }}>
-      {displayCards.map((card, ci) => {
-        const pos = messyPositions[ci] || { left: ci * 18, top: ci * 12, rotate: 0 };
-        return (
-        <div
-          key={ci}
-          onClick={() => onCardClick?.(card)}
-          style={{
-            position: 'absolute',
-            left: pos.left,
-            top: pos.top,
-            width: 56,
-            height: 78,
-            background: card.approved ? color : '#FFF',
-            border: `2px solid ${color}`,
-            borderRadius: 6,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '3px',
-            fontSize: 7,
-            color: card.approved ? '#FFF' : color,
-            fontWeight: 600,
-            boxShadow: `${ci + 1}px ${ci + 1}px 0 rgba(0,0,0,0.12)`,
-            zIndex: 10 + ci,
-            overflow: 'hidden',
-            cursor: 'pointer',
-            transform: `rotate(${pos.rotate}deg)`
-          }}
-        >
-          <div style={{ fontSize: 9, marginBottom: 1 }}>▶</div>
-          <div style={{ textAlign: 'center', lineHeight: 1.1, fontSize: 6 }}>
-            {card.focus?.replace(/\s*\(.*?\)\s*/g, '').substring(0, 12)}
-          </div>
-        </div>
-      );
-      })}
-      {onAdd && (
-        <div
-          onClick={onAdd}
-          style={{
-            position: 'absolute',
-            left: (Math.min(cards.length, 3)) * 14 + 4,
-            top: (Math.min(cards.length, 3)) * 10,
-            width: 36,
-            height: 40,
-            background: 'transparent',
-            border: `2px dashed ${color}60`,
-            borderRadius: 8,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 16,
-            color: `${color}60`,
-            cursor: 'pointer',
-            transition: 'all 0.15s'
-          }}
-          title="Add topic"
-        >
-          +
-        </div>
-      )}
-    </div>
-  );
-};
+const SPARKLES = ['✨', '⭐', '💫', '🌟', '⚡', '🌸', '🎶', '🌺'];
 
 export const SubjectCard: React.FC<SubjectCardProps> = ({
   subject,
@@ -164,118 +57,167 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   onClick,
   onCardClick
 }) => {
+  const [flipped, setFlipped] = useState(false);
+  
   const { color, icon, topic, category, progress, total, cards = [] } = subjectData;
+  const subjectColor = SUBJECT_COLORS[subject] || { c: color, cs: `${color}1F`, cl: '#fff' };
   const progressPercent = total > 0 ? (progress / total) * 100 : 0;
-  const hasMore = cards.length > 3;
+  const cardCount = cards.length || 1;
+  const sparkles = SPARKLES[Math.floor(Math.random() * SPARKLES.length)];
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isEditable) {
+      onClick?.();
+    } else {
+      setFlipped(!flipped);
+    }
+  };
+
+  const handleCardClick = (e: React.MouseEvent, card: { focus: string; approved: boolean }) => {
+    e.stopPropagation();
+    onCardClick?.(card);
+  };
+
+  const getColorClass = (subject: string) => {
+    const map: Record<string, string> = {
+      'English': 'dd-c-english',
+      'Maths': 'dd-c-maths',
+      'Science': 'dd-c-science',
+      'History': 'dd-c-history',
+      'Geography': 'dd-c-geography',
+      'Design & Technology': 'dd-c-dt',
+      'Art & Design': 'dd-c-art',
+      'Music': 'dd-c-music',
+      'PE': 'dd-c-pe',
+      'Computing': 'dd-c-computing',
+      'French': 'dd-c-french',
+      'Spanish': 'dd-c-spanish',
+      'German': 'dd-c-german',
+    };
+    return map[subject] || '';
+  };
 
   return (
-    <div
-      onClick={onClick}
-      style={{
-        position: 'relative',
-        borderRadius: 16,
-        border: `2.5px dashed ${color}40`,
-        padding: 16,
-        background: `${color}08`,
-        transition: 'all 0.2s',
-        cursor: isEditable ? 'default' : 'pointer',
-        display: 'flex',
-        flexDirection: 'column'
-      }}
+    <div 
+      className={`dd-card-stack ${getColorClass(subject)} ${flipped ? 'flipped' : ''}`}
+      style={{ 
+        '--card-color': subjectColor.c,
+        '--card-color-soft': subjectColor.cs,
+        '--card-color-light': subjectColor.cl,
+      } as React.CSSProperties}
+      onClick={handleClick}
     >
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ 
-            width: 36, 
-            height: 36, 
-            background: `${color}20`, 
-            border: `2px solid ${color}`, 
-            borderRadius: 10, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            fontSize: 18 
-          }}>
-            {icon}
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: DS.ink }}>{subject}</div>
-            <div style={{ fontSize: 11, color: DS.inkFade, fontWeight: 500 }}>{topic}</div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <StarRating 
-            frequency={frequency} 
-            onChange={onFrequencyChange}
-            editable={isEditable}
-          />
-          <div style={{
-            padding: '2px 8px',
-            background: isCore ? `${color}20` : `${color}10`,
-            border: `1px solid ${color}40`,
-            borderRadius: 4,
-            fontSize: 9,
-            fontWeight: 700,
-            color: color,
-            textTransform: 'uppercase'
-          }}>
-            {isCore ? 'Core' : 'OPT'}
-          </div>
-        </div>
-      </div>
-
-      {/* Topic Stack */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-        <div style={{ flex: 1 }}>
-          <TopicStack cards={cards} color={color} onAdd={isEditable ? onAddTopic : undefined} onCardClick={onCardClick} />
-        </div>
-        {hasMore && (
-          <div
+      <div className="dd-stack-count" style={{ background: subjectColor.c }}>{cardCount} cards</div>
+      
+      <div className="dd-flip-container">
+        {/* Front Face */}
+        <div 
+          className="dd-card-face"
+          style={{ 
+            borderColor: `${subjectColor.c}30`,
+          }}
+        >
+          <div 
+            className="dd-card-art-area"
             style={{
-              width: 32,
-              height: 32,
-              background: `${color}30`,
-              border: `2px dashed ${color}`,
-              borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 11,
-              color: color,
-              fontWeight: 700,
-              flexShrink: 0,
-              marginTop: 4
+              background: `linear-gradient(160deg, ${subjectColor.cl} 0%, ${subjectColor.cl.replace('1)', '0.6)')} 100%)`,
             }}
           >
-            +{cards.length - 3}
+            <span className="dd-art-sparkles">{sparkles}</span>
+            <div className="dd-kawaii-placeholder">{icon}</div>
           </div>
-        )}
-      </div>
-
-      {/* Progress */}
-      <div style={{ marginTop: 'auto', paddingTop: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-          <span style={{ fontSize: 10, color: DS.inkFade, fontWeight: 600 }}>Progress</span>
-          <span style={{ fontSize: 10, color: color, fontWeight: 700 }}>{progress}/{total}</span>
-        </div>
-        <div style={{ height: 6, background: '#EDE8E0', borderRadius: 100, overflow: 'hidden' }}>
+          
           <div 
-            style={{ 
-              height: '100%', 
-              width: `${progressPercent}%`, 
-              background: color, 
-              borderRadius: 100,
-              transition: 'width 0.3s'
-            }} 
-          />
+            className="dd-card-front-footer"
+            style={{
+              background: `linear-gradient(135deg, ${subjectColor.c} 0%, ${subjectColor.c}BF 100%)`,
+            }}
+          >
+            <span className="dd-front-subject-name">{subject}</span>
+            <span className="dd-front-badge" style={{ background: isCore ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)', borderColor: isCore ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)' }}>
+              {isCore ? 'Core' : 'Opt'}
+            </span>
+          </div>
+          
+          <div className="dd-front-progress">
+            <div className="dd-front-prog-label">
+              <span>Progress</span>
+              <span style={{ color: subjectColor.c }}>{progress} / {total}</span>
+            </div>
+            <div className="dd-front-prog-bar" style={{ background: subjectColor.cs }}>
+              <div className="dd-front-prog-fill" style={{ width: `${progressPercent}%`, background: subjectColor.c }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Back Face */}
+        <div 
+          className="dd-card-face dd-card-back"
+          style={{ 
+            borderColor: `${subjectColor.c}30`,
+          }}
+        >
+          <div 
+            className="dd-card-banner"
+            style={{
+              background: `linear-gradient(135deg, ${subjectColor.c} 0%, ${subjectColor.c}BF 100%)`,
+            }}
+          >
+            <div className="dd-subject-icon-wrap">{icon}</div>
+            <div className="dd-subject-title-group">
+              <div className="dd-subject-name">{subject}</div>
+              <div className="dd-subject-topics">{topic}</div>
+            </div>
+            <span className="dd-subject-badge" style={{ background: isCore ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)', borderColor: isCore ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)' }}>
+              {isCore ? 'Core' : 'Opt'}
+            </span>
+          </div>
+          
+          <div className="dd-back-close-hint">tap to flip back ↩</div>
+          
+          <div className="dd-card-body">
+            <div className="dd-topic-cards-list">
+              {cards.slice(0, 3).map((card, idx) => (
+                <div 
+                  key={idx} 
+                  className="dd-topic-card"
+                  style={{ background: subjectColor.cl, border: `1px solid ${subjectColor.c}30` }}
+                  onClick={(e) => handleCardClick(e, card)}
+                >
+                  <span className="dd-topic-num" style={{ color: subjectColor.c }}>{String(idx + 1).padStart(2, '0')}</span>
+                  <div className="dd-topic-play" style={{ background: subjectColor.c }}>▶</div>
+                  <span className="dd-topic-name">{card.focus}</span>
+                  <span className="dd-topic-count" style={{ color: subjectColor.c }}>{card.videoCount || 0} vids</span>
+                </div>
+              ))}
+            </div>
+            
+            {cards.length > 3 && (
+              <div 
+                className="dd-more-topics"
+                style={{ borderColor: `${subjectColor.c}30`, color: subjectColor.c }}
+              >
+                ＋ {cards.length - 3} more playlists
+              </div>
+            )}
+            
+            <div className="dd-card-progress">
+              <div className="dd-progress-header">
+                <span className="dd-progress-label">Progress</span>
+                <span className="dd-progress-count" style={{ color: subjectColor.c }}>{progress} / {total}</span>
+              </div>
+              <div className="dd-progress-bar" style={{ background: subjectColor.cs }}>
+                <div className="dd-progress-fill" style={{ width: `${progressPercent}%`, background: subjectColor.c }} />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Remove button (edit mode) */}
       {isEditable && onRemove && (
         <button
-          onClick={onRemove}
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
           style={{
             position: 'absolute',
             top: 8,
@@ -292,10 +234,11 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             opacity: 0.7,
-            transition: 'opacity 0.15s'
+            transition: 'opacity 0.15s',
+            zIndex: 20
           }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '0.7'}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '0.7'}
           title="Remove subject"
         >
           ×

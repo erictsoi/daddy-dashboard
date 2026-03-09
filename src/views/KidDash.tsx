@@ -1,7 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Navigate } from 'react-router-dom';
 import { getSubjectHexColor, getSubjectIcon } from '../utils/subjects';
-import { DS, Texture, Deco, Shadow, Chip, SectionHead } from '../components/design-system';
 import { toLessonView } from '../lib/routes';
 import { useAppContext } from '../context/AppContext';
 import { getSubjectCardsForYear, loadSubjectCardsForYear } from '../lib/subjectCards';
@@ -143,18 +142,18 @@ export const KidDash: React.FC = () => {
         });
     }, [jsonYearKey]);
 
-    const themeColor = selectedChild.themeColor === 'purple' ? '#9B6DD6'
+    const themeColor = selectedChild.themeColor === 'purple' ? '#7C3FE4'
         : selectedChild.themeColor === 'blue' ? '#2B8ED4'
-            : selectedChild.themeColor === 'green' ? '#4CAF8A'
+            : selectedChild.themeColor === 'green' ? '#22C17A'
                 : selectedChild.themeColor === 'amber' ? '#F5A623'
                     : selectedChild.themeColor === 'rose' ? '#FF6B6B'
-                        : '#9B6DD6';
-    const tintColor = selectedChild.themeColor === 'purple' ? '#F3EEFF'
+                        : '#7C3FE4';
+    const tintColor = selectedChild.themeColor === 'purple' ? '#F0E8FF'
         : selectedChild.themeColor === 'blue' ? '#EAF4FC'
-            : selectedChild.themeColor === 'green' ? '#EDFAF4'
-                : selectedChild.themeColor === 'amber' ? '#FFF8EC'
+            : selectedChild.themeColor === 'green' ? '#E4F9EF'
+                : selectedChild.themeColor === 'amber' ? '#FFF4E0'
                     : selectedChild.themeColor === 'rose' ? '#FFF0F0'
-                        : '#F3EEFF';
+                        : '#F0E8FF';
 
     const profile = {
         name: selectedChild.name,
@@ -253,14 +252,6 @@ export const KidDash: React.FC = () => {
         { subject: "LUNCH", topic: "", icon: "🍽️", status: "lunch", subjectId: "", topicId: "" }
     ];
 
-    const statusCfg: Record<string, { bg: string; border: string; label: string }> = {
-        done: { bg: "#E8F8F0", border: "#4CAF8A", label: "✓ Done" },
-        active: { bg: profile.tint, border: profile.color, label: "● Now" },
-        pending: { bg: DS.card, border: "#C4BBAF", label: "Up next" },
-        stretch: { bg: "#FFFBEC", border: "#F5A623", label: "★ Bonus" },
-        lunch: { bg: "#FFF8EC", border: "#F5A623", label: "🍽 Lunch" },
-    };
-
     const todayDone = subjects.reduce((sum, s) => sum + s.progress, 0);
     const totalToday = subjects.reduce((sum, s) => sum + s.total, 0) || 1;
     const streak = 5;
@@ -270,14 +261,15 @@ export const KidDash: React.FC = () => {
         return (
             <div style={{
                 minHeight: "100vh",
-                background: DS.cream,
+                background: "#FDF8F2",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center"
+                justifyContent: "center",
+                fontFamily: "'Nunito', sans-serif"
             }}>
                 <div style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 24, marginBottom: 8 }}>Loading subjects...</div>
-                    <div style={{ color: DS.inkFade }}>Loading {jsonYearKey} curriculum</div>
+                    <div style={{ color: "#7B6F8A" }}>Loading {jsonYearKey} curriculum</div>
                 </div>
             </div>
         );
@@ -286,274 +278,469 @@ export const KidDash: React.FC = () => {
     return (
         <div style={{
             minHeight: "100vh",
-            background: DS.cream,
-            position: "relative",
-            overflow: "hidden"
+            background: "#FDF8F2",
+            color: "#1A1028",
+            fontFamily: "'Nunito', sans-serif",
+            overflowX: "hidden",
+            position: "relative"
         }}>
-            <Texture />
-            <Deco color={profile.color} />
+            {/* Background texture */}
+            <div style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundImage: 'radial-gradient(circle, rgba(124,63,228,0.04) 1px, transparent 1px)',
+                backgroundSize: '24px 24px',
+                pointerEvents: 'none',
+                zIndex: 0
+            }} />
 
-            <div style={{ position: "relative", zIndex: 10, background: `${DS.card}F2`, backdropFilter: "blur(14px)", borderBottom: DS.border, padding: "12px 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <Shadow offset={2} size={2} radius={10}>
-                        <div style={{ position: "relative", width: 38, height: 38, background: profile.color, border: DS.border, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🎓</div>
-                    </Shadow>
-                    <span className="b t-h3" style={{ color: DS.ink, fontSize: 18 }}>DADDY DASHBOARD</span>
+            {/* Floating blobs */}
+            <div style={{
+                position: 'fixed',
+                borderRadius: '50%',
+                pointerEvents: 'none',
+                zIndex: 0,
+                filter: 'blur(80px)',
+                opacity: 0.12,
+                width: '400px',
+                height: '400px',
+                background: themeColor,
+                top: '-10%',
+                right: '-5%'
+            }} />
+            <div style={{
+                position: 'fixed',
+                borderRadius: '50%',
+                pointerEvents: 'none',
+                zIndex: 0,
+                filter: 'blur(80px)',
+                opacity: 0.12,
+                width: '300px',
+                height: '300px',
+                background: '#22C17A',
+                bottom: '-5%',
+                left: '-5%'
+            }} />
+
+            {/* NAV */}
+            <nav style={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+                background: 'rgba(253,248,242,0.92)',
+                backdropFilter: 'blur(16px)',
+                borderBottom: '1.5px solid rgba(26,16,40,0.1)',
+                padding: '0 32px',
+                height: '60px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                        width: '36px',
+                        height: '36px',
+                        background: themeColor,
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        boxShadow: '0 4px 12px rgba(124,63,228,0.35)'
+                    }}>🎓</div>
+                    <span style={{
+                        fontFamily: "'Baloo 2', cursive",
+                        fontSize: '17px',
+                        fontWeight: 800,
+                        letterSpacing: '0.04em',
+                        color: '#1A1028'
+                    }}>DADDY DASHBOARD</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <Shadow offset={2} size={1.5} radius={DS.radius.sm}>
-                        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, background: profile.tint, border: DS.border, borderRadius: DS.radius.sm, padding: "6px 14px" }}>
-                            <span>🔥</span>
-                            <span className="n t-small" style={{ fontWeight: 800, color: DS.ink }}>5 day streak!</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: '#FFF4E0',
+                        border: '1.5px solid rgba(245,166,35,0.3)',
+                        borderRadius: '100px',
+                        padding: '5px 14px',
+                        fontSize: '13px',
+                        fontWeight: 800,
+                        color: '#B8740A'
+                    }}>🔥 5 day streak!</div>
+                    <div style={{
+                        width: '36px',
+                        height: '36px',
+                        background: '#fff',
+                        border: '1.5px solid rgba(26,16,40,0.1)',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 12px rgba(26,16,40,0.08)'
+                    }}>{profile.emoji}</div>
+                </div>
+            </nav>
+
+            {/* MAIN */}
+            <main style={{
+                position: 'relative',
+                zIndex: 1,
+                maxWidth: '1280px',
+                margin: '0 auto',
+                padding: '28px 32px 48px'
+            }}>
+
+                {/* HERO */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '32px',
+                    gap: '24px'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+                        <div style={{
+                            width: '72px',
+                            height: '72px',
+                            background: `linear-gradient(135deg, ${themeColor} 0%, ${themeColor}CC 100%)`,
+                            borderRadius: '22px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '36px',
+                            boxShadow: `0 8px 24px ${themeColor}4D`,
+                            flexShrink: 0
+                        }}>{profile.emoji}</div>
+                        <div>
+                            <h1 style={{
+                                fontFamily: "'Baloo 2', cursive",
+                                fontSize: '36px',
+                                fontWeight: 800,
+                                lineHeight: 1,
+                                color: '#1A1028',
+                                margin: 0
+                            }}>Hey <span style={{ color: themeColor }}>{profile.name}</span>! 👋</h1>
+                            <p style={{
+                                color: '#7B6F8A',
+                                fontSize: '15px',
+                                fontWeight: 600,
+                                marginTop: '4px',
+                                margin: 0
+                            }}>Ready for today's adventure? Let's go! 🚀</p>
                         </div>
-                    </Shadow>
-                    <div
-                        className="float"
-                        onClick={() => navigate('/returningview')}
-                        style={{ width: 38, height: 38, background: DS.card, border: DS.border, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer" }}
-                    >
-                        {profile.emoji}
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px', flexShrink: 0 }}>
+                        <div style={{
+                            background: '#FFFFFF',
+                            border: '1.5px solid rgba(26,16,40,0.1)',
+                            borderRadius: '10px',
+                            padding: '12px 16px',
+                            textAlign: 'center',
+                            boxShadow: '0 2px 12px rgba(26,16,40,0.08)',
+                            minWidth: '90px'
+                        }}>
+                            <div style={{ fontSize: '20px', marginBottom: '4px' }}>✅</div>
+                            <div style={{
+                                fontFamily: "'Baloo 2', cursive",
+                                fontSize: '18px',
+                                fontWeight: 800,
+                                color: themeColor,
+                                lineHeight: 1
+                            }}>{todayDone}</div>
+                            <div style={{
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                letterSpacing: '0.08em',
+                                color: '#C4BAD0',
+                                textTransform: 'uppercase',
+                                marginTop: '2px'
+                            }}>TODAY</div>
+                        </div>
+                        <div style={{
+                            background: '#FFFFFF',
+                            border: '1.5px solid rgba(26,16,40,0.1)',
+                            borderRadius: '10px',
+                            padding: '12px 16px',
+                            textAlign: 'center',
+                            boxShadow: '0 2px 12px rgba(26,16,40,0.08)',
+                            minWidth: '90px'
+                        }}>
+                            <div style={{ fontSize: '20px', marginBottom: '4px' }}>🔥</div>
+                            <div style={{
+                                fontFamily: "'Baloo 2', cursive",
+                                fontSize: '18px',
+                                fontWeight: 800,
+                                color: themeColor,
+                                lineHeight: 1
+                            }}>{streak} days</div>
+                            <div style={{
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                letterSpacing: '0.08em',
+                                color: '#C4BAD0',
+                                textTransform: 'uppercase',
+                                marginTop: '2px'
+                            }}>STREAK</div>
+                        </div>
+                        <div style={{
+                            background: '#FFFFFF',
+                            border: '1.5px solid rgba(26,16,40,0.1)',
+                            borderRadius: '10px',
+                            padding: '12px 16px',
+                            textAlign: 'center',
+                            boxShadow: '0 2px 12px rgba(26,16,40,0.08)',
+                            minWidth: '90px'
+                        }}>
+                            <div style={{ fontSize: '20px', marginBottom: '4px' }}>⭐</div>
+                            <div style={{
+                                fontFamily: "'Baloo 2', cursive",
+                                fontSize: '18px',
+                                fontWeight: 800,
+                                color: themeColor,
+                                lineHeight: 1
+                            }}>+{xp}</div>
+                            <div style={{
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                letterSpacing: '0.08em',
+                                color: '#C4BAD0',
+                                textTransform: 'uppercase',
+                                marginTop: '2px'
+                            }}>XP</div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {childId ? (
-                <div style={{ position: "relative", zIndex: 5, padding: "26px 30px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 28 }}>
-                        <Shadow offset={4} size={2.5} radius={20}>
-                            <div style={{ position: "relative", width: 70, height: 70, background: profile.color, border: DS.border, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, flexShrink: 0 }}>{profile.emoji}</div>
-                        </Shadow>
-                        <div style={{ flex: 1 }}>
-                            <h1 className="b" style={{ fontSize: 38, fontWeight: 800, color: DS.ink, lineHeight: 1 }}>
-                                Hey <span style={{ color: profile.color }}>{profile.name}</span>! 👋
-                            </h1>
-                            <p className="n t-body" style={{ color: DS.inkSoft, marginTop: 4 }}>Ready for today's adventure? Let's go! 🚀</p>
-                        </div>
-                        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-                            <Chip icon="✅" val={`${todayDone}/${totalToday}`} label="TODAY" color={profile.color} />
-                            <Chip icon="🔥" val={`${streak} days`} label="STREAK" color={profile.color} />
-                            <Chip icon="⭐" val={`+${xp}`} label="XP" color={profile.color} />
-                        </div>
-                    </div>
+                {/* TODAY'S PLAN */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <span style={{
+                        fontFamily: "'Baloo 2', cursive",
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        color: '#fff',
+                        background: themeColor,
+                        borderRadius: '8px',
+                        padding: '3px 14px'
+                    }}>Today's Plan</span>
+                    <div style={{
+                        flex: 1,
+                        height: '1.5px',
+                        background: 'rgba(26,16,40,0.1)',
+                        borderRadius: '100px'
+                    }} />
+                </div>
 
-                    <SectionHead label="TODAY'S PLAN" color={profile.color} />
-                    <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6, paddingTop: 8, marginBottom: 28 }}>
-                        {schedule.map((item, i) => {
-                            const cfg = statusCfg[item.status] || statusCfg.pending;
-                            const isLunch = item.status === "lunch";
-                            const isActive = item.status === "active";
-                            return (
-                                <div key={i} className={isActive ? "float" : ""}>
-                                    <Shadow offset={2} size={2} radius={DS.radius.lg} style={{ flexShrink: 0, overflow: "visible", marginTop: 4 }}>
-                                        <div
-                                            style={{
-                                                position: "relative",
-                                                background: cfg.bg,
-                                                border: `3px solid ${cfg.border}`,
-                                                borderRadius: DS.radius.lg,
-                                                padding: "16px 18px",
-                                                minWidth: 148,
-                                                height: 148,
-                                                textAlign: "center",
-                                                cursor: !isLunch ? "pointer" : "default",
-                                                transition: "all .2s"
-                                            }}
-                                        >
-                                            {isLunch ? (
-                                                <>
-                                                    <div style={{ fontSize: 28, marginBottom: 4 }}>🍽️</div>
-                                                    <div className="b t-h3" style={{ color: DS.ink }}>LUNCH</div>
-                                                    <div className="n t-label" style={{ color: "#B87A10", marginTop: 2 }}>12 – 1PM</div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <div style={{ fontSize: 26, marginBottom: 6 }}>{item.icon}</div>
-                                                    <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
-                                                    <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 10, fontWeight: 600 }}>{item.topic}</div>
-                                                    {item.frequency !== 'balanced' && (
-                                                        <span style={{ marginLeft: 6, fontSize: 10, color: item.frequency === 'high' ? '#4CAF50' : '#FF9800' }}>
-                                                            {item.frequency === 'high' ? '⭐' : '○'}
-                                                        </span>
-                                                    )}
-                                                    {item.total !== undefined && item.total > 0 && (
-                                                        <span style={{ marginLeft: 4, color: DS.inkSoft }}>
-                                                            ({item.progress}/{item.total})
-                                                        </span>
-                                                    )}
-                                                    <Shadow offset={1} size={1.5} radius={DS.radius.pill} style={{ display: "inline-block" }}>
-                                                        <div style={{ position: "relative", background: cfg.border, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 10px" }}>
-                                                            <span className="n t-label" style={{ color: "#fff" }}>{cfg.label}</span>
-                                                        </div>
-                                                    </Shadow>
-                                                    {item.status === "active" && <span className="n t-label" style={{ color: profile.color, background: `${profile.color}18`, padding: "2px 8px", borderRadius: DS.radius.pill }}>NOW</span>}
-                                                    {item.status === "done" && <span className="n t-label" style={{ color: DS.inkFade }}>✓ Done</span>}
-                                                    {item.status === "upcoming" && (
-                                                        <span className="n t-label" style={{ color: DS.inkFade, fontSize: 10 }}>
-                                                            {item.weight === 3 ? 'Priority' : item.weight === 1 ? 'Optional' : 'Regular'}
-                                                        </span>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-                                    </Shadow>
+                <div style={{
+                    display: 'flex',
+                    gap: '12px',
+                    overflowX: 'auto',
+                    paddingBottom: '8px',
+                    paddingTop: '4px',
+                    marginBottom: '36px',
+                    scrollbarWidth: 'none'
+                }}>
+                    {schedule.map((item: any, i: number) => {
+                        const isLunch = item.status === "lunch";
+                        const statusClass = item.status === "done" ? "done" : 
+                                         item.status === "active" ? "active" : 
+                                         isLunch ? "break" : "upcoming";
+                        
+                        return (
+                            <div key={i} style={{
+                                flexShrink: 0,
+                                width: '160px',
+                                background: isLunch ? '#FFF4E0' : 
+                                           item.status === "done" ? '#E4F9EF' :
+                                           item.status === "active" ? tintColor : '#FFFFFF',
+                                border: `2px solid ${isLunch ? 'rgba(245,166,35,0.4)' : 
+                                                   item.status === "done" ? 'rgba(34,193,122,0.4)' :
+                                                   item.status === "active" ? `${themeColor}80` : 'rgba(26,16,40,0.1)'}`,
+                                borderRadius: '20px',
+                                padding: '18px 16px',
+                                textAlign: 'center',
+                                cursor: isLunch ? 'default' : 'pointer',
+                                transition: 'transform 0.15s, box-shadow 0.15s',
+                                boxShadow: '0 2px 12px rgba(26,16,40,0.08)',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                opacity: item.status === "upcoming" ? 0.6 : 1
+                            }}>
+                                <div style={{ fontSize: '28px', marginBottom: '8px' }}>{item.icon}</div>
+                                <div style={{
+                                    fontSize: '14px',
+                                    fontWeight: 800,
+                                    color: '#1A1028',
+                                    marginBottom: '4px'
+                                }}>{item.subject}</div>
+                                <div style={{
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    color: '#7B6F8A',
+                                    lineHeight: 1.4,
+                                    marginBottom: '10px'
+                                }}>{isLunch ? '12 – 1 PM' : item.topic}</div>
+                                
+                                {item.frequency !== 'balanced' && !isLunch && (
+                                    <span style={{ 
+                                        marginLeft: 6, 
+                                        fontSize: 10, 
+                                        color: item.frequency === 'high' ? '#22C17A' : '#F5A623' 
+                                    }}>
+                                        {item.frequency === 'high' ? '⭐' : '○'}
+                                    </span>
+                                )}
+                                
+                                {item.total !== undefined && item.total > 0 && !isLunch && (
+                                    <span style={{ marginLeft: 4, color: '#7B6F8A', fontSize: '10px' }}>
+                                        ({item.progress}/{item.total})
+                                    </span>
+                                )}
+                                
+                                <div style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    borderRadius: '100px',
+                                    padding: '3px 10px',
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    background: isLunch ? '#F5A623' : 
+                                              item.status === "done" ? '#22C17A' :
+                                              item.status === "active" ? themeColor : '#C4BAD0',
+                                    color: '#fff',
+                                    animation: item.status === "active" ? 'pulse-ring 2s infinite' : 'none'
+                                }}>
+                                    {isLunch ? '🍽️ Break' : 
+                                     item.status === "done" ? '✓ Done' :
+                                     item.status === "active" ? '● Now' : 'Up next'}
                                 </div>
-                            );
-                        })}
-                    </div>
-
-                    <SectionHead label="MY SUBJECTS" color={profile.color} />
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 16 }}>
-                        {(() => {
-                            const coreSubjects = ['English', 'Maths', 'Science', 'History', 'Geography'];
-                            const sortedSubjects = [...subjects].sort((a, b) => {
-                                const aIsCore = coreSubjects.includes(a.name);
-                                const bIsCore = coreSubjects.includes(b.name);
-                                if (aIsCore && !bIsCore) return -1;
-                                if (!aIsCore && bIsCore) return 1;
-                                return 0;
-                            });
-                            return sortedSubjects.map((s, i) => {
-                                const isCoreSubject = coreSubjects.includes(s.name);
-                                const subjectCardsData = {
-                                    color: s.color,
-                                    icon: s.icon,
-                                    topic: s.topic,
-                                    category: isCoreSubject ? 'core' : 'optional',
-                                    progress: s.progress,
-                                    total: s.total,
-                                    cards: s.topicCards?.slice(0, 7).map((tc: any, idx: number) => ({
-                                        focus: tc.title,
-                                        approved: idx === 0
-                                    })) || []
-                                };
-
-                                return (
-                                    <div key={i}>
-                                        <SubjectCard
-                                            subject={s.name}
-                                            subjectData={subjectCardsData}
-                                            frequency="balanced"
-                                            isCore={isCoreSubject}
-                                            isEditable={false}
-                                            onAddTopic={undefined}
-                                            onFrequencyChange={undefined}
-                                            onRemove={undefined}
-                                            onClick={() => {
-                                                const firstCard = s.topicCards?.[0];
-                                                if (firstCard) {
-                                                    navigate(
-                                                        toLessonView({
-                                                            childId,
-                                                            lessonId: firstCard.firstVideoId || '',
-                                                            subjectId: s.subjectId,
-                                                            topic: firstCard.title,
-                                                            url: firstCard.url,
-                                                        })
-                                                    );
-                                                }
-                                            }}
-                                            onCardClick={(card) => {
-                                                const clickedCard = s.topicCards?.find((tc: any) => tc.title === card.focus);
-                                                if (clickedCard) {
-                                                    navigate(
-                                                        toLessonView({
-                                                            childId,
-                                                            lessonId: clickedCard.firstVideoId || '',
-                                                            subjectId: s.subjectId,
-                                                            topic: clickedCard.title,
-                                                            url: clickedCard.url,
-                                                        })
-                                                    );
-                                                }
-                                            }}
-                                        />
+                                
+                                {item.status === "upcoming" && !isLunch && (
+                                    <div style={{
+                                        fontSize: '10px',
+                                        fontWeight: 600,
+                                        color: '#7B6F8A',
+                                        marginTop: '4px'
+                                    }}>
+                                        {item.weight === 3 ? 'Priority' : item.weight === 1 ? 'Optional' : 'Regular'}
                                     </div>
-                                );
-                            });
-                        })()}
-                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
-            ) : (
-                <div style={{ padding: "20px" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
-                        {children.map((child) => {
-                            const childSchedule = generateAutoSchedule(child, child.yearGroups?.flatMap((yg: any) => yg.subjects || []) || []);
-                            
-                            return (
-                                <div key={child.id} style={{ background: `${DS.card}F2`, border: DS.border, borderRadius: DS.radius.lg, padding: 20 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                                        <Shadow offset={2} size={2} radius={10}>
-                                            <div style={{ position: "relative", width: 38, height: 38, background: child.themeColor === 'purple' ? '#9B6DD6' : child.themeColor === 'blue' ? '#2B8ED4' : child.themeColor === 'green' ? '#4CAF8A' : child.themeColor === 'amber' ? '#F5A623' : child.themeColor === 'rose' ? '#FF6B6B' : '#9B6DD6', border: DS.border, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🎓</div>
-                                        </Shadow>
-                                        <div style={{ flex: 1 }}>
-                                            <h2 className="b" style={{ fontSize: 20, fontWeight: 800, color: DS.ink, lineHeight: 1 }}>
-                                                {child.name}'s Schedule
-                                            </h2>
-                                        </div>
-                                    </div>
 
-                                    <div style={{ marginTop: 16 }}>
-                                        {childSchedule.length > 0 ? (
-                                            childSchedule.map((item: any, i: number) => {
-                                                const cfg = statusCfg[item.status] || statusCfg.pending;
-                                                const isLunch = item.status === "lunch";
-                                                
-                                                return (
-                                                    <div key={i} style={{ marginBottom: 12 }}>
-                                                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: DS.radius.sm, background: isLunch ? "#FFF8EC" : `${child.themeColor === 'purple' ? '#9B6DD6' : child.themeColor === 'blue' ? '#2B8ED4' : child.themeColor === 'green' ? '#4CAF8A' : child.themeColor === 'amber' ? '#F5A623' : child.themeColor === 'rose' ? '#FF6B6B' : '#9B6DD6'}15`, border: DS.border }}>
-                                                            <div style={{ fontSize: 16, textAlign: "center", minWidth: 120 }}>
-                                                                {isLunch ? (
-                                                                    <>
-                                                                        <div style={{ fontSize: 20, marginBottom: 4 }}>🍽️</div>
-                                                                        <div className="b t-h3" style={{ color: DS.ink }}>LUNCH</div>
-                                                                        <div className="n t-label" style={{ color: "#B87A10", marginTop: 2 }}>12 – 1PM</div>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <div style={{ fontSize: 20, marginBottom: 6 }}>{item.icon}</div>
-                                                                        <div className="b t-h3" style={{ color: DS.ink, marginBottom: 2 }}>{item.subject}</div>
-                                                                        <div className="n t-label" style={{ color: DS.inkSoft, marginBottom: 10, fontWeight: 600 }}>{item.topic}</div>
-                                                                        {item.frequency !== 'balanced' && (
-                                                                            <span style={{ marginLeft: 6, fontSize: 10, color: item.frequency === 'high' ? '#4CAF50' : '#FF9800' }}>
-                                                                                {item.frequency === 'high' ? '⭐' : '○'}
-                                                                            </span>
-                                                                        )}
-                                                                        {item.total !== undefined && item.total > 0 && (
-                                                                            <span style={{ marginLeft: 4, color: DS.inkSoft }}>
-                                                                                ({item.progress}/{item.total})
-                                                                            </span>
-                                                                        )}
-                                                                        <Shadow offset={1} size={1.5} radius={DS.radius.pill} style={{ display: "inline-block" }}>
-                                                                            <div style={{ position: "relative", background: cfg.border, border: DS.border, borderRadius: DS.radius.pill, padding: "2px 10px" }}>
-                                                                                <span className="n t-label" style={{ color: "#fff" }}>{cfg.label}</span>
-                                                                            </div>
-                                                                        </Shadow>
-                                                                        {item.status === "active" && <span className="n t-label" style={{ color: child.themeColor === 'purple' ? '#9B6DD6' : child.themeColor === 'blue' ? '#2B8ED4' : child.themeColor === 'green' ? '#4CAF8A' : child.themeColor === 'amber' ? '#F5A623' : child.themeColor === 'rose' ? '#FF6B6B' : '#9B6DD6', background: `${child.themeColor === 'purple' ? '#9B6DD6' : child.themeColor === 'blue' ? '#2B8ED4' : child.themeColor === 'green' ? '#4CAF8A' : child.themeColor === 'amber' ? '#F5A623' : child.themeColor === 'rose' ? '#FF6B6B' : '#9B6DD6'}18`, padding: "2px 8px", borderRadius: DS.radius.pill }}>NOW</span>}
-                                                                        {item.status === "done" && <span className="n t-label" style={{ color: DS.inkFade }}>✓ Done</span>}
-                                                                        {item.status === "upcoming" && (
-                                                                            <span className="n t-label" style={{ color: DS.inkFade, fontSize: 10 }}>
-                                                                                {item.weight === 3 ? 'Priority' : item.weight === 1 ? 'Optional' : 'Regular'}
-                                                                            </span>
-                                                                        )}
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                {/* SUBJECTS */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <span style={{
+                        fontFamily: "'Baloo 2', cursive",
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        color: '#fff',
+                        background: themeColor,
+                        borderRadius: '8px',
+                        padding: '3px 14px'
+                    }}>My Subjects</span>
+                    <div style={{
+                        flex: 1,
+                        height: '1.5px',
+                        background: 'rgba(26,16,40,0.1)',
+                        borderRadius: '100px'
+                    }} />
+                </div>
+
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(5, 1fr)',
+                    gap: '28px 20px',
+                    paddingBottom: '20px'
+                }}>
+                    {(() => {
+                        const coreSubjects = ['English', 'Maths', 'Science', 'History', 'Geography'];
+                        const sortedSubjects = [...subjects].sort((a, b) => {
+                            const aIsCore = coreSubjects.includes(a.name);
+                            const bIsCore = coreSubjects.includes(b.name);
+                            if (aIsCore && !bIsCore) return -1;
+                            if (!aIsCore && bIsCore) return 1;
+                            return 0;
+                        });
+                        return sortedSubjects.map((s, i) => {
+                            const isCoreSubject = coreSubjects.includes(s.name);
+                            const subjectCardsData = {
+                                color: s.color,
+                                icon: s.icon,
+                                topic: s.topic,
+                                category: isCoreSubject ? 'core' : 'optional',
+                                progress: s.progress,
+                                total: s.total,
+                                cards: s.topicCards?.slice(0, 7).map((tc: any, idx: number) => ({
+                                    focus: tc.title,
+                                    approved: idx === 0
+                                })) || []
+                            };
+
+                            return (
+                                <div key={i}>
+                                    <SubjectCard
+                                        subject={s.name}
+                                        subjectData={subjectCardsData}
+                                        frequency="balanced"
+                                        isCore={isCoreSubject}
+                                        isEditable={false}
+                                        onAddTopic={undefined}
+                                        onFrequencyChange={undefined}
+                                        onRemove={undefined}
+                                        onClick={() => {
+                                            const firstCard = s.topicCards?.[0];
+                                            if (firstCard) {
+                                                navigate(
+                                                    toLessonView({
+                                                        childId,
+                                                        lessonId: firstCard.firstVideoId || '',
+                                                        subjectId: s.subjectId,
+                                                        topic: firstCard.title,
+                                                        url: firstCard.url,
+                                                    })
                                                 );
-                                            })
-                                        ) : (
-                                            <div style={{ textAlign: "center", padding: "20px", color: DS.inkSoft }}>
-                                                No subjects scheduled for {child.name}
-                                            </div>
-                                        )}
-                                    </div>
+                                            }
+                                        }}
+                                        onCardClick={(card) => {
+                                            const clickedCard = s.topicCards?.find((tc: any) => tc.title === card.focus);
+                                            if (clickedCard) {
+                                                navigate(
+                                                    toLessonView({
+                                                        childId,
+                                                        lessonId: clickedCard.firstVideoId || '',
+                                                        subjectId: s.subjectId,
+                                                        topic: clickedCard.title,
+                                                        url: clickedCard.url,
+                                                    })
+                                                );
+                                            }
+                                        }}
+                                    />
                                 </div>
                             );
-                        })}
-                    </div>
+                        });
+                    })()}
                 </div>
-            )}
+            </main>
+
+            {/* Add pulse animation */}
+            <style>{`
+                @keyframes pulse-ring {
+                    0%, 100% { box-shadow: 0 0 0 0 ${themeColor}66; }
+                    50% { box-shadow: 0 0 0 6px ${themeColor}00; }
+                }
+            `}</style>
         </div>
     );
 };

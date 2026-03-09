@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daddy Dashboard – Sophia</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FDF8F2;
+    --surface: #FFFFFF;
+    --ink: #1A1028;
+    --ink-muted: #7B6F8A;
+    --ink-faint: #C4BAD0;
+    --accent: #7C3FE4;
+    --accent-soft: #F0E8FF;
+    --green: #22C17A;
+    --green-soft: #E4F9EF;
+    --amber: #F5A623;
+    --amber-soft: #FFF4E0;
+    --border: rgba(26,16,40,0.1);
+    --shadow: 0 2px 12px rgba(26,16,40,0.08);
+    --shadow-lg: 0 8px 32px rgba(26,16,40,0.12);
+    --radius: 18px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(124,63,228,0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Floating blobs */
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(80px);
+    opacity: 0.12;
+  }
+  .blob-1 { width: 400px; height: 400px; background: var(--accent); top: -10%; right: -5%; }
+  .blob-2 { width: 300px; height: 300px; background: var(--green); bottom: -5%; left: -5%; }
+
+  /* ─── NAV ─── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(253,248,242,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1.5px solid var(--border);
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nav-logo {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 12px rgba(124,63,228,0.35);
+  }
+
+  .nav-title {
+    font-family: 'Baloo 2', cursive;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .streak-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--amber-soft);
+    border: 1.5px solid rgba(245,166,35,0.3);
+    border-radius: 100px;
+    padding: 5px 14px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #B8740A;
+  }
+
+  /* ─── MAIN ─── */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 28px 32px 48px;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    gap: 24px;
+  }
+
+  .hero-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .avatar {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, var(--accent) 0%, #B07CF8 100%);
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    box-shadow: 0 8px 24px rgba(124,63,228,0.3);
+    flex-shrink: 0;
+  }
+
+  .hero-text h1 {
+    font-family: 'Baloo 2', cursive;
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .hero-text h1 span { color: var(--accent); }
+
+  .hero-text p {
+    color: var(--ink-muted);
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    min-width: 90px;
+  }
+
+  .stat-card .stat-icon { font-size: 20px; margin-bottom: 4px; }
+  .stat-card .stat-value {
+    font-family: 'Baloo 2', cursive;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-card .stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* ─── SECTION HEADER ─── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .section-label {
+    font-family: 'Baloo 2', cursive;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--accent);
+    border-radius: 8px;
+    padding: 3px 14px;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1.5px;
+    background: var(--border);
+    border-radius: 100px;
+  }
+
+  /* ─── TODAY'S PLAN ─── */
+  .plan-track {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    padding-top: 4px;
+    margin-bottom: 36px;
+    scrollbar-width: none;
+  }
+  .plan-track::-webkit-scrollbar { display: none; }
+
+  .plan-card {
+    flex-shrink: 0;
+    width: 160px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    padding: 18px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .plan-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+
+  .plan-card.done {
+    background: var(--green-soft);
+    border-color: rgba(34,193,122,0.4);
+  }
+  .plan-card.active {
+    background: var(--accent-soft);
+    border-color: rgba(124,63,228,0.5);
+    box-shadow: 0 0 0 3px rgba(124,63,228,0.12), var(--shadow-lg);
+  }
+  .plan-card.break {
+    background: var(--amber-soft);
+    border-color: rgba(245,166,35,0.4);
+    cursor: default;
+  }
+  .plan-card.upcoming {
+    opacity: 0.6;
+  }
+
+  .plan-card .plan-icon { font-size: 28px; margin-bottom: 8px; }
+  .plan-card .plan-name {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .plan-card .plan-topics {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 100px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .status-pill.done { background: var(--green); color: #fff; }
+  .status-pill.active { background: var(--accent); color: #fff; animation: pulse-ring 2s infinite; }
+  .status-pill.break { background: var(--amber); color: #fff; }
+  .status-pill.upcoming { background: var(--ink-faint); color: #fff; }
+
+  @keyframes pulse-ring {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(124,63,228,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(124,63,228,0); }
+  }
+
+  /* ─── COLOR SYSTEM PER SUBJECT ─── */
+  .c-english   { --c: #E84848; --cs: rgba(232,72,72,0.12); --cl: #fff0f0; }
+  .c-maths     { --c: #F5A623; --cs: rgba(245,166,35,0.12); --cl: #fffbf0; }
+  .c-science   { --c: #00A8DD; --cs: rgba(0,168,221,0.12); --cl: #f0faff; }
+  .c-history   { --c: #C2680A; --cs: rgba(194,104,10,0.12); --cl: #fff8f0; }
+  .c-geography { --c: #2ECC71; --cs: rgba(46,204,113,0.12); --cl: #f0fff8; }
+  .c-dt        { --c: #1A9BB5; --cs: rgba(26,155,181,0.12); --cl: #f0fafd; }
+  .c-art       { --c: #9B4FD4; --cs: rgba(155,79,212,0.12); --cl: #faf0ff; }
+  .c-music     { --c: #8855EE; --cs: rgba(136,85,238,0.12); --cl: #f5f0ff; }
+  .c-pe        { --c: #44AA22; --cs: rgba(68,170,34,0.12); --cl: #f0fff0; }
+  .c-computing { --c: #3355DD; --cs: rgba(51,85,221,0.12); --cl: #f0f3ff; }
+  .c-french    { --c: #FF8822; --cs: rgba(255,136,34,0.12); --cl: #fff5f0; }
+  .c-spanish   { --c: #FF7711; --cs: rgba(255,119,17,0.12); --cl: #fff4ee; }
+  .c-german    { --c: #CC5500; --cs: rgba(204,85,0,0.12); --cl: #fff2ee; }
+
+  /* ─── SUBJECTS GRID ─── */
+  .subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 28px 20px;
+    padding-bottom: 20px;
+  }
+
+  @media (max-width: 1100px) { .subjects-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 860px)  { .subjects-grid { grid-template-columns: repeat(3, 1fr); } }
+
+  /* ─── CARD STACK WRAPPER ─── */
+  .card-stack {
+    position: relative;
+    padding-top: 14px;
+    padding-bottom: 6px;
+    cursor: pointer;
+  }
+
+  /* Ghost cards behind the deck */
+  .card-stack::before,
+  .card-stack::after {
+    content: '';
+    position: absolute;
+    left: 6px; right: 6px; top: 8px;
+    height: calc(100% - 8px);
+    border-radius: 16px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    transition: transform 0.45s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: var(--shadow);
+  }
+  .card-stack::before {
+    z-index: 1;
+    background: color-mix(in srgb, var(--c) 8%, white);
+    top: 4px; left: 5px; right: 5px;
+  }
+  .card-stack::after {
+    z-index: 0;
+    background: color-mix(in srgb, var(--c) 15%, white);
+    top: 0; left: 4px; right: 4px;
+  }
+
+  /* Fan ghost cards on hover (only when NOT flipped) */
+  .card-stack:not(.flipped):hover::before {
+    transform: translateY(-8px) rotate(-4deg);
+  }
+  .card-stack:not(.flipped):hover::after {
+    transform: translateY(-14px) rotate(-8deg);
+  }
+  /* Tuck ghost cards away when flipped */
+  .card-stack.flipped::before,
+  .card-stack.flipped::after {
+    transform: translateY(4px) scale(0.96);
+    opacity: 0.5;
+  }
+
+  /* ─── FLIP CONTAINER ─── */
+  .flip-container {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    /* height set by JS to match front face */
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+  }
+
+  .card-stack.flipped .flip-container {
+    transform: rotateY(180deg);
+  }
+
+  /* ─── CARD FACES ─── */
+  .card-face {
+    border-radius: 16px;
+    border: 1.5px solid color-mix(in srgb, var(--c) 30%, transparent);
+    box-shadow: 0 4px 20px rgba(26,16,40,0.1);
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+  }
+
+  /* FRONT face */
+  .card-front {
+    position: relative;
+  }
+
+  /* BACK face — rotated 180deg, positioned absolutely so both faces occupy same space */
+  .card-back {
+    position: absolute;
+    inset: 0;
+    transform: rotateY(180deg);
+    height: 100%;
+  }
+
+  /* ─── FRONT: kawaii art card ─── */
+  .card-art-area {
+    position: relative;
+    background: linear-gradient(160deg, color-mix(in srgb, var(--c) 18%, white) 0%, color-mix(in srgb, var(--c) 6%, white) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 16px 14px;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 160px;
+  }
+
+  /* Decorative dots pattern */
+  .card-art-area::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--c) 20%, transparent) 1.5px, transparent 1.5px);
+    background-size: 16px 16px;
+    opacity: 0.4;
+  }
+
+  /* Kawaii placeholder illustration */
+  .kawaii-placeholder {
+    position: relative;
+    z-index: 1;
+    font-size: 64px;
+    line-height: 1;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.12));
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    user-select: none;
+  }
+  .card-stack:not(.flipped):hover .kawaii-placeholder {
+    transform: scale(1.08) translateY(-3px);
+  }
+
+  /* Shimmer badge on art */
+  .art-sparkles {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 16px;
+    opacity: 0.7;
+    animation: sparkle 2.4s ease-in-out infinite;
+  }
+  @keyframes sparkle {
+    0%,100% { transform: scale(1) rotate(0deg); opacity: 0.7; }
+    50% { transform: scale(1.3) rotate(15deg); opacity: 1; }
+  }
+
+  /* Front bottom strip */
+  .card-front-footer {
+    background: linear-gradient(135deg, var(--c) 0%, color-mix(in srgb, var(--c) 70%, black) 100%);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .front-subject-name {
+    font-family: 'Baloo 2', cursive;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .front-tap-hint {
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.65);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .front-badge {
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    padding: 3px 7px;
+    border-radius: 5px;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.3);
+    flex-shrink: 0;
+  }
+
+  /* Progress strip on front */
+  .front-progress {
+    padding: 8px 14px 10px;
+    background: var(--surface);
+  }
+  .front-prog-bar {
+    height: 5px;
+    background: var(--cs);
+    border-radius: 100px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .front-prog-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: var(--c);
+  }
+  .front-prog-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--ink-faint);
+  }
+  .front-prog-label span:last-child { color: var(--c); font-weight: 800; }
+
+  /* ─── BACK: topics/playlists ─── */
+  .card-banner {
+    background: linear-gradient(135deg, var(--c) 0%, color-mix(in srgb, var(--c) 70%, black) 100%);
+    padding: 10px 12px 8px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .card-banner::after {
+    content: '';
+    position: absolute;
+    right: -18px; top: -18px;
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+  }
+
+  .subject-icon-wrap {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+
+  .subject-title-group { flex: 1; min-width: 0; }
+  .subject-name {
+    font-size: 12px; font-weight: 800; color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
+  }
+  .subject-topics {
+    font-size: 9px; font-weight: 600;
+    color: rgba(255,255,255,0.72);
+    margin-top: 1px; line-height: 1.3;
+  }
+
+  .subject-badge {
+    font-size: 8px; font-weight: 800; letter-spacing: 0.06em;
+    padding: 2px 6px; border-radius: 5px; text-transform: uppercase;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.25); color: #fff;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .subject-badge.opt { background: rgba(0,0,0,0.15); border-color: rgba(255,255,255,0.15); }
+
+  /* Back close hint */
+  .back-close-hint {
+    text-align: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--ink-faint);
+    padding: 4px 0 2px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Card body */
+  .card-body {
+    padding: 8px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--surface);
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Topic cards list */
+  .topic-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* Each topic = a mini card */
+  .topic-card {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--cl);
+    border: 1px solid color-mix(in srgb, var(--c) 18%, transparent);
+    border-radius: 8px;
+    padding: 5px 8px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  .topic-card:hover {
+    background: var(--cs);
+    transform: translateX(3px);
+    box-shadow: -3px 0 0 var(--c);
+  }
+
+  .topic-num {
+    font-size: 8px; font-weight: 900; color: var(--c);
+    opacity: 0.5; min-width: 12px;
+  }
+  .topic-play {
+    width: 15px; height: 15px; border-radius: 4px;
+    background: var(--c); display: flex;
+    align-items: center; justify-content: center;
+    font-size: 6px; color: #fff; flex-shrink: 0;
+  }
+  .topic-name {
+    font-size: 10.5px; font-weight: 700; color: var(--ink);
+    flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .topic-count {
+    font-size: 9px; font-weight: 700; color: var(--c); opacity: 0.75; flex-shrink: 0;
+  }
+
+  /* More topics pill */
+  .more-topics {
+    display: flex; align-items: center; justify-content: center;
+    gap: 4px; padding: 4px;
+    border-radius: 8px;
+    border: 1.5px dashed color-mix(in srgb, var(--c) 30%, transparent);
+    font-size: 9.5px; font-weight: 800; color: var(--c); opacity: 0.75;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .more-topics:hover { opacity: 1; }
+
+  /* Stack count badge */
+  .stack-count {
+    position: absolute;
+    top: -8px; right: 10px;
+    z-index: 10;
+    background: var(--c); color: #fff;
+    font-size: 9px; font-weight: 900;
+    padding: 2px 8px; border-radius: 100px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    letter-spacing: 0.04em;
+    transition: opacity 0.3s;
+  }
+
+  /* Progress bar (back face) */
+  .card-progress { display: flex; flex-direction: column; gap: 3px; }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; }
+  .progress-label { font-size: 9px; font-weight: 700; color: var(--ink-faint); letter-spacing: 0.05em; text-transform: uppercase; }
+  .progress-count { font-size: 10px; font-weight: 800; color: var(--c); }
+  .progress-bar { height: 5px; background: var(--cs); border-radius: 100px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 100px; background: var(--c); transition: width 0.6s ease; }
+
+  /* Stars row */
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .stars { display: flex; gap: 2px; }
+  .star { font-size: 11px; color: var(--c); }
+  .star.dim { opacity: 0.18; }
+
+  /* Floating emojis */
+  .float-emoji {
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+    font-size: 20px;
+    opacity: 0.12;
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<!-- Floating emojis -->
+<div class="float-emoji" style="left:3%;top:15%;animation-delay:0s">⭐</div>
+<div class="float-emoji" style="left:91%;top:20%;animation-delay:0.4s">✨</div>
+<div class="float-emoji" style="left:1%;top:55%;animation-delay:0.8s">🚀</div>
+<div class="float-emoji" style="left:95%;top:65%;animation-delay:1.2s">💫</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">🎓</div>
+    <span class="nav-title">DADDY DASHBOARD</span>
+  </div>
+  <div class="nav-right">
+    <div class="streak-pill">🔥 5 day streak!</div>
+    <div style="width:36px;height:36px;background:#fff;border:1.5px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;box-shadow:var(--shadow)">🎨</div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <div class="avatar">🎨</div>
+      <div class="hero-text">
+        <h1>Hey <span>Sophia</span>! 👋</h1>
+        <p>Ready for today's adventure? Let's go! 🚀</p>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value">851</div>
+        <div class="stat-label">Today's XP</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-value">5 days</div>
+        <div class="stat-label">Streak</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-value">+120</div>
+        <div class="stat-label">XP Earned</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TODAY'S PLAN -->
+  <div class="section-header">
+    <span class="section-label">Today's Plan</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="plan-track">
+    <!-- Done -->
+    <div class="plan-card done">
+      <div class="plan-icon">📖</div>
+      <div class="plan-name">English</div>
+      <div class="plan-topics">Comprehension, Composition, SPaG</div>
+      <span class="status-pill done">✓ Done</span>
+    </div>
+    <!-- Done -->
+    <div class="plan-card done">
+      <div class="plan-icon">📐</div>
+      <div class="plan-name">Maths</div>
+      <div class="plan-topics">Fractions, Decimals, Geometry</div>
+      <span class="status-pill done">✓ Done</span>
+    </div>
+    <!-- Break -->
+    <div class="plan-card break">
+      <div class="plan-icon">🍽️</div>
+      <div class="plan-name">LUNCH</div>
+      <div class="plan-topics" style="color:#B8740A">12 – 1 PM</div>
+      <span class="status-pill break">Break</span>
+    </div>
+    <!-- Active -->
+    <div class="plan-card active">
+      <div class="plan-icon">🔬</div>
+      <div class="plan-name">Science</div>
+      <div class="plan-topics">Earth/space, Forces, Living things</div>
+      <span class="status-pill active">● Now</span>
+    </div>
+    <!-- Upcoming -->
+    <div class="plan-card upcoming">
+      <div class="plan-icon">⚙️</div>
+      <div class="plan-name">Design & Tech</div>
+      <div class="plan-topics">Technical knowledge</div>
+      <span class="status-pill upcoming">Up next</span>
+    </div>
+  </div>
+
+  <!-- SUBJECTS -->
+  <div class="section-header">
+    <span class="section-label">My Subjects</span>
+    <div class="section-line"></div>
+  </div>
+
+
+  <div class="subjects-grid">
+
+    <!-- ── ENGLISH ── -->
+    <div class="card-stack c-english" onclick="toggleFlip(this)">
+      <div class="stack-count">5 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">✨</span>
+            <div class="kawaii-placeholder">📖</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">English</span>
+            <span class="front-badge">Core</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>35 / 282</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:12.4%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">📖</div>
+            <div class="subject-title-group"><div class="subject-name">English</div><div class="subject-topics">Comprehension · Composition · SPaG</div></div>
+            <span class="subject-badge core">Core</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Comprehension</span><span class="topic-count">64 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">Writing: KS2</span><span class="topic-count">88 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">03</span><div class="topic-play">▶</div><span class="topic-name">Grammar 🎥</span><span class="topic-count">72 vids</span></div>
+            </div>
+            <div class="more-topics" onclick="event.stopPropagation()">＋ 2 more playlists</div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">35 / 282</span></div><div class="progress-bar"><div class="progress-fill" style="width:12.4%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MATHS ── -->
+    <div class="card-stack c-maths" onclick="toggleFlip(this)">
+      <div class="stack-count">3 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">⭐</span>
+            <div class="kawaii-placeholder">📐</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">Maths</span>
+            <span class="front-badge">Core</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>54 / 108</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:50%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">📐</div>
+            <div class="subject-title-group"><div class="subject-name">Maths</div><div class="subject-topics">Fractions · Decimals · Geometry</div></div>
+            <span class="subject-badge core">Core</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Decimals</span><span class="topic-count">36 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">Percentages</span><span class="topic-count">40 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">03</span><div class="topic-play">▶</div><span class="topic-name">Geometry: SA</span><span class="topic-count">32 vids</span></div>
+            </div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">54 / 108</span></div><div class="progress-bar"><div class="progress-fill" style="width:50%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SCIENCE ── -->
+    <div class="card-stack c-science" onclick="toggleFlip(this)">
+      <div class="stack-count">5 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">💫</span>
+            <div class="kawaii-placeholder">🔬</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">Science</span>
+            <span class="front-badge">Core</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>15 / 51</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:29.4%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">🔬</div>
+            <div class="subject-title-group"><div class="subject-name">Science</div><div class="subject-topics">Earth/Space · Forces · Living Things</div></div>
+            <span class="subject-badge core">Core</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Earth / Space</span><span class="topic-count">12 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">Forces</span><span class="topic-count">18 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">03</span><div class="topic-play">▶</div><span class="topic-name">Living Things</span><span class="topic-count">21 vids</span></div>
+            </div>
+            <div class="more-topics" onclick="event.stopPropagation()">＋ 2 more playlists</div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">15 / 51</span></div><div class="progress-bar"><div class="progress-fill" style="width:29.4%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HISTORY ── -->
+    <div class="card-stack c-history" onclick="toggleFlip(this)">
+      <div class="stack-count">4 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">🌟</span>
+            <div class="kawaii-placeholder">📜</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">History</span>
+            <span class="front-badge">Core</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>149 / 443</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:33.6%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">📜</div>
+            <div class="subject-title-group"><div class="subject-name">History</div><div class="subject-topics">Ancient Greece · British History</div></div>
+            <span class="subject-badge core">Core</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Ancient Greece</span><span class="topic-count">98 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">WW2: BBC Bitesize</span><span class="topic-count">155 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">03</span><div class="topic-play">▶</div><span class="topic-name">Victorians</span><span class="topic-count">110 vids</span></div>
+            </div>
+            <div class="more-topics" onclick="event.stopPropagation()">＋ 1 more playlist</div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">149 / 443</span></div><div class="progress-bar"><div class="progress-fill" style="width:33.6%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GEOGRAPHY ── -->
+    <div class="card-stack c-geography" onclick="toggleFlip(this)">
+      <div class="stack-count">5 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">✨</span>
+            <div class="kawaii-placeholder">🌍</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">Geography</span>
+            <span class="front-badge">Core</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>55 / 167</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:32.9%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">🌍</div>
+            <div class="subject-title-group"><div class="subject-name">Geography</div><div class="subject-topics">Biomes · Climate · Trade</div></div>
+            <span class="subject-badge core">Core</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Biomes</span><span class="topic-count">42 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">Climate</span><span class="topic-count">58 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">03</span><div class="topic-play">▶</div><span class="topic-name">Trade</span><span class="topic-count">38 vids</span></div>
+            </div>
+            <div class="more-topics" onclick="event.stopPropagation()">＋ 2 more playlists</div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">55 / 167</span></div><div class="progress-bar"><div class="progress-fill" style="width:32.9%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DESIGN & TECH ── -->
+    <div class="card-stack c-dt" onclick="toggleFlip(this)">
+      <div class="stack-count">2 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">⚡</span>
+            <div class="kawaii-placeholder">⚙️</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">Design &amp; Tech</span>
+            <span class="front-badge opt">Opt</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>246 / 255</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:96.5%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">⚙️</div>
+            <div class="subject-title-group"><div class="subject-name">Design &amp; Tech</div><div class="subject-topics">Technical Knowledge</div></div>
+            <span class="subject-badge opt">Opt</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Technical Design</span><span class="topic-count">128 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">Food Technology</span><span class="topic-count">127 vids</span></div>
+            </div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">246 / 255</span></div><div class="progress-bar"><div class="progress-fill" style="width:96.5%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ART & DESIGN ── -->
+    <div class="card-stack c-art" onclick="toggleFlip(this)">
+      <div class="stack-count">3 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">🌸</span>
+            <div class="kawaii-placeholder">🎨</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">Art &amp; Design</span>
+            <span class="front-badge opt">Opt</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>12 / 59</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:20.3%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">🎨</div>
+            <div class="subject-title-group"><div class="subject-name">Art &amp; Design</div><div class="subject-topics">Drawing · Painting · Printmaking</div></div>
+            <span class="subject-badge opt">Opt</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Drawing: KS2</span><span class="topic-count">22 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">Painting</span><span class="topic-count">20 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">03</span><div class="topic-play">▶</div><span class="topic-name">Printmaking</span><span class="topic-count">17 vids</span></div>
+            </div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">12 / 59</span></div><div class="progress-bar"><div class="progress-fill" style="width:20.3%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MUSIC ── -->
+    <div class="card-stack c-music" onclick="toggleFlip(this)">
+      <div class="stack-count">3 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">🎶</span>
+            <div class="kawaii-placeholder">🎵</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">Music</span>
+            <span class="front-badge opt">Opt</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>110 / 172</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:64%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">🎵</div>
+            <div class="subject-title-group"><div class="subject-name">Music</div><div class="subject-topics">Composition · Appraisal</div></div>
+            <span class="subject-badge opt">Opt</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Composition</span><span class="topic-count">58 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">Performance</span><span class="topic-count">62 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">03</span><div class="topic-play">▶</div><span class="topic-name">Appraising</span><span class="topic-count">52 vids</span></div>
+            </div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">110 / 172</span></div><div class="progress-bar"><div class="progress-fill" style="width:64%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PE ── -->
+    <div class="card-stack c-pe" onclick="toggleFlip(this)">
+      <div class="stack-count">2 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">🏅</span>
+            <div class="kawaii-placeholder">⚽</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">PE</span>
+            <span class="front-badge opt">Opt</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>54 / 62</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:87.1%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">⚽</div>
+            <div class="subject-title-group"><div class="subject-name">PE</div><div class="subject-topics">Athletics · Swimming · Dance</div></div>
+            <span class="subject-badge opt">Opt</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Swimming</span><span class="topic-count">34 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">Dance</span><span class="topic-count">28 vids</span></div>
+            </div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">54 / 62</span></div><div class="progress-bar"><div class="progress-fill" style="width:87.1%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── COMPUTING ── -->
+    <div class="card-stack c-computing" onclick="toggleFlip(this)">
+      <div class="stack-count">3 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">💡</span>
+            <div class="kawaii-placeholder">💻</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">Computing</span>
+            <span class="front-badge opt">Opt</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>20 / 50</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:40%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">💻</div>
+            <div class="subject-title-group"><div class="subject-name">Computing</div><div class="subject-topics">Algorithms · Coding · E-Safety</div></div>
+            <span class="subject-badge opt">Opt</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Algorithms</span><span class="topic-count">18 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">Coding</span><span class="topic-count">22 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">03</span><div class="topic-play">▶</div><span class="topic-name">E-Safety</span><span class="topic-count">10 vids</span></div>
+            </div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">20 / 50</span></div><div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FRENCH ── -->
+    <div class="card-stack c-french" onclick="toggleFlip(this)">
+      <div class="stack-count">6 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">🌺</span>
+            <div class="kawaii-placeholder">🗣️</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">French</span>
+            <span class="front-badge opt">Opt</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>17 / 138</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:12.3%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">🗣️</div>
+            <div class="subject-title-group"><div class="subject-name">French</div><div class="subject-topics">Vocabulary · Grammar · Speaking</div></div>
+            <span class="subject-badge opt">Opt</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Vocabulary</span><span class="topic-count">44 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">Grammar</span><span class="topic-count">48 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">03</span><div class="topic-play">▶</div><span class="topic-name">Conversation</span><span class="topic-count">46 vids</span></div>
+            </div>
+            <div class="more-topics" onclick="event.stopPropagation()">＋ 3 more playlists</div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">17 / 138</span></div><div class="progress-bar"><div class="progress-fill" style="width:12.3%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SPANISH ── -->
+    <div class="card-stack c-spanish" onclick="toggleFlip(this)">
+      <div class="stack-count">6 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">🌻</span>
+            <div class="kawaii-placeholder">🇪🇸</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">Spanish</span>
+            <span class="front-badge opt">Opt</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>25 / 246</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:10.2%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">🇪🇸</div>
+            <div class="subject-title-group"><div class="subject-name">Spanish</div><div class="subject-topics">Vocabulary · Grammar · Stories</div></div>
+            <span class="subject-badge opt">Opt</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Stories in Spanish</span><span class="topic-count">82 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">Vocabulary</span><span class="topic-count">76 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">03</span><div class="topic-play">▶</div><span class="topic-name">Conversation</span><span class="topic-count">88 vids</span></div>
+            </div>
+            <div class="more-topics" onclick="event.stopPropagation()">＋ 3 more playlists</div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">25 / 246</span></div><div class="progress-bar"><div class="progress-fill" style="width:10.2%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GERMAN ── -->
+    <div class="card-stack c-german" onclick="toggleFlip(this)">
+      <div class="stack-count">2 cards</div>
+      <div class="flip-container">
+        <div class="card-face card-front">
+          <div class="card-art-area">
+            <span class="art-sparkles">⭐</span>
+            <div class="kawaii-placeholder">🇩🇪</div>
+          </div>
+          <div class="card-front-footer">
+            <span class="front-subject-name">German</span>
+            <span class="front-badge opt">Opt</span>
+          </div>
+          <div class="front-progress">
+            <div class="front-prog-label"><span>Progress</span><span>59 / 95</span></div>
+            <div class="front-prog-bar"><div class="front-prog-fill" style="width:62.1%"></div></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-banner">
+            <div class="subject-icon-wrap">🇩🇪</div>
+            <div class="subject-title-group"><div class="subject-name">German</div><div class="subject-topics">Vocabulary · Grammar</div></div>
+            <span class="subject-badge opt">Opt</span>
+          </div>
+          <div class="back-close-hint">tap to flip back ↩</div>
+          <div class="card-body">
+            <div class="topic-cards-list">
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">01</span><div class="topic-play">▶</div><span class="topic-name">Vocabulary</span><span class="topic-count">52 vids</span></div>
+              <div class="topic-card" onclick="event.stopPropagation()"><span class="topic-num">02</span><div class="topic-play">▶</div><span class="topic-name">Grammar</span><span class="topic-count">43 vids</span></div>
+            </div>
+            <div class="card-footer"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star dim">★</span></div></div>
+            <div class="card-progress"><div class="progress-header"><span class="progress-label">Progress</span><span class="progress-count">59 / 95</span></div><div class="progress-bar"><div class="progress-fill" style="width:62.1%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /subjects-grid -->
+
+</main>
+
+<script>
+  function syncCardHeights() {
+    document.querySelectorAll('.flip-container').forEach(fc => {
+      const front = fc.querySelector('.card-front');
+      const back  = fc.querySelector('.card-back');
+      if (!front || !back) return;
+      // Temporarily un-fix height so front can measure naturally
+      fc.style.height = 'auto';
+      back.style.height = 'auto';
+      const h = front.offsetHeight;
+      fc.style.height = h + 'px';
+      back.style.height = h + 'px';
+    });
+  }
+
+  function toggleFlip(stack) {
+    stack.classList.toggle('flipped');
+  }
+
+  window.addEventListener('load', syncCardHeights);
+  window.addEventListener('resize', syncCardHeights);
+</script>
+</body>
+</html>
