@@ -4,7 +4,6 @@ import { getSubjectHexColor, getSubjectIcon } from '../utils/subjects';
 import { toLessonView } from '../lib/routes';
 import { useAppContext } from '../context/AppContext';
 import { getSubjectCardsForYear, loadSubjectCardsForYear } from '../lib/subjectCards';
-import { KawaiiSubjectCard } from '../components/KawaiiSubjectCard';
 import { DEMO_PROFILES } from '../data/demoProfiles';
 import { countCompletedToday } from '../utils/dashboardStats';
 
@@ -78,6 +77,7 @@ const KidDash: React.FC = () => {
     const { children, loading } = useAppContext();
     const childId = searchParams.get('child');
     const [subjectCards, setSubjectCards] = useState<any[]>([]);
+    const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
 
     const selectedChild = useMemo(() => {
         if (childId) {
@@ -125,7 +125,11 @@ const KidDash: React.FC = () => {
                 isStack: true,
                 topics: [],
                 subjectId: subject.name,
-                topicCards: [],
+                topicCards: [
+                    { title: 'Topic 1', videoCount: Math.floor(Math.random() * 50) + 10, url: '', firstVideoId: '' },
+                    { title: 'Topic 2', videoCount: Math.floor(Math.random() * 50) + 10, url: '', firstVideoId: '' },
+                    { title: 'Topic 3', videoCount: Math.floor(Math.random() * 50) + 10, url: '', firstVideoId: '' }
+                ],
                 stackCount: Math.floor(Math.random() * 8) + 3
             }));
         }
@@ -190,7 +194,10 @@ const KidDash: React.FC = () => {
                         isStack: true,
                         topics: item.topics,
                         subjectId: item.subjectId,
-                        topicCards: [],
+                        topicCards: [
+                            { title: 'Topic 1', videoCount: Math.floor(Math.random() * 50) + 10, url: '', firstVideoId: '' },
+                            { title: 'Topic 2', videoCount: Math.floor(Math.random() * 50) + 10, url: '', firstVideoId: '' }
+                        ],
                         stackCount: Math.floor(Math.random() * 8) + 3
                     };
                 } else {
@@ -278,6 +285,28 @@ const KidDash: React.FC = () => {
             'Computing': 'c-computing'
         };
         return nameMap[subjectName] || 'c-english';
+    };
+
+    const toggleFlip = (subjectName: string) => {
+        setFlippedCards(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(subjectName)) {
+                newSet.delete(subjectName);
+            } else {
+                newSet.add(subjectName);
+            }
+            return newSet;
+        });
+    };
+
+    const handleTopicClick = (subject: any, topic: any) => {
+        navigate(toLessonView({
+            childId: selectedChild.id,
+            lessonId: topic.firstVideoId || '',
+            subjectId: subject.subjectId,
+            topic: topic.title,
+            url: topic.url,
+        }));
     };
 
     return (
@@ -613,6 +642,272 @@ const KidDash: React.FC = () => {
                 @media (max-width: 1100px) { .subjects-grid { grid-template-columns: repeat(4, 1fr); } }
                 @media (max-width: 860px)  { .subjects-grid { grid-template-columns: repeat(3, 1fr); } }
 
+                /* ─── CARD STACK WRAPPER ─── */
+                .card-stack {
+                    position: relative;
+                    padding-top: 14px;
+                    padding-bottom: 6px;
+                    cursor: pointer;
+                }
+
+                /* Ghost cards behind the deck */
+                .card-stack::before,
+                .card-stack::after {
+                    content: '';
+                    position: absolute;
+                    left: 6px; right: 6px; top: 8px;
+                    height: calc(100% - 8px);
+                    border-radius: 16px;
+                    border: 1.5px solid var(--border);
+                    background: var(--surface);
+                    transition: transform 0.45s cubic-bezier(0.34,1.56,0.64,1);
+                    box-shadow: var(--shadow);
+                }
+                .card-stack::before {
+                    z-index: 1;
+                    background: color-mix(in srgb, var(--c) 8%, white);
+                    top: 4px; left: 5px; right: 5px;
+                }
+                .card-stack::after {
+                    z-index: 0;
+                    background: color-mix(in srgb, var(--c) 15%, white);
+                    top: 0; left: 4px; right: 4px;
+                }
+
+                /* Fan ghost cards on hover (only when NOT flipped) */
+                .card-stack:not(.flipped):hover::before {
+                    transform: translateY(-8px) rotate(-4deg);
+                }
+                .card-stack:not(.flipped):hover::after {
+                    transform: translateY(-14px) rotate(-8deg);
+                }
+                /* Tuck ghost cards away when flipped */
+                .card-stack.flipped::before,
+                .card-stack.flipped::after {
+                    transform: translateY(4px) scale(0.96);
+                    opacity: 0.5;
+                }
+
+                /* ─── FLIP CONTAINER ─── */
+                .flip-container {
+                    position: relative;
+                    width: 100%;
+                    height: 220px;
+                    transform-style: preserve-3d;
+                    transition: transform 0.6s cubic-bezier(0.34,1.56,0.64,1);
+                }
+                .card-stack.flipped .flip-container {
+                    transform: rotateY(180deg);
+                }
+
+                /* ─── CARD FACES ─── */
+                .card-face {
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    backface-visibility: hidden;
+                    border-radius: 16px;
+                    background: var(--surface);
+                    border: 1.5px solid var(--border);
+                    box-shadow: var(--shadow);
+                    overflow: hidden;
+                }
+                .card-back {
+                    transform: rotateY(180deg);
+                }
+
+                /* ─── FRONT FACE ─── */
+                .card-art-area {
+                    position: relative;
+                    height: 140px;
+                    background: var(--cs);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    overflow: hidden;
+                }
+                .art-sparkles {
+                    position: absolute;
+                    font-size: 16px;
+                    opacity: 0.4;
+                    animation: sparkle 3s ease-in-out infinite;
+                }
+                .art-sparkles:nth-child(1) { top: 20%; left: 20%; animation-delay: 0s; }
+                .art-sparkles:nth-child(2) { top: 70%; left: 80%; animation-delay: 0.6s; }
+                .art-sparkles:nth-child(3) { top: 30%; left: 60%; animation-delay: 1.2s; }
+                .kawaii-placeholder {
+                    font-size: 48px;
+                    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+                }
+
+                .card-front-footer {
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    padding: 10px 14px;
+                    background: var(--surface);
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+                .front-subject-name {
+                    font-size: 13px;
+                    font-weight: 800;
+                    color: var(--ink);
+                }
+                .front-badge {
+                    font-size: 8px;
+                    font-weight: 800;
+                    letter-spacing: 0.06em;
+                    padding: 3px 7px;
+                    border-radius: 5px;
+                    text-transform: uppercase;
+                    background: rgba(255,255,255,0.25);
+                    color: #fff;
+                    border: 1px solid rgba(255,255,255,0.3);
+                    flex-shrink: 0;
+                }
+
+                .front-progress {
+                    padding: 8px 14px 10px;
+                    background: var(--surface);
+                }
+                .front-prog-bar {
+                    height: 5px;
+                    background: var(--cs);
+                    border-radius: 100px;
+                    overflow: hidden;
+                    margin-top: 4px;
+                }
+                .front-prog-fill {
+                    height: 100%;
+                    border-radius: 100px;
+                    background: var(--c);
+                }
+                .front-prog-label {
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: var(--ink-faint);
+                }
+                .front-prog-label span:last-child { color: var(--c); font-weight: 800; }
+
+                /* ─── BACK FACE ─── */
+                .card-banner {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px 16px;
+                    background: var(--c);
+                    color: #fff;
+                }
+                .subject-icon-wrap {
+                    width: 32px;
+                    height: 32px;
+                    background: rgba(255,255,255,0.25);
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 16px;
+                }
+                .subject-title-group {
+                    flex: 1;
+                }
+                .subject-name {
+                    font-size: 14px;
+                    font-weight: 800;
+                    line-height: 1;
+                }
+                .subject-topics {
+                    font-size: 10px;
+                    opacity: 0.9;
+                    margin-top: 2px;
+                }
+                .subject-badge {
+                    font-size: 8px;
+                    font-weight: 800;
+                    letter-spacing: 0.06em;
+                    padding: 3px 7px;
+                    border-radius: 5px;
+                    text-transform: uppercase;
+                    background: rgba(255,255,255,0.25);
+                    border: 1px solid rgba(255,255,255,0.3);
+                    flex-shrink: 0;
+                }
+
+                .back-close-hint {
+                    text-align: center;
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: rgba(255,255,255,0.65);
+                    white-space: nowrap;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 3px;
+                    padding: 8px 0;
+                }
+
+                .card-body {
+                    padding: 8px 14px 10px;
+                    background: var(--surface);
+                }
+                .topic-cards-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                }
+                .topic-card {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 6px 8px;
+                    background: var(--cl);
+                    border: 1px solid var(--c);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.15s;
+                }
+                .topic-card:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                }
+                .topic-num {
+                    width: 16px;
+                    height: 16px;
+                    background: var(--c); display: flex;
+                    align-items: center; justify-content: center;
+                    font-size: 6px; color: #fff; flex-shrink: 0;
+                }
+                .topic-play {
+                    width: 16px;
+                    height: 16px;
+                    background: var(--c); display: flex;
+                    align-items: center; justify-content: center;
+                    font-size: 6px; color: #fff; flex-shrink: 0;
+                }
+                .topic-name {
+                    font-size: 10.5px; font-weight: 700; color: var(--ink);
+                    flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                }
+                .topic-count {
+                    font-size: 9px; font-weight: 700; color: var(--c); opacity: 0.75; flex-shrink: 0;
+                }
+
+                /* More topics pill */
+                .more-topics {
+                    display: flex; align-items: center; justify-content: center;
+                    gap: 4px; padding: 4px;
+                    border-radius: 8px;
+                    border: 1.5px dashed color-mix(in srgb, var(--c) 30%, transparent);
+                    font-size: 9.5px; font-weight: 800; color: var(--c); opacity: 0.75;
+                    cursor: pointer; transition: opacity 0.15s;
+                }
+                .more-topics:hover { opacity: 1; }
+
                 /* Stack count badge */
                 .stack-count {
                     position: absolute;
@@ -639,7 +934,10 @@ const KidDash: React.FC = () => {
                     0%, 100% { transform: translateY(0); }
                     50% { transform: translateY(-10px); }
                 }
-
+                @keyframes sparkle {
+                    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.7; }
+                    50% { transform: scale(1.3) rotate(15deg); opacity: 1; }
+                }
                 @keyframes spin {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
@@ -736,36 +1034,57 @@ const KidDash: React.FC = () => {
 
                 <div className="subjects-grid">
                     {subjects.map((s, i) => (
-                        <div key={i} className={`card-stack ${getSubjectClass(s.name)}`} onClick={() => {
-                            const firstCard = s.topicCards?.[0];
-                            if (firstCard) {
-                                navigate(toLessonView({
-                                    childId: selectedChild.id, lessonId: firstCard.firstVideoId || '',
-                                    subjectId: s.subjectId, topic: firstCard.title, url: firstCard.url,
-                                }));
-                            }
-                        }}>
+                        <div key={i} className={`card-stack ${getSubjectClass(s.name)} ${flippedCards.has(s.name) ? 'flipped' : ''}`} onClick={() => toggleFlip(s.name)}>
                             <div className="stack-count">{s.stackCount} cards</div>
-                            <KawaiiSubjectCard
-                                subject={s.name} icon={s.icon} color={s.color}
-                                progress={s.progress} total={s.total} topicCards={s.topicCards || []}
-                                isCore={s.category === 'core'}
-                                onClick={() => {
-                                    const firstCard = s.topicCards?.[0];
-                                    if (firstCard) {
-                                        navigate(toLessonView({
-                                            childId: selectedChild.id, lessonId: firstCard.firstVideoId || '',
-                                            subjectId: s.subjectId, topic: firstCard.title, url: firstCard.url,
-                                        }));
-                                    }
-                                }}
-                                onCardClick={(card) => {
-                                    navigate(toLessonView({
-                                        childId: selectedChild.id, lessonId: card.firstVideoId || '',
-                                        subjectId: s.subjectId, topic: card.title, url: card.url,
-                                    }));
-                                }}
-                            />
+                            <div className="flip-container">
+                                {/* FRONT FACE */}
+                                <div className="card-face card-front">
+                                    <div className="card-art-area">
+                                        <span className="art-sparkles">✨</span>
+                                        <div className="kawaii-placeholder">{s.icon}</div>
+                                    </div>
+                                    <div className="card-front-footer">
+                                        <span className="front-subject-name">{s.name}</span>
+                                        <span className="front-badge">{s.category === 'core' ? 'Core' : 'Arts'}</span>
+                                    </div>
+                                    <div className="front-progress">
+                                        <div className="front-prog-label">
+                                            <span>Progress</span>
+                                            <span>{s.progress} / {s.total}</span>
+                                        </div>
+                                        <div className="front-prog-bar">
+                                            <div className="front-prog-fill" style={{width: `${(s.progress / s.total) * 100}%`}}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* BACK FACE */}
+                                <div className="card-face card-back">
+                                    <div className="card-banner">
+                                        <div className="subject-icon-wrap">{s.icon}</div>
+                                        <div className="subject-title-group">
+                                            <div className="subject-name">{s.name}</div>
+                                            <div className="subject-topics">{s.topics || 'Various topics'}</div>
+                                        </div>
+                                        <span className="subject-badge core">{s.category === 'core' ? 'Core' : 'Arts'}</span>
+                                    </div>
+                                    <div className="back-close-hint">tap to flip back ↩</div>
+                                    <div className="card-body">
+                                        <div className="topic-cards-list">
+                                            {s.topicCards.map((topic: any, idx: number) => (
+                                                <div key={idx} className="topic-card" onClick={(e) => { e.stopPropagation(); handleTopicClick(s, topic); }}>
+                                                    <span className="topic-num">{String(idx + 1).padStart(2, '0')}</span>
+                                                    <div className="topic-play">▶</div>
+                                                    <span className="topic-name">{topic.title}</span>
+                                                    <span className="topic-count">{topic.videoCount} vids</span>
+                                                </div>
+                                            ))}
+                                            <div className="more-topics">
+                                                +{Math.max(0, s.stackCount - s.topicCards.length)} more
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     ))}
                 </div>
