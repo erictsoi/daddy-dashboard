@@ -4,7 +4,7 @@ import { getSubjectHexColor, getSubjectIcon } from '../utils/subjects';
 import { toLessonView } from '../lib/routes';
 import { useAppContext } from '../context/AppContext';
 import { getSubjectCardsForYear, loadSubjectCardsForYear } from '../lib/subjectCards';
-import { SubjectCard } from '../components/SubjectCard';
+import { KawaiiSubjectCard } from '../components/KawaiiSubjectCard';
 import { DEMO_PROFILES } from '../data/demoProfiles';
 import { countCompletedToday } from '../utils/dashboardStats';
 
@@ -72,190 +72,149 @@ const generateAutoSchedule = (child: any, subjects: any[]) => {
   return scheduleItems;
 };
 
-export const KidDash: React.FC = () => {
+const KidDash: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const { children, loading } = useAppContext();
     const childId = searchParams.get('child');
-    const { children } = useAppContext();
-    
-    let selectedChild = children.find(c => c.id === childId);
-    if (!selectedChild && childId) {
-        const demoProfile = DEMO_PROFILES.find(p => p.id === childId);
-        if (demoProfile) {
-            const colorMap: Record<string, string> = {
-                '#9B6DD6': 'purple',
-                '#2B8ED4': 'blue',
-                '#4CAF8A': 'green',
-                '#F5A623': 'amber',
-                '#FF6B6B': 'rose'
-            };
-            const themeColorName = Object.entries(colorMap).find(([hex]) => hex === demoProfile.color)?.[1] || 'purple';
-            selectedChild = {
-                id: demoProfile.id,
-                name: demoProfile.name,
-                year: demoProfile.year,
-                age: demoProfile.age,
-                color: demoProfile.color,
-                themeColor: themeColorName,
-                emoji: demoProfile.emoji,
-                avatar: demoProfile.emoji,
-                image: demoProfile.image,
-                interests: demoProfile.interests,
-                yearGroups: [{
-                    id: 'demo-year',
-                    name: demoProfile.year,
-                    subjects: []
-                }]
-            };
+    const [subjectCards, setSubjectCards] = useState<any[]>([]);
+
+    const selectedChild = useMemo(() => {
+        if (childId) {
+            if (childId.startsWith('demo-')) {
+                const demoProfile = DEMO_PROFILES.find(p => p.id === childId);
+                if (demoProfile) {
+                    return {
+                        id: demoProfile.id,
+                        name: demoProfile.name,
+                        avatar: demoProfile.emoji,
+                        themeColor: demoProfile.color,
+                        yearGroups: [{ name: demoProfile.year }],
+                        profileData: {
+                            customName: demoProfile.name,
+                            template: demoProfile.year,
+                            stacks: []
+                        }
+                    };
+                }
+            }
+            return children.find(c => c.id === childId);
         }
-    }
+        return children[0];
+    }, [children, childId]);
 
-    if (!childId || !selectedChild) {
-        return <Navigate to="/" replace />;
-    }
+    const subjects = useMemo(() => {
+        let subjectsArray: any[] = [];
+        
+        if (selectedChild.id.startsWith('demo-')) {
+            const demoSubjects = [
+                { name: 'English', icon: '📖', color: '#E84848', progress: 35, total: 282, category: 'core', topics: 'Comprehension, Composition, SPaG' },
+                { name: 'Maths', icon: '📐', color: '#F5A623', progress: 42, total: 156, category: 'core', topics: 'Fractions, Decimals, Geometry' },
+                { name: 'Science', icon: '🔬', color: '#00A8DD', progress: 12, total: 89, category: 'core', topics: 'Earth/space, Forces, Living things' },
+                { name: 'Design & Tech', icon: '⚙️', color: '#1A9BB5', progress: 0, total: 45, category: 'core', topics: 'Technical knowledge' },
+                { name: 'History', icon: '📚', color: '#C2680A', progress: 8, total: 67, category: 'core', topics: 'Ancient civilizations, World wars' },
+                { name: 'Geography', icon: '🌍', color: '#2ECC71', progress: 15, total: 78, category: 'core', topics: 'Maps, Climate, Population' },
+                { name: 'Art', icon: '🎨', color: '#9B4FD4', progress: 28, total: 134, category: 'arts', topics: 'Drawing, Painting, Sculpture' },
+                { name: 'Music', icon: '🎵', color: '#8855EE', progress: 19, total: 92, category: 'arts', topics: 'Theory, Performance, Composition' },
+                { name: 'PE', icon: '⚽', color: '#44AA22', progress: 45, total: 180, category: 'arts', topics: 'Games, Fitness, Sports' },
+                { name: 'Computing', icon: '💻', color: '#3355DD', progress: 7, total: 56, category: 'core', topics: 'Programming, Digital literacy' }
+            ];
+            
+            return demoSubjects.map(subject => ({
+                ...subject,
+                isStack: true,
+                topics: [],
+                subjectId: subject.name,
+                topicCards: [],
+                stackCount: Math.floor(Math.random() * 8) + 3
+            }));
+        }
+        
+        if (selectedChild.profileData?.stacks?.length > 0) {
+            subjectsArray = selectedChild.profileData.stacks
+                .filter(stack => stack.cards.length > 0)
+                .map(stack => {
+                    const cardProgress = stack.cards.filter(c => c.approved).length;
+                    return {
+                        name: stack.subject,
+                        icon: stack.emoji || '📚',
+                        color: getSubjectHexColor(stack.subject),
+                        progress: cardProgress,
+                        total: stack.cards.length,
+                        category: 'core',
+                        isStack: true,
+                        topics: stack.cards.map(c => ({ name: c.focus, lessons: [] })),
+                        subjectId: stack.subject,
+                        topicCards: stack.cards.map((card: any) => ({
+                            title: card.focus,
+                            videoCount: card.videoCount || 0,
+                            url: card.url || '',
+                            firstVideoId: card.firstVideoId || ''
+                        })),
+                        stackCount: stack.cards.length
+                    };
+                });
+        } else if (selectedChild.yearGroups) {
+            const allSubjectTopics: any[] = [];
+            selectedChild.yearGroups.forEach((yg: any) => {
+                yg.subjects.forEach((s: any) => {
+                    s.topics.forEach((topic: any, topicIdx: number) => {
+                        const lessonCount = topic.lessons?.length || 0;
+                        const completedCount = topic.lessons?.filter((l: any) => l.completed).length || 0;
+                        allSubjectTopics.push({
+                            subject: s.name,
+                            topic: topic.name,
+                            icon: getSubjectIcon(s.name),
+                            color: getSubjectHexColor(s.name),
+                            progress: completedCount,
+                            total: lessonCount,
+                            category: s.category || 'core',
+                            isStack: true,
+                            topics: s.topics,
+                            currentTopicIndex: topicIdx,
+                            subjectId: s.subjectId || s.name
+                        });
+                    });
+                });
+            });
 
-    const [loading, setLoading] = useState(true);
+            const groupedSubjects = allSubjectTopics.reduce((acc, item) => {
+                if (!acc[item.subject]) {
+                    acc[item.subject] = {
+                        name: item.subject,
+                        icon: item.icon,
+                        color: item.color,
+                        progress: item.progress,
+                        total: item.total,
+                        category: item.category,
+                        isStack: true,
+                        topics: item.topics,
+                        subjectId: item.subjectId,
+                        topicCards: [],
+                        stackCount: Math.floor(Math.random() * 8) + 3
+                    };
+                } else {
+                    acc[item.subject].progress += item.progress;
+                    acc[item.subject].total += item.total;
+                }
+                return acc;
+            }, {} as Record<string, any>);
 
-    const yearKeyMap: Record<string, string> = {
-        'Y5-6': 'Y5-6',
-        'Y7-9': 'Y7-9',
-        'Y10-11': 'Y7-9',
-        'Y12-13': 'Y7-9'
-    };
-    const rawYear = selectedChild.yearGroups?.[0]?.name || 'Y5-6';
-    const yearMatch = rawYear.match(/Year\s*(\d+)/i);
-    let normalizedYear = 'Y5-6';
-    if (yearMatch) {
-        const yearNum = parseInt(yearMatch[1]);
-        if (yearNum <= 2) normalizedYear = 'Y1-2';
-        else if (yearNum <= 4) normalizedYear = 'Y3-4';
-        else if (yearNum <= 6) normalizedYear = 'Y5-6';
-        else if (yearNum <= 9) normalizedYear = 'Y7-9';
-        else if (yearNum <= 11) normalizedYear = 'Y10-11';
-        else normalizedYear = 'Y12-13';
-    }
-    const jsonYearKey = yearKeyMap[normalizedYear] || 'Y5-6';
+            subjectsArray = Object.values(groupedSubjects);
+        }
+
+        return subjectsArray;
+    }, [selectedChild]);
 
     useEffect(() => {
-        loadSubjectCardsForYear(jsonYearKey).then(() => {
-            setLoading(false);
-        });
-    }, [jsonYearKey]);
-
-    const themeColor = selectedChild.themeColor === 'purple' ? '#7C3FE4'
-        : selectedChild.themeColor === 'blue' ? '#2B8ED4'
-            : selectedChild.themeColor === 'green' ? '#22C17A'
-                : selectedChild.themeColor === 'amber' ? '#F5A623'
-                    : selectedChild.themeColor === 'rose' ? '#FF6B6B'
-                        : '#7C3FE4';
-    const tintColor = selectedChild.themeColor === 'purple' ? '#F0E8FF'
-        : selectedChild.themeColor === 'blue' ? '#EAF4FC'
-            : selectedChild.themeColor === 'green' ? '#E4F9EF'
-                : selectedChild.themeColor === 'amber' ? '#FFF4E0'
-                    : selectedChild.themeColor === 'rose' ? '#FFF0F0'
-                        : '#F0E8FF';
-
-    const profile = {
-        name: selectedChild.name,
-        year: selectedChild.yearGroups?.[0]?.name || "Student",
-        color: themeColor,
-        tint: tintColor,
-        emoji: selectedChild.avatar
-    };
-
-    const jsonSubjectCards = useMemo(() => getSubjectCardsForYear(jsonYearKey), [jsonYearKey, loading]);
-
-    const subjects: any[] = [];
-
-    if (jsonSubjectCards.length > 0) {
-        for (const card of jsonSubjectCards) {
-            const totalVideos = card.playlists.reduce((sum, p) => sum + p.videos.length, 0);
-            const firstPlaylist = card.playlists[0];
-            const completedCount = firstPlaylist ? firstPlaylist.videos.length : 0;
-
-            const allLessons = card.playlists.flatMap((p, pIdx) =>
-                p.videos.map(v => ({
-                    id: v.id,
-                    title: v.title,
-                    videoUrl: v.url,
-                    completed: pIdx === 0
-                }))
-            );
-
-            const firstTopicUrl = firstPlaylist?.url;
-
-            subjects.push({
-                name: card.subject,
-                icon: getSubjectIcon(card.subject),
-                progress: completedCount,
-                total: totalVideos || 1,
-                topic: card.focus,
-                color: getSubjectHexColor(card.subject),
-                subjectId: card.id,
-                topicId: firstTopicUrl || '',
-                lessons: allLessons,
-                topicCards: card.playlists.map(p => ({
-                    title: p.title,
-                    videoCount: p.videos.length,
-                    url: p.url,
-                    firstVideoId: p.videos[0]?.id
-                }))
-            });
-        }
-    } else if (selectedChild.yearGroups) {
-        for (const yg of selectedChild.yearGroups) {
-            for (const sub of yg.subjects || []) {
-                let lessonCount = 0;
-                let completedCount = 0;
-                let subjectId = sub.id;
-                let allLessons: any[] = [];
-                let firstTopicId = '';
-
-                for (const topic of sub.topics || []) {
-                    if (!firstTopicId) firstTopicId = topic.id;
-                    for (const lesson of topic.lessons || []) {
-                        lessonCount++;
-                        if (lesson.completed) completedCount++;
-                        allLessons.push({
-                            id: lesson.id,
-                            title: lesson.title,
-                            videoUrl: lesson.videoUrl,
-                            completed: lesson.completed
-                        });
-                    }
-                }
-
-                const subjectName = sub.category || sub.name;
-                subjects.push({
-                    name: sub.name,
-                    icon: getSubjectIcon(subjectName),
-                    progress: completedCount,
-                    total: lessonCount || 1,
-                    topic: sub.topics?.[0]?.name || sub.category || 'General',
-                    color: getSubjectHexColor(subjectName),
-                    subjectId,
-                    topicId: firstTopicId,
-                    lessons: allLessons,
-                    topicCards: []
-                });
+        if (selectedChild) {
+            const cards = getSubjectCardsForYear(selectedChild.yearGroups[0]?.name || 'Y3-4');
+            if (!cards || cards.length === 0) {
+                loadSubjectCardsForYear(selectedChild.yearGroups[0]?.name || 'Y3-4');
             }
+            setSubjectCards(cards || []);
         }
-    }
-
-    const autoSchedule = generateAutoSchedule(selectedChild, subjects);
-    const schedule = [
-        ...autoSchedule.map(item => ({
-            ...item,
-            subjectId: "",
-            topicId: ""
-        })),
-        { subject: "LUNCH", topic: "", icon: "🍽️", status: "lunch", subjectId: "", topicId: "" }
-    ];
-
-    const todayDone = subjects.reduce((sum, s) => sum + s.progress, 0);
-    const totalToday = subjects.reduce((sum, s) => sum + s.total, 0) || 1;
-    const streak = 5;
-    const xp = 120;
+    }, [selectedChild]);
 
     if (loading) {
         return (
@@ -267,480 +226,550 @@ export const KidDash: React.FC = () => {
                 justifyContent: "center",
                 fontFamily: "'Nunito', sans-serif"
             }}>
-                <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 24, marginBottom: 8 }}>Loading subjects...</div>
-                    <div style={{ color: "#7B6F8A" }}>Loading {jsonYearKey} curriculum</div>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                        width: '40px',
+                        height: '40px',
+                        border: '4px solid rgba(124,63,228,0.2)',
+                        borderTop: '4px solid #7C3FE4',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite',
+                        margin: '0 auto 16px'
+                    }} />
+                    <div style={{ color: '#1A1028', fontWeight: 600 }}>Loading...</div>
                 </div>
             </div>
         );
     }
 
-    return (
-        <div style={{
-            minHeight: "100vh",
-            background: "#FDF8F2",
-            color: "#1A1028",
-            fontFamily: "'Nunito', sans-serif",
-            overflowX: "hidden",
-            position: "relative"
-        }}>
-            {/* Background texture */}
-            <div style={{
-                position: 'fixed',
-                inset: 0,
-                backgroundImage: 'radial-gradient(circle, rgba(124,63,228,0.04) 1px, transparent 1px)',
-                backgroundSize: '24px 24px',
-                pointerEvents: 'none',
-                zIndex: 0
-            }} />
+    if (!selectedChild) {
+        return <Navigate to="/" replace />;
+    }
 
-            {/* Floating blobs */}
-            <div style={{
-                position: 'fixed',
-                borderRadius: '50%',
-                pointerEvents: 'none',
-                zIndex: 0,
-                filter: 'blur(80px)',
-                opacity: 0.12,
-                width: '400px',
-                height: '400px',
-                background: themeColor,
-                top: '-10%',
-                right: '-5%'
-            }} />
-            <div style={{
-                position: 'fixed',
-                borderRadius: '50%',
-                pointerEvents: 'none',
-                zIndex: 0,
-                filter: 'blur(80px)',
-                opacity: 0.12,
-                width: '300px',
-                height: '300px',
-                background: '#22C17A',
-                bottom: '-5%',
-                left: '-5%'
-            }} />
+    const profile = {
+        name: selectedChild.profileData?.customName || selectedChild.name,
+        emoji: selectedChild.avatar,
+        color: getSubjectHexColor(selectedChild.themeColor as any),
+        year: selectedChild.profileData?.template || selectedChild.yearGroups[0]?.name || 'N/A'
+    };
+
+    const autoSchedule = generateAutoSchedule(selectedChild, subjects);
+    const schedule = [
+        ...autoSchedule.map(item => ({
+            ...item,
+            subjectId: "",
+            topicId: ""
+        })),
+        { subject: "LUNCH", topic: "", icon: "🍽️", status: "lunch", subjectId: "", topicId: "" }
+    ];
+
+    // Helper to get subject color class
+    const getSubjectClass = (subjectName: string) => {
+        const nameMap: Record<string, string> = {
+            'English': 'c-english',
+            'Maths': 'c-maths', 
+            'Science': 'c-science',
+            'History': 'c-history',
+            'Geography': 'c-geography',
+            'Design & Tech': 'c-dt',
+            'Art': 'c-art',
+            'Music': 'c-music',
+            'PE': 'c-pe',
+            'Computing': 'c-computing'
+        };
+        return nameMap[subjectName] || 'c-english';
+    };
+
+    return (
+        <div style={{ margin: 0, padding: 0, boxSizing: 'border-box' }}>
+            <style>{`
+                :root {
+                    --bg: #FDF8F2;
+                    --surface: #FFFFFF;
+                    --ink: #1A1028;
+                    --ink-muted: #7B6F8A;
+                    --ink-faint: #C4BAD0;
+                    --accent: #7C3FE4;
+                    --accent-soft: #F0E8FF;
+                    --green: #22C17A;
+                    --green-soft: #E4F9EF;
+                    --amber: #F5A623;
+                    --amber-soft: #FFF4E0;
+                    --border: rgba(26,16,40,0.1);
+                    --shadow: 0 2px 12px rgba(26,16,40,0.08);
+                    --shadow-lg: 0 8px 32px rgba(26,16,40,0.12);
+                    --radius: 18px;
+                    --radius-sm: 10px;
+                }
+
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+
+                body {
+                    font-family: 'Nunito', sans-serif;
+                    background: var(--bg);
+                    color: var(--ink);
+                    min-height: 100vh;
+                    overflow-x: hidden;
+                }
+
+                /* Background texture */
+                body::before {
+                    content: '';
+                    position: fixed;
+                    inset: 0;
+                    background-image: radial-gradient(circle, rgba(124,63,228,0.04) 1px, transparent 1px);
+                    background-size: 24px 24px;
+                    pointer-events: none;
+                    z-index: 0;
+                }
+
+                /* Floating blobs */
+                .blob {
+                    position: fixed;
+                    border-radius: 50%;
+                    pointer-events: none;
+                    z-index: 0;
+                    filter: blur(80px);
+                    opacity: 0.12;
+                }
+                .blob-1 { width: 400px; height: 400px; background: var(--accent); top: -10%; right: -5%; }
+                .blob-2 { width: 300px; height: 300px; background: var(--green); bottom: -5%; left: -5%; }
+
+                /* ─── NAV ─── */
+                nav {
+                    position: sticky;
+                    top: 0;
+                    z-index: 100;
+                    background: rgba(253,248,242,0.92);
+                    backdrop-filter: blur(16px);
+                    border-bottom: 1.5px solid var(--border);
+                    padding: 0 32px;
+                    height: 60px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+
+                .nav-brand {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                .nav-logo {
+                    width: 36px;
+                    height: 36px;
+                    background: var(--accent);
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                    box-shadow: 0 4px 12px rgba(124,63,228,0.35);
+                }
+
+                .nav-title {
+                    font-family: 'Baloo 2', cursive;
+                    font-size: 17px;
+                    font-weight: 800;
+                    letter-spacing: 0.04em;
+                    color: var(--ink);
+                }
+
+                .nav-right {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                .streak-pill {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: var(--amber-soft);
+                    border: 1.5px solid rgba(245,166,35,0.3);
+                    border-radius: 100px;
+                    padding: 5px 14px;
+                    font-size: 13px;
+                    font-weight: 800;
+                    color: #B8740A;
+                }
+
+                /* ─── MAIN ─── */
+                main {
+                    position: relative;
+                    z-index: 1;
+                    max-width: 1280px;
+                    margin: 0 auto;
+                    padding: 28px 32px 48px;
+                }
+
+                /* ─── HERO ─── */
+                .hero {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 32px;
+                    gap: 24px;
+                }
+
+                .hero-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 18px;
+                }
+
+                .avatar {
+                    width: 72px;
+                    height: 72px;
+                    background: linear-gradient(135deg, var(--accent) 0%, #B07CF8 100%);
+                    border-radius: 22px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 36px;
+                    box-shadow: 0 8px 24px rgba(124,63,228,0.3);
+                    flex-shrink: 0;
+                }
+
+                .hero-text h1 {
+                    font-family: 'Baloo 2', cursive;
+                    font-size: 36px;
+                    font-weight: 800;
+                    line-height: 1;
+                    color: var(--ink);
+                }
+
+                .hero-text h1 span { color: var(--accent); }
+
+                .hero-text p {
+                    color: var(--ink-muted);
+                    font-size: 15px;
+                    font-weight: 600;
+                    margin-top: 4px;
+                }
+
+                .hero-stats {
+                    display: flex;
+                    gap: 12px;
+                    flex-shrink: 0;
+                }
+
+                .stat-card {
+                    background: var(--surface);
+                    border: 1.5px solid var(--border);
+                    border-radius: var(--radius-sm);
+                    padding: 12px 16px;
+                    text-align: center;
+                    box-shadow: var(--shadow);
+                    min-width: 90px;
+                }
+
+                .stat-card .stat-icon { font-size: 20px; margin-bottom: 4px; }
+                .stat-card .stat-value {
+                    font-family: 'Baloo 2', cursive;
+                    font-size: 18px;
+                    font-weight: 800;
+                    color: var(--accent);
+                    line-height: 1;
+                }
+                .stat-card .stat-label {
+                    font-size: 10px;
+                    font-weight: 700;
+                    letter-spacing: 0.08em;
+                    color: var(--ink-faint);
+                    text-transform: uppercase;
+                    margin-top: 2px;
+                }
+
+                /* ─── SECTION HEADER ─── */
+                .section-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    margin-bottom: 16px;
+                }
+
+                .section-label {
+                    font-family: 'Baloo 2', cursive;
+                    font-size: 13px;
+                    font-weight: 700;
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
+                    color: #fff;
+                    background: var(--accent);
+                    border-radius: 8px;
+                    padding: 3px 14px;
+                }
+
+                .section-line {
+                    flex: 1;
+                    height: 1.5px;
+                    background: var(--border);
+                    border-radius: 100px;
+                }
+
+                /* ─── TODAY'S PLAN ─── */
+                .plan-track {
+                    display: flex;
+                    gap: 12px;
+                    overflow-x: auto;
+                    padding-bottom: 8px;
+                    padding-top: 4px;
+                    margin-bottom: 36px;
+                    scrollbar-width: none;
+                }
+                .plan-track::-webkit-scrollbar { display: none; }
+
+                .plan-card {
+                    flex-shrink: 0;
+                    width: 160px;
+                    background: var(--surface);
+                    border: 2px solid var(--border);
+                    border-radius: 20px;
+                    padding: 18px 16px;
+                    text-align: center;
+                    cursor: pointer;
+                    transition: transform 0.15s, box-shadow 0.15s;
+                    box-shadow: var(--shadow);
+                    position: relative;
+                    overflow: hidden;
+                }
+
+                .plan-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+
+                .plan-card.done {
+                    background: var(--green-soft);
+                    border-color: rgba(34,193,122,0.4);
+                }
+                .plan-card.active {
+                    background: var(--accent-soft);
+                    border-color: rgba(124,63,228,0.5);
+                    box-shadow: 0 0 0 3px rgba(124,63,228,0.12), var(--shadow-lg);
+                }
+                .plan-card.break {
+                    background: var(--amber-soft);
+                    border-color: rgba(245,166,35,0.4);
+                    cursor: default;
+                }
+                .plan-card.upcoming {
+                    opacity: 0.6;
+                }
+
+                .plan-card .plan-icon { font-size: 28px; margin-bottom: 8px; }
+                .plan-card .plan-name {
+                    font-size: 14px;
+                    font-weight: 800;
+                    color: var(--ink);
+                    margin-bottom: 4px;
+                }
+                .plan-card .plan-topics {
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: var(--ink-muted);
+                    line-height: 1.4;
+                    margin-bottom: 10px;
+                }
+
+                .status-pill {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    border-radius: 100px;
+                    padding: 3px 10px;
+                    font-size: 11px;
+                    font-weight: 700;
+                }
+                .status-pill.done { background: var(--green); color: #fff; }
+                .status-pill.active { background: var(--accent); color: #fff; animation: pulse-ring 2s infinite; }
+                .status-pill.break { background: var(--amber); color: #fff; }
+                .status-pill.upcoming { background: var(--ink-faint); color: #fff; }
+
+                @keyframes pulse-ring {
+                    0%, 100% { box-shadow: 0 0 0 0 rgba(124,63,228,0.4); }
+                    50% { box-shadow: 0 0 0 6px rgba(124,63,228,0); }
+                }
+
+                /* ─── COLOR SYSTEM PER SUBJECT ─── */
+                .c-english   { --c: #E84848; --cs: rgba(232,72,72,0.12); --cl: #fff0f0; }
+                .c-maths     { --c: #F5A623; --cs: rgba(245,166,35,0.12); --cl: #fffbf0; }
+                .c-science   { --c: #00A8DD; --cs: rgba(0,168,221,0.12); --cl: #f0faff; }
+                .c-history   { --c: #C2680A; --cs: rgba(194,104,10,0.12); --cl: #fff8f0; }
+                .c-geography { --c: #2ECC71; --cs: rgba(46,204,113,0.12); --cl: #f0fff8; }
+                .c-dt        { --c: #1A9BB5; --cs: rgba(26,155,181,0.12); --cl: #f0fafd; }
+                .c-art       { --c: #9B4FD4; --cs: rgba(155,79,212,0.12); --cl: #faf0ff; }
+                .c-music     { --c: #8855EE; --cs: rgba(136,85,238,0.12); --cl: #f5f0ff; }
+                .c-pe        { --c: #44AA22; --cs: rgba(68,170,34,0.12); --cl: #f0fff0; }
+                .c-computing { --c: #3355DD; --cs: rgba(51,85,221,0.12); --cl: #f0f3ff; }
+
+                /* ─── SUBJECTS GRID ─── */
+                .subjects-grid {
+                    display: grid;
+                    grid-template-columns: repeat(5, 1fr);
+                    gap: 28px 20px;
+                    padding-bottom: 20px;
+                }
+
+                @media (max-width: 1100px) { .subjects-grid { grid-template-columns: repeat(4, 1fr); } }
+                @media (max-width: 860px)  { .subjects-grid { grid-template-columns: repeat(3, 1fr); } }
+
+                /* Stack count badge */
+                .stack-count {
+                    position: absolute;
+                    top: -8px; right: 10px;
+                    z-index: 10;
+                    background: var(--c); color: #fff;
+                    font-size: 9px; font-weight: 900;
+                    padding: 2px 8px; border-radius: 100px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                    letter-spacing: 0.04em;
+                    transition: opacity 0.3s;
+                }
+
+                /* Floating emojis */
+                .float-emoji {
+                    position: fixed;
+                    pointer-events: none;
+                    z-index: 0;
+                    font-size: 20px;
+                    opacity: 0.12;
+                    animation: float 3s ease-in-out infinite;
+                }
+                @keyframes float {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-10px); }
+                }
+
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `}</style>
+
+            {/* Background elements */}
+            <div className="blob blob-1"></div>
+            <div className="blob blob-2"></div>
+
+            {/* Floating emojis */}
+            <div className="float-emoji" style={{left:'3%',top:'15%',animationDelay:'0s'}}>⭐</div>
+            <div className="float-emoji" style={{left:'91%',top:'20%',animationDelay:'0.4s'}}>✨</div>
+            <div className="float-emoji" style={{left:'1%',top:'55%',animationDelay:'0.8s'}}>🚀</div>
+            <div className="float-emoji" style={{left:'95%',top:'65%',animationDelay:'1.2s'}}>💫</div>
 
             {/* NAV */}
-            <nav style={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 100,
-                background: 'rgba(253,248,242,0.92)',
-                backdropFilter: 'blur(16px)',
-                borderBottom: '1.5px solid rgba(26,16,40,0.1)',
-                padding: '0 32px',
-                height: '60px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{
-                        width: '36px',
-                        height: '36px',
-                        background: themeColor,
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '18px',
-                        boxShadow: '0 4px 12px rgba(124,63,228,0.35)'
-                    }}>🎓</div>
-                    <span style={{
-                        fontFamily: "'Baloo 2', cursive",
-                        fontSize: '17px',
-                        fontWeight: 800,
-                        letterSpacing: '0.04em',
-                        color: '#1A1028'
-                    }}>DADDY DASHBOARD</span>
+            <nav>
+                <div className="nav-brand">
+                    <div className="nav-logo">🎓</div>
+                    <span className="nav-title">DADDY DASHBOARD</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="nav-right">
+                    <div className="streak-pill">🔥 5 day streak!</div>
                     <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        background: '#FFF4E0',
-                        border: '1.5px solid rgba(245,166,35,0.3)',
-                        borderRadius: '100px',
-                        padding: '5px 14px',
-                        fontSize: '13px',
-                        fontWeight: 800,
-                        color: '#B8740A'
-                    }}>🔥 5 day streak!</div>
-                    <div style={{
-                        width: '36px',
-                        height: '36px',
-                        background: '#fff',
-                        border: '1.5px solid rgba(26,16,40,0.1)',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '18px',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 12px rgba(26,16,40,0.08)'
+                        width:'36px',height:'36px',background:'#fff',border:'1.5px solid var(--border)',
+                        borderRadius:'10px',display:'flex',alignItems:'center',justifyContent:'center',
+                        fontSize:'18px',cursor:'pointer',boxShadow:'var(--shadow)'
                     }}>{profile.emoji}</div>
                 </div>
             </nav>
 
             {/* MAIN */}
-            <main style={{
-                position: 'relative',
-                zIndex: 1,
-                maxWidth: '1280px',
-                margin: '0 auto',
-                padding: '28px 32px 48px'
-            }}>
-
+            <main>
                 {/* HERO */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '32px',
-                    gap: '24px'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-                        <div style={{
-                            width: '72px',
-                            height: '72px',
-                            background: `linear-gradient(135deg, ${themeColor} 0%, ${themeColor}CC 100%)`,
-                            borderRadius: '22px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '36px',
-                            boxShadow: `0 8px 24px ${themeColor}4D`,
-                            flexShrink: 0
-                        }}>{profile.emoji}</div>
-                        <div>
-                            <h1 style={{
-                                fontFamily: "'Baloo 2', cursive",
-                                fontSize: '36px',
-                                fontWeight: 800,
-                                lineHeight: 1,
-                                color: '#1A1028',
-                                margin: 0
-                            }}>Hey <span style={{ color: themeColor }}>{profile.name}</span>! 👋</h1>
-                            <p style={{
-                                color: '#7B6F8A',
-                                fontSize: '15px',
-                                fontWeight: 600,
-                                marginTop: '4px',
-                                margin: 0
-                            }}>Ready for today's adventure? Let's go! 🚀</p>
+                <div className="hero">
+                    <div className="hero-left">
+                        <div className="avatar">{profile.emoji}</div>
+                        <div className="hero-text">
+                            <h1>Hey <span>{profile.name}</span>! 👋</h1>
+                            <p>Ready for today's adventure? Let's go! 🚀</p>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '12px', flexShrink: 0 }}>
-                        <div style={{
-                            background: '#FFFFFF',
-                            border: '1.5px solid rgba(26,16,40,0.1)',
-                            borderRadius: '10px',
-                            padding: '12px 16px',
-                            textAlign: 'center',
-                            boxShadow: '0 2px 12px rgba(26,16,40,0.08)',
-                            minWidth: '90px'
-                        }}>
-                            <div style={{ fontSize: '20px', marginBottom: '4px' }}>✅</div>
-                            <div style={{
-                                fontFamily: "'Baloo 2', cursive",
-                                fontSize: '18px',
-                                fontWeight: 800,
-                                color: themeColor,
-                                lineHeight: 1
-                            }}>{todayDone}</div>
-                            <div style={{
-                                fontSize: '10px',
-                                fontWeight: 700,
-                                letterSpacing: '0.08em',
-                                color: '#C4BAD0',
-                                textTransform: 'uppercase',
-                                marginTop: '2px'
-                            }}>TODAY</div>
+                    <div className="hero-stats">
+                        <div className="stat-card">
+                            <div className="stat-icon">✅</div>
+                            <div className="stat-value">851</div>
+                            <div className="stat-label">Today's XP</div>
                         </div>
-                        <div style={{
-                            background: '#FFFFFF',
-                            border: '1.5px solid rgba(26,16,40,0.1)',
-                            borderRadius: '10px',
-                            padding: '12px 16px',
-                            textAlign: 'center',
-                            boxShadow: '0 2px 12px rgba(26,16,40,0.08)',
-                            minWidth: '90px'
-                        }}>
-                            <div style={{ fontSize: '20px', marginBottom: '4px' }}>🔥</div>
-                            <div style={{
-                                fontFamily: "'Baloo 2', cursive",
-                                fontSize: '18px',
-                                fontWeight: 800,
-                                color: themeColor,
-                                lineHeight: 1
-                            }}>{streak} days</div>
-                            <div style={{
-                                fontSize: '10px',
-                                fontWeight: 700,
-                                letterSpacing: '0.08em',
-                                color: '#C4BAD0',
-                                textTransform: 'uppercase',
-                                marginTop: '2px'
-                            }}>STREAK</div>
+                        <div className="stat-card">
+                            <div className="stat-icon">🔥</div>
+                            <div className="stat-value">5 days</div>
+                            <div className="stat-label">Streak</div>
                         </div>
-                        <div style={{
-                            background: '#FFFFFF',
-                            border: '1.5px solid rgba(26,16,40,0.1)',
-                            borderRadius: '10px',
-                            padding: '12px 16px',
-                            textAlign: 'center',
-                            boxShadow: '0 2px 12px rgba(26,16,40,0.08)',
-                            minWidth: '90px'
-                        }}>
-                            <div style={{ fontSize: '20px', marginBottom: '4px' }}>⭐</div>
-                            <div style={{
-                                fontFamily: "'Baloo 2', cursive",
-                                fontSize: '18px',
-                                fontWeight: 800,
-                                color: themeColor,
-                                lineHeight: 1
-                            }}>+{xp}</div>
-                            <div style={{
-                                fontSize: '10px',
-                                fontWeight: 700,
-                                letterSpacing: '0.08em',
-                                color: '#C4BAD0',
-                                textTransform: 'uppercase',
-                                marginTop: '2px'
-                            }}>XP</div>
+                        <div className="stat-card">
+                            <div className="stat-icon">⭐</div>
+                            <div className="stat-value">+120</div>
+                            <div className="stat-label">XP Earned</div>
                         </div>
                     </div>
                 </div>
 
                 {/* TODAY'S PLAN */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                    <span style={{
-                        fontFamily: "'Baloo 2', cursive",
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: '#fff',
-                        background: themeColor,
-                        borderRadius: '8px',
-                        padding: '3px 14px'
-                    }}>Today's Plan</span>
-                    <div style={{
-                        flex: 1,
-                        height: '1.5px',
-                        background: 'rgba(26,16,40,0.1)',
-                        borderRadius: '100px'
-                    }} />
+                <div className="section-header">
+                    <span className="section-label">Today's Plan</span>
+                    <div className="section-line"></div>
                 </div>
 
-                <div style={{
-                    display: 'flex',
-                    gap: '12px',
-                    overflowX: 'auto',
-                    paddingBottom: '8px',
-                    paddingTop: '4px',
-                    marginBottom: '36px',
-                    scrollbarWidth: 'none'
-                }}>
+                <div className="plan-track">
                     {schedule.map((item: any, i: number) => {
                         const isLunch = item.status === "lunch";
-                        const statusClass = item.status === "done" ? "done" : 
-                                         item.status === "active" ? "active" : 
-                                         isLunch ? "break" : "upcoming";
-                        
                         return (
-                            <div key={i} style={{
-                                flexShrink: 0,
-                                width: '160px',
-                                background: isLunch ? '#FFF4E0' : 
-                                           item.status === "done" ? '#E4F9EF' :
-                                           item.status === "active" ? tintColor : '#FFFFFF',
-                                border: `2px solid ${isLunch ? 'rgba(245,166,35,0.4)' : 
-                                                   item.status === "done" ? 'rgba(34,193,122,0.4)' :
-                                                   item.status === "active" ? `${themeColor}80` : 'rgba(26,16,40,0.1)'}`,
-                                borderRadius: '20px',
-                                padding: '18px 16px',
-                                textAlign: 'center',
-                                cursor: isLunch ? 'default' : 'pointer',
-                                transition: 'transform 0.15s, box-shadow 0.15s',
-                                boxShadow: '0 2px 12px rgba(26,16,40,0.08)',
-                                position: 'relative',
-                                overflow: 'hidden',
-                                opacity: item.status === "upcoming" ? 0.6 : 1
-                            }}>
-                                <div style={{ fontSize: '28px', marginBottom: '8px' }}>{item.icon}</div>
-                                <div style={{
-                                    fontSize: '14px',
-                                    fontWeight: 800,
-                                    color: '#1A1028',
-                                    marginBottom: '4px'
-                                }}>{item.subject}</div>
-                                <div style={{
-                                    fontSize: '11px',
-                                    fontWeight: 600,
-                                    color: '#7B6F8A',
-                                    lineHeight: 1.4,
-                                    marginBottom: '10px'
-                                }}>{isLunch ? '12 – 1 PM' : item.topic}</div>
-                                
-                                {item.frequency !== 'balanced' && !isLunch && (
-                                    <span style={{ 
-                                        marginLeft: 6, 
-                                        fontSize: 10, 
-                                        color: item.frequency === 'high' ? '#22C17A' : '#F5A623' 
-                                    }}>
-                                        {item.frequency === 'high' ? '⭐' : '○'}
-                                    </span>
-                                )}
-                                
-                                {item.total !== undefined && item.total > 0 && !isLunch && (
-                                    <span style={{ marginLeft: 4, color: '#7B6F8A', fontSize: '10px' }}>
-                                        ({item.progress}/{item.total})
-                                    </span>
-                                )}
-                                
-                                <div style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                    borderRadius: '100px',
-                                    padding: '3px 10px',
-                                    fontSize: '11px',
-                                    fontWeight: 700,
-                                    background: isLunch ? '#F5A623' : 
-                                              item.status === "done" ? '#22C17A' :
-                                              item.status === "active" ? themeColor : '#C4BAD0',
-                                    color: '#fff',
-                                    animation: item.status === "active" ? 'pulse-ring 2s infinite' : 'none'
-                                }}>
+                            <div key={i} className={`plan-card ${item.status}`}>
+                                <div className="plan-icon">{item.icon}</div>
+                                <div className="plan-name">{item.subject}</div>
+                                <div className="plan-topics" style={{color: isLunch ? '#B8740A' : 'var(--ink-muted)'}}>
+                                    {isLunch ? '12 – 1 PM' : item.topic}
+                                </div>
+                                <span className={`status-pill ${item.status}`}>
                                     {isLunch ? '🍽️ Break' : 
                                      item.status === "done" ? '✓ Done' :
                                      item.status === "active" ? '● Now' : 'Up next'}
-                                </div>
-                                
-                                {item.status === "upcoming" && !isLunch && (
-                                    <div style={{
-                                        fontSize: '10px',
-                                        fontWeight: 600,
-                                        color: '#7B6F8A',
-                                        marginTop: '4px'
-                                    }}>
-                                        {item.weight === 3 ? 'Priority' : item.weight === 1 ? 'Optional' : 'Regular'}
-                                    </div>
-                                )}
+                                </span>
                             </div>
                         );
                     })}
                 </div>
 
                 {/* SUBJECTS */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                    <span style={{
-                        fontFamily: "'Baloo 2', cursive",
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: '#fff',
-                        background: themeColor,
-                        borderRadius: '8px',
-                        padding: '3px 14px'
-                    }}>My Subjects</span>
-                    <div style={{
-                        flex: 1,
-                        height: '1.5px',
-                        background: 'rgba(26,16,40,0.1)',
-                        borderRadius: '100px'
-                    }} />
+                <div className="section-header">
+                    <span className="section-label">My Subjects</span>
+                    <div className="section-line"></div>
                 </div>
 
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(5, 1fr)',
-                    gap: '28px 20px',
-                    paddingBottom: '20px'
-                }}>
-                    {(() => {
-                        const coreSubjects = ['English', 'Maths', 'Science', 'History', 'Geography'];
-                        const sortedSubjects = [...subjects].sort((a, b) => {
-                            const aIsCore = coreSubjects.includes(a.name);
-                            const bIsCore = coreSubjects.includes(b.name);
-                            if (aIsCore && !bIsCore) return -1;
-                            if (!aIsCore && bIsCore) return 1;
-                            return 0;
-                        });
-                        return sortedSubjects.map((s, i) => {
-                            const isCoreSubject = coreSubjects.includes(s.name);
-                            const subjectCardsData = {
-                                color: s.color,
-                                icon: s.icon,
-                                topic: s.topic,
-                                category: isCoreSubject ? 'core' : 'optional',
-                                progress: s.progress,
-                                total: s.total,
-                                cards: s.topicCards?.slice(0, 7).map((tc: any, idx: number) => ({
-                                    focus: tc.title,
-                                    approved: idx === 0
-                                })) || []
-                            };
-
-                            return (
-                                <div key={i}>
-                                    <SubjectCard
-                                        subject={s.name}
-                                        subjectData={subjectCardsData}
-                                        frequency="balanced"
-                                        isCore={isCoreSubject}
-                                        isEditable={false}
-                                        onAddTopic={undefined}
-                                        onFrequencyChange={undefined}
-                                        onRemove={undefined}
-                                        onClick={() => {
-                                            const firstCard = s.topicCards?.[0];
-                                            if (firstCard) {
-                                                navigate(
-                                                    toLessonView({
-                                                        childId,
-                                                        lessonId: firstCard.firstVideoId || '',
-                                                        subjectId: s.subjectId,
-                                                        topic: firstCard.title,
-                                                        url: firstCard.url,
-                                                    })
-                                                );
-                                            }
-                                        }}
-                                        onCardClick={(card) => {
-                                            const clickedCard = s.topicCards?.find((tc: any) => tc.title === card.focus);
-                                            if (clickedCard) {
-                                                navigate(
-                                                    toLessonView({
-                                                        childId,
-                                                        lessonId: clickedCard.firstVideoId || '',
-                                                        subjectId: s.subjectId,
-                                                        topic: clickedCard.title,
-                                                        url: clickedCard.url,
-                                                    })
-                                                );
-                                            }
-                                        }}
-                                    />
-                                </div>
-                            );
-                        });
-                    })()}
+                <div className="subjects-grid">
+                    {subjects.map((s, i) => (
+                        <div key={i} className={`card-stack ${getSubjectClass(s.name)}`} onClick={() => {
+                            const firstCard = s.topicCards?.[0];
+                            if (firstCard) {
+                                navigate(toLessonView({
+                                    childId: selectedChild.id, lessonId: firstCard.firstVideoId || '',
+                                    subjectId: s.subjectId, topic: firstCard.title, url: firstCard.url,
+                                }));
+                            }
+                        }}>
+                            <div className="stack-count">{s.stackCount} cards</div>
+                            <KawaiiSubjectCard
+                                subject={s.name} icon={s.icon} color={s.color}
+                                progress={s.progress} total={s.total} topicCards={s.topicCards || []}
+                                isCore={s.category === 'core'}
+                                onClick={() => {
+                                    const firstCard = s.topicCards?.[0];
+                                    if (firstCard) {
+                                        navigate(toLessonView({
+                                            childId: selectedChild.id, lessonId: firstCard.firstVideoId || '',
+                                            subjectId: s.subjectId, topic: firstCard.title, url: firstCard.url,
+                                        }));
+                                    }
+                                }}
+                                onCardClick={(card) => {
+                                    navigate(toLessonView({
+                                        childId: selectedChild.id, lessonId: card.firstVideoId || '',
+                                        subjectId: s.subjectId, topic: card.title, url: card.url,
+                                    }));
+                                }}
+                            />
+                        </div>
+                    ))}
                 </div>
             </main>
-
-            {/* Add pulse animation */}
-            <style>{`
-                @keyframes pulse-ring {
-                    0%, 100% { box-shadow: 0 0 0 0 ${themeColor}66; }
-                    50% { box-shadow: 0 0 0 6px ${themeColor}00; }
-                }
-            `}</style>
         </div>
     );
 };

@@ -12,7 +12,7 @@ import { AppModals } from './app/AppModals';
 
 // Lazy Views
 const AdminDash = lazy(() => import('./views/AdminDash').then(m => ({ default: m.AdminDash })));
-const KidDash = lazy(() => import('./views/KidDash').then(m => ({ default: m.KidDash })));
+const KidDash = lazy(() => import('./views/KidDash'));
 const LessonView = lazy(() => import('./views/LessonView').then(m => ({ default: m.LessonView })));
 const ReturningView = lazy(() => import('./views/ReturningView').then(m => ({ default: m.ReturningView })));
 const Marketplace = lazy(() => import('./views/Marketplace').then(m => ({ default: m.Marketplace })));

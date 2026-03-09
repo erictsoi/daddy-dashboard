@@ -2,11 +2,17 @@ import { ChildProfile, Lesson } from '../types';
 
 // ─── Flat lesson helpers ──────────────────────────────────────────────────────
 
-export const getAllLessons = (child: ChildProfile): Lesson[] =>
-  child.yearGroups
-    .flatMap(yg => yg.subjects)
-    .flatMap(s => s.topics)
-    .flatMap(t => t.lessons);
+export const getAllLessons = (child: ChildProfile): Lesson[] => {
+  // Handle demo profiles or children without yearGroups
+  if (!child.yearGroups || child.yearGroups.length === 0) {
+    return [];
+  }
+  
+  return child.yearGroups
+    .flatMap(yg => yg.subjects || [])
+    .flatMap(s => s.topics || [])
+    .flatMap(t => t.lessons || []);
+};
 
 export const getActiveLessons = (child: ChildProfile): Lesson[] =>
   getAllLessons(child).filter(l => !l.deleted);
@@ -67,11 +73,16 @@ export interface SubjectStat {
   color: string;
 }
 
-export const getSubjectStats = (child: ChildProfile): SubjectStat[] =>
-  child.yearGroups
-    .flatMap(yg => yg.subjects)
+export const getSubjectStats = (child: ChildProfile): SubjectStat[] => {
+  // Handle demo profiles or children without yearGroups
+  if (!child.yearGroups || child.yearGroups.length === 0) {
+    return [];
+  }
+  
+  return child.yearGroups
+    .flatMap(yg => yg.subjects || [])
     .map(sub => {
-      const lessons = sub.topics.flatMap(t => t.lessons).filter(l => !l.deleted);
+      const lessons = (sub.topics || []).flatMap(t => t.lessons || []).filter(l => !l.deleted);
       const completed = lessons.filter(l => l.completed).length;
       const total = lessons.length;
       return {
@@ -84,6 +95,7 @@ export const getSubjectStats = (child: ChildProfile): SubjectStat[] =>
     })
     .filter(s => s.total > 0)
     .sort((a, b) => b.percent - a.percent);
+};
 
 /**
  * Builds a subject card list for the AdminDash subject grid.
@@ -118,12 +130,17 @@ const SUBJECT_ICONS: Record<string, string> = {
   Default: '📚',
 };
 
-export const buildSubjectCards = (child: ChildProfile): SubjectCard[] =>
-  child.yearGroups.flatMap(yg =>
-    yg.subjects.map(sub => {
-      const lessons = sub.topics.flatMap(t => t.lessons).filter(l => !l.deleted);
+export const buildSubjectCards = (child: ChildProfile): SubjectCard[] => {
+  // Handle demo profiles or children without yearGroups
+  if (!child.yearGroups || child.yearGroups.length === 0) {
+    return [];
+  }
+  
+  return child.yearGroups.flatMap(yg =>
+    (yg.subjects || []).map(sub => {
+      const lessons = (sub.topics || []).flatMap(t => t.lessons || []).filter(l => !l.deleted);
       const completed = lessons.filter(l => l.completed).length;
-      const firstTopic = sub.topics[0]?.name ?? '';
+      const firstTopic = (sub.topics || [])[0]?.name ?? '';
       return {
         subjectId: sub.id,
         subject: sub.name,
@@ -136,6 +153,7 @@ export const buildSubjectCards = (child: ChildProfile): SubjectCard[] =>
       };
     })
   );
+};
 
 /**
  * Naive streak: counts how many consecutive days (working backwards from today)
